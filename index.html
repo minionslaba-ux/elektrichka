@@ -106,6 +106,21 @@ body.post #vig{display:none}
 #turbo .bar.hot{animation:glowP .6s ease-in-out infinite}
 .cf{position:fixed;top:0;width:9px;height:14px;z-index:11;pointer-events:none;border-radius:2px;animation:conf linear both}
 #radio span .cur{display:inline-block;width:7px;height:13px;background:var(--cyan);margin-left:2px;vertical-align:-2px;animation:flash .6s steps(2) infinite}
+/* ---------- рыбалка ---------- */
+#fishHud{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;display:none;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+body.fish #fishHud{display:flex}body.fish #zl,body.fish #zr,body.fish #turbo,body.fish #prog,body.fish #tr{display:none}
+#fishHud .tens{position:relative;width:min(320px,76vw);height:18px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden;opacity:0;transition:opacity .2s}
+#fishHud.reel .tens{opacity:1}
+#fishHud .tens .ok{position:absolute;top:0;bottom:0;left:25%;width:55%;background:rgba(120,230,150,.28);border-left:2px solid #7be39a;border-right:2px solid #7be39a}
+#fishHud .tens .bad{position:absolute;top:0;bottom:0;left:85%;right:0;background:rgba(255,80,60,.3)}
+#fishHud .tens .nd{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 10px #fff}
+#fishHud .dist{width:min(320px,76vw);height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;opacity:0;transition:opacity .2s}#fishHud.reel .dist{opacity:1}
+#fishHud .dist i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fe8ff,#fff)}
+#fishHud .lbl{font-weight:800;font-size:15px;letter-spacing:.06em;text-shadow:0 2px 8px #000;text-align:center;min-height:20px}
+#fishHud .big{width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:44px;pointer-events:none;transition:transform .08s}
+#fishHud .big.dn{transform:scale(.92);box-shadow:0 0 0 3px var(--cyan),0 0 30px rgba(127,232,255,.5)}
+#fishCard{position:fixed;left:16px;right:16px;margin:0 auto;max-width:340px;top:22%;z-index:8;display:none;text-align:center;border-radius:16px;padding:14px 22px;pointer-events:none}
+#fishCard.on{display:block;animation:pop .45s cubic-bezier(.2,1.5,.4,1) both}#fishCard b{display:block;font-size:24px;margin:4px 0}#fishCard .e{font-size:46px}#fishCard small{color:var(--dim);font-size:14px}#fishCard .new{color:var(--hot);font-weight:900;letter-spacing:.1em;font-size:12px}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -128,6 +143,8 @@ body.post #vig{display:none}
 <div id="intro"><div class="in"><small>ЗАКАЗ</small><b id="introT"></b><span id="introS"></span></div></div>
 <div id="warn"><div class="in" id="warnT"></div></div>
 <div id="combo"></div>
+<div id="fishHud"><div class="lbl" id="fishLbl"></div><div class="tens"><div class="ok"></div><div class="bad"></div><div class="nd" id="fishNd"></div></div><div class="dist"><i id="fishDist"></i></div><div class="big g" id="fishBtn">🎣</div></div>
+<div id="fishCard" class="g"></div>
 <div id="msg"></div>
 <div id="hint"></div>
 <div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
@@ -834,6 +851,7 @@ const ORDERS = {
   jam: { name: 'Варенье Лёхе', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внук Лёха ждёт' },
   pies: { name: 'Пирожки Максу', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Макс ждёт' },
   seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
+  fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва' },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
@@ -978,6 +996,8 @@ function startMsg(first) {
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 function newRun(first) {
+  if (ORDER === 'fish') { startFishing(); return; }
+  stopFishing();
   genTrack(); buildSky(); buildWorld(); placeItems(); resetCar(); car.state = 'go';
   $('end').classList.remove('on'); snapCam(); startMsg(first);
 }
@@ -1027,13 +1047,13 @@ const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStar
 /* ---------- управление: левая/правая половина экрана ---------- */
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
-const up = (e) => { touches.delete(e.pointerId); updInput(); };
+const up = (e) => { touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
 const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
-addEventListener('keydown', (e) => { if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
-addEventListener('keyup', (e) => { if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
+addEventListener('keydown', (e) => { if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
+addEventListener('keyup', (e) => { if (FISH.active && e.code === 'Space') FISH.hold = false;  if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
 addEventListener('blur', () => { touches.clear(); input.kl = input.kr = input.tl = input.tr = false; });
 
 /* ---------- облегчение по fps ---------- */
@@ -1065,6 +1085,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const tsec = now / 1000;
+  if (FISH.active) { fishFrame(dt, now); return; }
   // руль
   const L = input.tl || input.kl, R = input.tr || input.kr;
   const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : 0) : 0;
@@ -1149,7 +1170,7 @@ function frame(now) {
     if (isDim()) { tank.position.set(car.x + (car.stuck ? Math.sin(tsec * 40) * 0.06 : 0), Math.abs(Math.sin(tsec * 9)) * 0.03 * Math.min(1, spd / 10), car.z); tank.rotation.y = car.h; tank.rotation.z = -steer * 0.04; }
     // интерфейс
     orderHud();
-    $('time').textContent = fmt(car.t); $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
+    $('time').textContent = fmt(car.t); if (car.t < 0.1) $('tl').querySelector('small').textContent = 'до внуков'; $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
     $('turbo').querySelector('.bar').classList.toggle('hot', car.boost > 0 || car.drift > 0.55);
     $('progi').style.width = (100 * TRACK[bi].s / TOTAL) + '%'; $('turboi').style.width = clamp(car.boost > 0 ? car.boost / 3 * 100 : car.drift / 3 * 100, 0, 100) + '%';
     // бабуля
@@ -1190,9 +1211,175 @@ function frame(now) {
   if (!firstFrame) { firstFrame = performance.now(); window.EL_FIRST = Math.round(firstFrame - T0); afterFirst(); }
 }
 
+/* ---------- 🎣 РЫБАЛКА в ледяном кратере Королёва ---------- */
+const FISHES = [
+  { id: 'karas', name: 'Карась-трёхглаз', e: '🐟', w: [0.4, 1.4], p: 30, str: 0.8, col: '#d8b04a', eyes: 3, joke: 'смотрит с укором всеми тремя глазами' },
+  { id: 'okun', name: 'Светлячок-окунь', e: '🐠', w: [0.3, 1.0], p: 22, str: 1.0, col: '#7fe8ff', glow: 1, joke: 'светится, им можно читать газету' },
+  { id: 'vobla', name: 'Вобла марсианская', e: '🐟', w: [0.2, 0.6], p: 16, str: 0.7, col: '#c8a878', joke: 'завялилась сама, пока вытаскивали' },
+  { id: 'shchuka', name: 'Щука-телепатка', e: '🐊', w: [2, 6], p: 9, str: 1.6, col: '#5a8a4a', joke: 'шепчет: «Таня, левее лунку сверли»' },
+  { id: 'meteor', name: 'Рыба-метеорит', e: '☄️', w: [3, 9], p: 4, str: 2.0, col: '#ff7a3a', glow: 1, joke: 'упала с неба прямо в лунку. Горячая!' },
+  { id: 'boot', name: 'Ботинок космонавта', e: '🥾', w: [1.2, 1.2], p: 7, str: 0.5, col: '#e8e8e8', junk: 1, joke: '43-й размер. Дед примерил — как раз' },
+  { id: 'plate', name: 'Номер «ф 037 эь»', e: '🚙', w: [0.5, 0.5], p: 5, str: 0.6, col: '#ffffff', junk: 1, joke: 'Димон опять тут проваливался' },
+  { id: 'sputnik', name: 'Спутник связи', e: '🛰️', w: [40, 40], p: 2, str: 1.8, col: '#c8c8d8', junk: 1, joke: 'отпустили. Теперь новости на один улов позже' },
+];
+const FISH_SAY = { wait: ['Дед: «Тихо, Таня, рыбу спугнёшь»', 'Дед: «В 72-м я на Земле сома во такого видал!»', 'Дед: «У меня клюёт! А, нет, это я замёрз»', 'Гоша смотрит в лунку и облизывается', 'Дед: «Лёд всего два километра, не провалимся»', 'Дед: «Червяк метровый, рыба должна быть с марсоход»'],
+  early: ['Дед: «Это ветер, Таня!»', 'Дед: «Рано! Дай рыбе распробовать»', 'Дед: «Ты так всю рыбу распугаешь!»'],
+  miss: ['Сорвалась!', 'Ушла, зараза!', 'Дед: «Подсекать надо было, Таня!»'], snap: ['Леска лопнула!', 'Дед: «Тянешь, как трактор!»'],
+  gosha: ['Гоша тянет леску лапой!', 'Гоша прыгнул на удочку!'] };
+let fishScene = null, fishCam = null, FISH = { active: false };
+let ALBUM = {}; try { ALBUM = JSON.parse(localStorage.getItem('bm_fish') || '{}'); } catch (e) {}
+const HOLE = new THREE.Vector3(0, 0, 0);
+function buildFishScene() {
+  fishScene = new THREE.Scene(); const fc = new THREE.Color('#5a5a7e'); fishScene.fog = new THREE.FogExp2(fc, 0.0075); fishScene.background = fc;
+  fishCam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.2, 700);
+  fishScene.add(new THREE.HemisphereLight('#c0c8f0', '#4a4058', 1.1)); const sl = new THREE.DirectionalLight('#ffd0b0', 0.7); sl.position.set(0.6, 0.4, 0.5); fishScene.add(sl);
+  const lamps = [{ x: 4.5, y: 1.4, z: -2.5, R: 12, I: 1.2, r: 1, g: 0.7, b: 0.4 }];
+  const B = new Builder(lamps), E = new Builder(null), gl = new GlowList();
+  // лёд: трещины и снег
+  const ice = new THREE.RingGeometry(0.01, 170, 64, 28); ice.rotateX(-Math.PI / 2);
+  { const pos = ice.attributes.position; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i), r = Math.hypot(x, z); pos.setY(i, r > 120 ? (r - 120) * 0.4 : 0); } }
+  B.add(ice, null, (cx, cy, cz) => { const crack = Math.abs(Math.sin(cx * 0.31 + Math.sin(cz * 0.2) * 3)) < 0.06; return TC.set(cy > 4 ? '#b86a4a' : crack ? '#6a8ab0' : (Math.sin(cx * 0.05) + Math.sin(cz * 0.07)) > 1.2 ? '#f0f4fa' : '#bcd4ea'); }, { flat: false });
+  // стенки кратера
+  for (let k = 0; k < 90; k++) { const a = k / 90 * Math.PI * 2, r = rnd(135, 165), h = rnd(18, 45); B.add(ICO, mat(Math.cos(a) * r, h * 0.3, Math.sin(a) * r, rnd(10, 18), h, rnd(10, 18), rnd(0, 6)), '#9a4a34', { jit: 0.2 }); }
+  // лунка
+  E.add(new THREE.CircleGeometry(0.55, 20), mat(0, 0.02, 0, 1, 1, 1, 0, -Math.PI / 2), '#0a1e3a', { emit: true });
+  B.add(new THREE.TorusGeometry(0.62, 0.12, 6, 20), mat(0, 0.03, 0, 1, 1, 0.5, 0, -Math.PI / 2), '#f4f8ff');
+  // палатка, фонарь, термос, ведро, ящик
+  B.add(new THREE.ConeGeometry(2.4, 3.2, 6), mat(5, 1.6, -3, 1, 1, 1, 0.3), '#e8782a', { jit: 0.08 });
+  E.add(BOX, mat(4.5, 1.4, -2.5, 0.3, 0.4, 0.3), '#ffd28a', { emit: true }); gl.add(4.5, 1.4, -2.3, '#ffb060', 1);
+  B.add(CYL2, mat(-1.6, 0.35, 0.9, 0.22, 0.7, 0.22), '#3a8a5a', SMOOTH); B.add(CYL2, mat(1.3, 0.3, 1.3, 0.7, 0.6, 0.7), '#8a8e96', SMOOTH); B.add(BOX, mat(-1.4, 0.3, -1.2, 0.8, 0.6, 0.5), '#5a6a4a');
+  // соседние рыбаки и Валина палатка с телескопом
+  for (let k = 0; k < 9; k++) { const a = rnd(0, 6.28), r = rnd(25, 90), x = Math.cos(a) * r, z = Math.sin(a) * r; B.add(new THREE.ConeGeometry(1.8, 2.6, 6), mat(x, 1.3, z), ['#2a6ad8', '#d83a3a', '#3ab07a', '#e8b03a'][k % 4]); B.add(CYL, mat(x + 2, 0.6, z, 0.5, 1.2, 0.5), '#2a2a30'); B.add(BALL2, mat(x + 2, 1.35, z, 0.25, 0.25, 0.25), '#e8bc9c'); gl.add(x, 1.4, z, '#ffb060', 0.5); }
+  B.add(new THREE.ConeGeometry(2, 3, 6), mat(-30, 1.5, -40), '#c84ab0'); B.add(CYL, mat(-27.5, 2.6, -40, 0.3, 2.4, 0.3, 0, 0.9), '#d8d8e0');
+  fishScene.add(new THREE.Mesh(B.build(), bakedMat)); fishScene.add(new THREE.Mesh(E.build(), bakedMat)); gl.make(fishScene);
+  // удочка, леска, бур, крошка льда, рыба
+  const rod = new THREE.Group(); fishScene.add(rod); FISH.rod = rod;
+  const rm = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.035, 1.9, 6), new THREE.MeshLambertMaterial({ color: '#e8e0d0' })); rm.rotation.x = Math.PI / 2; rm.position.z = 0.95; rod.add(rm);
+  const tip = new THREE.Object3D(); tip.position.z = 1.9; rod.add(tip); FISH.tip = tip;
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+  FISH.line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: '#f0f0ff' })); fishScene.add(FISH.line);
+  const drill = new THREE.Group(); fishScene.add(drill); FISH.drill = drill;
+  const DB = new Builder(null, true); DB.add(CYL, mat(0, 0.9, 0, 0.05, 1.8, 0.05), '#9aa0a8'); DB.add(BOX, mat(0, 1.8, 0, 0.7, 0.06, 0.06), '#d83a3a');
+  for (let k = 0; k < 6; k++) DB.add(BOX, mat(0, 0.2 + k * 0.1, 0, 0.32, 0.02, 0.1, k * 0.9), '#c8ccd2');
+  drill.add(new THREE.Mesh(DB.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  const fishM = new THREE.Group(); fishM.visible = false; fishScene.add(fishM); FISH.fishM = fishM;
+}
+function fishMesh(f) {
+  const g = FISH.fishM; while (g.children.length) g.remove(g.children[0]);
+  const B = new Builder(null, true), sz = f.junk ? 1 : clamp(0.6 + (f.w[1] - 0.3) * 0.12, 0.6, 1.8);
+  if (f.id === 'boot') { B.add(BOX, mat(0, 0, 0, 0.3, 0.45, 0.35), f.col); B.add(BOX, mat(0, -0.18, 0.15, 0.3, 0.12, 0.45), f.col); }
+  else if (f.id === 'plate') { B.add(BOX, mat(0, 0, 0, 0.6, 0.15, 0.03), f.col); B.add(BOX, mat(0, 0, 0.02, 0.5, 0.06, 0.01), '#111'); }
+  else if (f.id === 'sputnik') { B.add(BOX, mat(0, 0, 0, 0.5, 0.5, 0.5), f.col); for (const sd of [-1, 1]) B.add(BOX, mat(sd * 0.75, 0, 0, 0.9, 0.04, 0.4), '#2a4ab0'); }
+  else {
+    B.add(BALL2, mat(0, 0, 0, 0.16 * sz, 0.22 * sz, 0.5 * sz), f.col, SMOOTH); B.add(new THREE.ConeGeometry(0.2 * sz, 0.3 * sz, 4), mat(0, 0, -0.55 * sz, 1, 1, 0.3, 0, -Math.PI / 2), f.col);
+    B.add(new THREE.ConeGeometry(0.06 * sz, 0.25 * sz, 4), mat(0, 0.22 * sz, -0.05, 1, 1, 0.3), f.col);
+    for (let k = 0; k < (f.eyes || 2); k++) { const ex = f.eyes === 3 ? (k - 1) * 0.07 * sz : (k ? 1 : -1) * 0.12 * sz; B.add(BALL2, mat(ex, 0.08 * sz, 0.38 * sz, 0.04, 0.04, 0.04), '#ffffff'); }
+  }
+  g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true, emissive: f.glow ? f.col : '#000', emissiveIntensity: f.glow ? 0.6 : 0 })));
+}
+function startFishing() {
+  if (!fishScene) buildFishScene();
+  FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
+  // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
+  fishScene.add(babka); fishScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
+  babka.position.set(-2.4, 0.15, 0.4); babka.rotation.y = Math.PI / 2; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  Object.assign(FISH, { st: 'drill', drl: 0, t: 0, left: 75, wait: 0, bite: 0, tension: 0.4, prog: 0, fish: null, low: 0, catch: [], hold: false, sayT: 6, catT: 0, som: false, somUsed: false });
+  FISH.drill.visible = true; FISH.drill.position.set(0, 0, 0); FISH.fishM.visible = false;
+  fishCam.position.set(2.2, 2.8, 6.8); fishCam.lookAt(-0.8, 0.9, 0);
+  introCard(ORDERS.fish); radio('<b>Марс-ФМ:</b> в кратере Королёва клёв! Лёд всего два километра, рыба голодная, рыбаки трезвые');
+  hint('Сверли лунку: <b>быстро тапай</b> по экрану', 4000);
+}
+function stopFishing() {
+  if (!FISH.active) return; FISH.active = false; document.body.classList.remove('fish');
+  scene.add(babka); scene.add(skyG); FX.flame.visible = FX.flame2.visible = true; FX.pool.visible = true; $('fishCard').classList.remove('on');
+}
+function fishSay(arr) { const t = arr[Math.floor(Math.random() * arr.length)]; $('fishLbl').textContent = t; }
+function pickFish() {
+  if (!FISH.somUsed && FISH.t > 30 && Math.random() < 0.08) { FISH.somUsed = true; return { id: 'som', name: 'Царь-сом Пётр Петрович', e: '🐋', w: [400, 400], str: 4, col: '#4a5a6a', som: 1 }; }
+  const tot = FISHES.reduce((a, f) => a + f.p, 0); let r = Math.random() * tot; for (const f of FISHES) { r -= f.p; if (r <= 0) return f; } return FISHES[0];
+}
+function fishTap() {
+  if (!FISH.active) return; const f = FISH;
+  bump($('fishBtn'));
+  if (f.st === 'drill') { f.drl += 1; for (let q = 0; q < 2; q++) puffF(); if (f.drl >= 18) { f.st = 'wait'; f.wait = rnd(1.8, 4.5); FISH.drill.visible = false; fishSay(['Лунка готова! Дед: «Опускай, Таня»']); hint('Жди поклёвку. Кивок нырнул — <b>тапай</b>!', 3500); } return; }
+  if (f.st === 'wait') { fishSay(FISH_SAY.early); f.wait = rnd(2, 4); return; }
+  if (f.st === 'bite') { f.st = 'reel'; f.prog = 0.12; f.tension = 0.45; f.low = 0; $('fishHud').classList.add('reel'); fishSay([f.fish.som ? 'Ого!!! Что-то огромное!' : 'Подсекла! Держи натяжение в зелёной зоне']); if (f.fish.som) radio('<b>Дед:</b> Таня!!! Это ОН! Царь-сом! Держи, я за валидолом!'); hint('Держи палец — тянешь. Отпусти — даёшь слабину', 3000); return; }
+}
+const iceChips = [];
+function puffF() { if (!fishScene) return; const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: '#f4f8ff' })); m.position.set(rnd(-0.2, 0.2), 0.2, rnd(-0.2, 0.2)); m.userData.v = new THREE.Vector3(rnd(-1.5, 1.5), rnd(2, 4), rnd(-1.5, 1.5)); fishScene.add(m); iceChips.push(m); }
+function landFish() {
+  const f = FISH, fi = f.fish, w = Math.round(rnd(fi.w[0], fi.w[1]) * 10) / 10, isNew = !ALBUM[fi.id];
+  ALBUM[fi.id] = (ALBUM[fi.id] || 0) + 1; try { localStorage.setItem('bm_fish', JSON.stringify(ALBUM)); } catch (e) {}
+  f.catch.push({ fi, w }); fishMesh(fi); f.fishM.visible = true; f.jump = 0;
+  const c = $('fishCard'); c.innerHTML = (isNew ? '<div class="new">НОВАЯ В АЛЬБОМЕ!</div>' : '') + '<div class="e">' + fi.e + '</div><b>' + fi.name + '</b>' + (fi.junk ? '' : w.toString().replace('.', ',') + ' кг · ') + '<small>' + fi.joke + '</small>';
+  c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); clearTimeout(landFish.t); landFish.t = setTimeout(() => c.classList.remove('on'), 2300);
+  flash(fi.junk ? '#c8c8d8' : '#7fe8ff', 0.35); confettiSmall();
+  // кот Гоша иногда ворует улов
+  if (!fi.junk && Math.random() < 0.15) setTimeout(() => { const last = f.catch.pop(); if (last) { fishSay(['Гоша утащил «' + last.fi.name + '»! Дед: «Ну хоть кот сытый»']); bump($('order'), 'shk'); } }, 2400);
+  f.st = 'wait'; f.wait = rnd(2.5, 5); $('fishHud').classList.remove('reel');
+}
+function confettiSmall() { for (let i = 0; i < 14; i++) { const e = document.createElement('div'); e.className = 'f'; e.textContent = ['✨', '💧', '❄️'][i % 3]; e.style.left = (innerWidth / 2 + rnd(-90, 90)) + 'px'; e.style.top = (innerHeight * 0.55 + rnd(-30, 30)) + 'px'; $('fl').appendChild(e); setTimeout(() => e.remove(), 950); } }
+function fishFrame(dt, now) {
+  const f = FISH, tsec = now / 1000; f.t += dt; if (f.st !== 'end') f.left -= dt;
+  const port = innerWidth < innerHeight; fishCam.aspect = innerWidth / innerHeight; fishCam.fov = port ? 70 : 55; fishCam.updateProjectionMatrix();
+  // интерфейс
+  $('time').textContent = fmt(Math.max(0, f.left)); $('tl').querySelector('small').textContent = 'до заката';
+  const kg = f.catch.reduce((a, c) => a + (c.fi.junk ? 0 : c.w), 0); $('order').textContent = '🎣 улов: ' + f.catch.length + ' · ' + kg.toFixed(1).replace('.', ',') + ' кг'; $('order').classList.remove('bad');
+  $('fishBtn').classList.toggle('dn', f.hold); $('fishBtn').textContent = f.st === 'drill' ? '🔩' : f.st === 'reel' ? '🌀' : '🎣';
+  f.sayT -= dt; if (f.sayT <= 0 && (f.st === 'wait')) { f.sayT = rnd(6, 10); fishSay(FISH_SAY.wait); }
+  let bend = 0.1, dip = 0;
+  if (f.st === 'drill') { FISH.drill.rotation.y += dt * (f.hold ? 30 : 6) ; FISH.drill.position.y = -f.drl * 0.03; if (!$('fishLbl').textContent) fishSay(['Сверли! Тапай быстрее']); $('fishLbl').textContent = 'Сверлим: ' + Math.round(f.drl / 18 * 100) + '%'; }
+  else if (f.st === 'wait') { f.wait -= dt; dip = Math.sin(tsec * 7) * 0.02 + (Math.random() < 0.02 ? 0.06 : 0); if (f.wait <= 0 && f.left > 0) { f.fish = pickFish(); f.st = 'bite'; f.bite = f.fish.som ? 1.1 : 0.75; fishSay(['КЛЮЁТ!']); flash('#ffffff', 0.15); } }
+  else if (f.st === 'bite') { f.bite -= dt; dip = 0.35 + Math.sin(tsec * 30) * 0.08; bend = 0.6; if (f.bite <= 0) { fishSay(FISH_SAY.miss); f.st = 'wait'; f.wait = rnd(2, 4); } }
+  else if (f.st === 'reel') {
+    const fi = f.fish, pull = fi.str * (0.35 + 0.65 * Math.abs(Math.sin(tsec * (1.3 + fi.str * 0.4)))) + (Math.random() < 0.01 * fi.str ? 0.8 : 0);
+    f.tension += ((f.hold ? 0.55 + pull * 0.35 : 0.08 + pull * 0.15) - f.tension) * Math.min(1, dt * 2.5);
+    if (Math.random() < dt * 0.06 && !fi.som) { f.tension += 0.35; fishSay(FISH_SAY.gosha); }
+    f.prog += (f.hold ? (0.22 / fi.str) * (f.tension < 0.85 ? 1 : 0.3) : -0.05 * fi.str) * dt;
+    f.low = f.tension < 0.18 ? f.low + dt : 0;
+    $('fishNd').style.left = clamp(f.tension * 100, 0, 100) + '%'; $('fishDist').style.width = clamp(f.prog * 100, 0, 100) + '%';
+    bend = 0.3 + f.tension * 0.9; dip = 0.2 + f.tension * 0.3;
+    if (fi.som && f.t > 0 && f.prog > 0.45) { f.st = 'wait'; f.wait = 4; $('fishHud').classList.remove('reel'); ALBUM.som = (ALBUM.som || 0) + 1; try { localStorage.setItem('bm_fish', JSON.stringify(ALBUM)); } catch (e) {}
+      showMsg('Царь-сом!', 'Сом: «Червей с Земли привезли? Нет? Тогда до свидания»', '#7fe8ff', 3200); radio('<b>Дед:</b> Таня… он со мной поздоровался. Сорок лет ловлю — впервые поздоровался'); shake = 0.8; }
+    else if (f.tension > 1) { fishSay(FISH_SAY.snap); f.st = 'wait'; f.wait = rnd(2.5, 4); $('fishHud').classList.remove('reel'); flash('#ff3a2a', 0.35); }
+    else if (f.low > 1.6 || f.prog < 0) { fishSay(FISH_SAY.miss); f.st = 'wait'; f.wait = rnd(2, 4); $('fishHud').classList.remove('reel'); }
+    else if (f.prog >= 1) landFish();
+  }
+  if (f.left <= 0 && f.st !== 'end' && f.st !== 'reel') endFishing();
+  // удочка у бабки в руках над лункой, леска к воде
+  const rod = FISH.rod; rod.position.set(-1.55, 1.75, 0.35); rod.lookAt(0.1, 1.55 - dip * 1.6, 0.05); rod.children[0].rotation.y = 0; rod.children[0].scale.set(1, 1, 1);
+  rod.updateMatrixWorld(true); const tp = new THREE.Vector3(); FISH.tip.getWorldPosition(tp);
+  const la = FISH.line.geometry.attributes.position; la.setXYZ(0, tp.x, tp.y, tp.z); la.setXYZ(1, 0, 0.02, 0); la.needsUpdate = true;
+  // рыба выпрыгивает из лунки
+  if (FISH.fishM.visible) { f.jump += dt; const k = f.jump / 1.2; FISH.fishM.position.set(-0.5 * k, Math.sin(Math.min(1, k) * Math.PI) * 2.2 + 0.2, -0.6 * k); FISH.fishM.rotation.set(tsec * 6, 0.5, Math.sin(tsec * 20) * 0.4); if (k > 1.2) FISH.fishM.visible = false; }
+  for (let i = iceChips.length - 1; i >= 0; i--) { const m = iceChips[i]; m.userData.v.y -= dt * 9; m.position.addScaledVector(m.userData.v, dt); if (m.position.y < 0) { fishScene.remove(m); m.geometry.dispose(); iceChips.splice(i, 1); } }
+  // бабка, дед и Гоша живые
+  FX.ded.rotation.z = Math.sin(tsec * 0.8) * 0.05; FX.tail.rotation.z = Math.sin(tsec * 3) * 0.6; FX.cat.rotation.y = f.st === 'reel' ? Math.sin(tsec * 5) * 0.4 : 0; FX.body.rotation.x = f.st === 'reel' ? -0.05 - f.tension * 0.06 : 0;
+  const pf = innerWidth < innerHeight; fishCam.position.set(2.2 + Math.sin(tsec * 0.3) * 0.15 + (pf ? 1.5 : 0), pf ? 3.6 : 2.8, pf ? 8.8 : 6.8); fishCam.lookAt(-0.8, 0.9, 0);
+  if (shake > 0) { fishCam.position.x += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.5); }
+  skyG.position.copy(fishCam.position);
+  renderer.render(fishScene, fishCam);
+  adapt(dt);
+}
+function endFishing() {
+  const f = FISH; f.st = 'end'; $('fishHud').classList.remove('reel');
+  const fishes = f.catch.filter((c) => !c.fi.junk), kg = fishes.reduce((a, c) => a + c.w, 0), pay = Math.round(kg * 60) + f.catch.length * 40;
+  const types = FISHES.filter((x) => !x.junk).length, got = FISHES.filter((x) => !x.junk && ALBUM[x.id]).length;
+  const title = kg >= 12 ? 'Дед в шоке: улов больше, чем у него за 60 лет!' : kg >= 4 ? 'Уха будет! Макс уже несёт кастрюлю на 200 литров' : f.catch.length ? 'Улов скромный, но кот Гоша доволен' : 'Не клевало. Дед: «Это всё лунка не та»';
+  $('etitle').innerHTML = letters(title, 0.025);
+  $('esub').textContent = '🎣 Кратер Королёва · подлёдная рыбалка';
+  const st = kg >= 12 ? 3 : kg >= 4 ? 2 : 1; $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < st ? '★' : '☆'}</span>`).join('');
+  $('etab').innerHTML = (f.catch.length ? f.catch.map((c) => `<tr><td>${c.fi.e} ${c.fi.name}</td><td>${c.fi.junk ? 'хлам' : c.w.toString().replace('.', ',') + ' кг'}</td></tr>`).join('') : '<tr><td>Ни одной рыбки</td><td>—</td></tr>') +
+    `<tr><td>Альбом рыб</td><td>${got} из ${types}${ALBUM.som ? ' + Царь-сом 👀' : ''}</td></tr><tr><td><b>Продано на рынке «Красная пыль»</b></td><td><b>+${pay} ₽</b></td></tr>`;
+  const before = BANK; BANK += pay; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
+  $('banki').style.width = Math.min(100, before / TICKET * 100) + '%'; setTimeout(() => ($('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'), 1100);
+  $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽';
+  renderOrders(); showMsg('Закат!', 'сматываем удочки', '#ffcf8a', 1500); setTimeout(() => $('end').classList.add('on'), 1200);
+}
+
 /* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
 let firstEver = true; try { firstEver = !localStorage.getItem('bm_seen'); localStorage.setItem('bm_seen', '1'); } catch (e) {}
-if (firstEver) ORDER = 'potato';
+if (firstEver || ORDER === 'fish') ORDER = 'potato'; // первый заход — всегда езда
 genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
@@ -1202,7 +1389,7 @@ function afterFirst() {
   setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
