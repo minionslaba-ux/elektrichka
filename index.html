@@ -526,7 +526,42 @@ const FX = {};
   // антенна на кресле с флажком
   L.add(CYL, mat(0.5, 2.2, -0.5, 0.03, 1.5, 0.03), '#30343c'); E.add(BOX, mat(0.65, 2.85, -0.5, 0.3, 0.18, 0.02), '#ffb04a', { emit: true });
   const body = new THREE.Group(); body.scale.setScalar(1.25); babka.add(body); FX.body = body;
+  // люлька, как у мотоцикла с коляской, — справа от бабули (x < 0 — правая сторона при виде сзади)
+  const SX = -1.6;
+  L.add(BALL2, mat(SX, 0.85, 0.15, 0.58, 0.42, 1.05), '#3a7a8a', SMOOTH);                                     // корпус люльки
+  L.add(new THREE.TorusGeometry(0.5, 0.06, 6, 20), mat(SX, 1.17, 0.12, 1, 1.75, 1, 0, Math.PI / 2), '#c8ccd0', SMOOTH); // хромированный край
+  L.add(new THREE.CylinderGeometry(0.47, 0.47, 0.04, 20), mat(SX, 1.15, 0.12, 1, 1, 1.72), '#1e2024');           // проём
+  L.add(BOX, mat(-0.95, 0.72, 0.1, 0.8, 0.1, 0.12), '#9aa0a8'); L.add(BOX, mat(-0.95, 0.72, -0.45, 0.8, 0.1, 0.12), '#9aa0a8'); // крепления к креслу
+  L.add(new THREE.CylinderGeometry(0.5, 0.58, 0.22, 20), mat(SX, 0.42, 0.15), '#5a6270', SMOOTH);              // подушка люльки
+  E.add(new THREE.TorusGeometry(0.55, 0.05, 6, 22), mat(SX, 0.3, 0.15, 1, 1, 1, 0, Math.PI / 2), '#7fe8ff', { emit: true });
+  E.add(BOX, mat(SX, 1.27, 0.98, 0.6, 0.16, 0.03, 0, -0.6), '#6a8aa8', { emit: true });                        // низкое ветровое стекло
+  E.add(BALL2, mat(SX - 0.05, 0.95, 1.18, 0.12, 0.12, 0.06), '#fff6d0', { emit: true });                         // фара люльки
+  L.add(BOX, mat(SX + 0.35, 1.0, -0.9, 0.04, 0.5, 0.04), '#30343c'); E.add(BOX, mat(SX + 0.47, 1.18, -0.9, 0.22, 0.14, 0.02), '#ff5a4a', { emit: true }); // флажок
   body.add(new THREE.Mesh(L.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); body.add(new THREE.Mesh(E.build(), bakedMat));
+  // дед — отдельно, чтобы двигался
+  const ded = new THREE.Group(); ded.position.set(SX, 1.05, 0.0); body.add(ded); FX.ded = ded;
+  const D = new Builder(null, true), DE = new Builder(null);
+  D.add(new THREE.CylinderGeometry(0.28, 0.36, 0.55, 16), mat(0, 0.25, 0), (cx, cy) => TC.set(Math.round(cy * 14) % 2 ? '#4f5e3c' : '#46553a'), SMOOTH); // ватник
+  D.add(BALL2, mat(0, 0.74, 0.02, 0.21, 0.23, 0.21), '#e8bc9c', SMOOTH);                                         // голова
+  D.add(BALL2, mat(0, 0.86, -0.01, 0.25, 0.17, 0.25), '#6a4430', SMOOTH);                                        // ушанка
+  D.add(BOX, mat(0, 0.88, 0.2, 0.42, 0.1, 0.08, 0, 0.3), '#7a5238');                                              // козырёк ушанки
+  const flaps = []; for (const sd of [-1, 1]) { const f = new THREE.Group(); f.position.set(sd * 0.23, 0.8, 0); ded.add(f); flaps.push(f); }
+  FX.flaps = flaps;
+  D.add(BALL2, mat(0, 0.72, 0.21, 0.055, 0.05, 0.05), '#d86a5a', SMOOTH);                                         // красный нос
+  D.add(BOX, mat(0, 0.66, 0.2, 0.3, 0.06, 0.06), '#e8e8e4');                                                     // седые усы
+  for (const sd of [-1, 1]) D.add(BOX, mat(sd * 0.17, 0.645, 0.18, 0.1, 0.05, 0.05, 0, 0, sd * -0.5), '#e8e8e4');
+  for (const sd of [-1, 1]) DE.add(BOX, mat(sd * 0.085, 0.77, 0.2, 0.1, 0.07, 0.02), '#9fd8ff', { emit: true });  // очки
+  DE.add(BOX, mat(0, 0.77, 0.205, 0.06, 0.015, 0.015), '#202020', { emit: true });
+  for (const sd of [-1, 1]) D.add(new THREE.CylinderGeometry(0.08, 0.09, 0.42, 8), mat(sd * 0.3, 0.32, 0.18, 1, 1, 1, 0, 1.1, sd * 0.25), '#4f5e3c', SMOOTH); // руки
+  // газета «Марсианская правда»
+  D.add(BOX, mat(0, 0.42, 0.4, 0.55, 0.36, 0.02, 0, -0.35), (cx, cy) => TC.set(Math.round(cy * 40) % 3 ? '#e8e2d4' : '#8a8478'));
+  const dm = new THREE.Mesh(D.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); ded.add(dm); ded.add(new THREE.Mesh(DE.build(), bakedMat));
+  for (const f of flaps) { const fm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.16), new THREE.MeshLambertMaterial({ color: '#6a4430' })); fm.position.y = -0.1; f.add(fm); }
+  // поддон с рассадой (виден только в заказе «рассада»)
+  const tray = new THREE.Group(); tray.position.set(SX, 1.2, 0.62); body.add(tray); FX.tray = tray;
+  const TB = new Builder(null, true); TB.add(BOX, mat(0, 0, 0, 0.6, 0.1, 0.32), '#7a5232');
+  for (let k = 0; k < 8; k++) TB.add(new THREE.ConeGeometry(0.06, 0.22, 5), mat(-0.24 + (k % 4) * 0.16, 0.14, -0.08 + Math.floor(k / 4) * 0.16), '#4ac85a');
+  tray.add(new THREE.Mesh(TB.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
   // пламя турбины, свет подушки
   const fl = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.6, 10, 1, true), new THREE.MeshBasicMaterial({ color: '#ffb04a', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   fl.rotation.x = -Math.PI / 2; fl.position.set(0, 1.15, -2.05); body.add(fl); FX.flame = fl;
@@ -660,7 +695,7 @@ const ORDERS = {
   potato: { name: 'Картошка внукам', icon: '🥔', desc: 'Собери побольше картошки', who: 'Внуки ждут' },
   jam: { name: 'Варенье Алёнке', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внучка Алёнка ждёт' },
   pies: { name: 'Пирожки Пете', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Петя ждёт' },
-  seed: { name: 'Рассада деду', icon: '🌱', desc: 'Долгие заносы — рассада вылетает', who: 'Дед ждёт' },
+  seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
 };
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
 const TICKET = 30000;
@@ -772,7 +807,10 @@ function confetti() {
 function countUp(el, to, ms, suffix = '') { const t0 = performance.now(); const tick = (n) => { const k = Math.min(1, (n - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = (to < 0 ? '' : '') + Math.round(to * e).toLocaleString('ru') + suffix; if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
 function hint(t, ms) { const h = $('hint'); h.innerHTML = '<span class="g">' + t + '</span>'; h.classList.add('on'); clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.classList.remove('on'), ms); }
 const OUCH = ['Ох, радикулит!', 'Батюшки!', 'Куда прёшь, жучара!', 'Ой, давление!', 'Хулиганьё!'];
-const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Вот это занос!', 'Дед бы обзавидовался!', 'Турбо-бабуля!'];
+const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Вот это занос!', 'Турбо-бабуля!', 'Нюра жжёт!'];
+const DED = ['Дед: «Нюра, тормози!»', 'Дед: «Я на „Урале“ в 72-м так же гонял!»', 'Дед: «Ух, с ветерком!»', 'Дед: «Мои вставные зубы!»', 'Дед: «Жми, Нюра, жми!»', 'Дед: «Газету сдуло!»', 'Дед: «Шапку держу, шапку!»'];
+const DED_HIT = ['Дед: «Я же говорил!»', 'Дед: «Нюра, ну куда ты!»', 'Дед: «Валидол где?!»', 'Дед: «Это всё твои жуки!»'];
+const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
   const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
   car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
@@ -884,13 +922,13 @@ function frame(now) {
       const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
       car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * 0.5; // развернуло вдоль дороги
       if (now - car.bump > 900) { car.vx *= 0.55; car.vz *= 0.55; car.drift = 0; car.combo = 0; }
-      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], damage(''), '#ff9a7a', 1300, true);
+      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], damage('') || dedSay(DED_HIT), '#ff9a7a', 1300, true);
       car.bump = now;
     }
     // занос и турбо
     if (car.state === 'go') {
       if (steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
-      if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'дед будет ругаться', '#9aff8a', 1100); } } else car.seedT = 0;
+      if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'Дед: «Помидорчики мои!»', '#9aff8a', 1100); } } else car.seedT = 0;
       if (ORDER === 'pies' && !car.cold && car.t > car.pieLimit) { car.cold = true; showMsg('Пирожки остыли!', 'эх, а были с пылу с жару', '#ffb07a', 1500); }
       // радио и события зон
       car.radioT -= dt; if (car.radioT <= 0) { car.radioT = rnd(11, 16); radio(pickRadio()); }
@@ -903,7 +941,7 @@ function frame(now) {
         if (car.drift > 0.55) {
           const mult = 1 + Math.min(2, car.drift * 0.6), pts = Math.round(car.combo * mult);
           car.score += pts; car.boost = Math.min(3, 0.6 + car.drift * 0.8); flash('#5fe0ff', 0.35);
-          $('combo').innerHTML = '+' + pts + '<small>' + YAY[Math.floor(Math.random() * YAY.length)] + ' · турбо!</small>'; $('combo').classList.add('on'); clearTimeout(frame.ct); frame.ct = setTimeout(() => $('combo').classList.remove('on'), 1100);
+          $('combo').innerHTML = '+' + pts + '<small>' + (Math.random() < 0.5 ? dedSay(DED) : YAY[Math.floor(Math.random() * YAY.length)] + ' · турбо!') + '</small>'; $('combo').classList.add('on'); clearTimeout(frame.ct); frame.ct = setTimeout(() => $('combo').classList.remove('on'), 1100);
         }
         car.drift = 0; car.combo = 0;
       }
@@ -917,7 +955,7 @@ function frame(now) {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
         b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
-        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : 'жук!'), '#ff8a6a', 1300, true);
+        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : dedSay(DED_HIT)), '#ff8a6a', 1300, true);
       }
     });
     // пыль
@@ -931,6 +969,11 @@ function frame(now) {
     // бабуля
     babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.06, car.z); babka.rotation.y = car.h;
     FX.body.rotation.z = -steer * 0.18 * Math.min(1, slip * 3 + 0.3); FX.body.rotation.x = car.boost > 0 ? -0.08 : 0;
+    { const d = FX.ded, tz = steer * 0.32 * Math.min(1, slip * 3 + 0.2) + (car.spin > 0 ? Math.sin(tsec * 30) * 0.3 : 0), tx = car.boost > 0 ? -0.35 : 0;
+      d.rotation.z += (tz - d.rotation.z) * Math.min(1, dt * 8); d.rotation.x += (tx - d.rotation.x) * Math.min(1, dt * 6); d.position.y = 1.05 + Math.abs(Math.sin(tsec * 7)) * 0.03;
+      const fl = car.boost > 0 ? -1.2 - Math.sin(tsec * 40) * 0.3 : -0.1 * Math.min(1, spd / VMAX) - Math.sin(tsec * 18) * 0.08 * (spd / VMAX);
+      FX.flaps[0].rotation.x = fl; FX.flaps[1].rotation.x = fl; }
+    FX.tray.visible = ORDER === 'seed'; if (ORDER === 'seed') FX.tray.children[0].scale.set(1, 1, 1);
     const fk = car.boost > 0 ? 1.8 : 0.6 + spd / VMAX * 0.5; FX.flame.scale.set(1, fk * (0.9 + Math.random() * 0.2), 1); FX.flame.position.z = -1.33 - 0.8 * fk; FX.flame2.scale.set(1, fk, 1); FX.flame2.position.z = -1.33 - 0.5 * fk;
     FX.flame.material.color.set(car.boost > 0 ? '#7fe8ff' : '#ffb04a');
   }
