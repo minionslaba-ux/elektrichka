@@ -177,7 +177,7 @@ class Builder {
     const P = g.attributes.position.array, N = g.attributes.normal.array, fixed = typeof col !== 'function' ? new THREE.Color(col) : null;
     for (let i = 0; i < P.length; i += 9) {
       const cx = (P[i] + P[i + 3] + P[i + 6]) / 3, cy = (P[i + 1] + P[i + 4] + P[i + 7]) / 3, cz = (P[i + 2] + P[i + 5] + P[i + 8]) / 3;
-      const base = fixed || col(cx, cy, cz, N[i], N[i + 1], N[i + 2]);
+      const VC = o.vcol && g.attributes.color, base = VC ? TC.setRGB(VC.getX(i / 3) * o.vk, VC.getY(i / 3) * o.vk, VC.getZ(i / 3) * o.vk) : fixed || col(cx, cy, cz, N[i], N[i + 1], N[i + 2]);
       const k = o.jit ? 1 + (Math.random() - 0.5) * o.jit : 1, ar = base.r * k, ag = base.g * k, ab = base.b * k;
       for (let v = 0; v < 3; v++) {
         const j = i + v * 3, px = P[j], py = P[j + 1], pz = P[j + 2], nx = N[j], ny = N[j + 1], nz = N[j + 2];
@@ -313,6 +313,72 @@ let coarse = [];
 function distToRoad(x, z) { let best = 1e9; for (const p of coarse) { const dx = p.x - x, dz = p.z - z, d = dx * dx + dz * dz; if (d < best) best = d; } return Math.sqrt(best); }
 function hills(x, z) { return Math.sin(x * 0.021 + 1.3) * 3.2 + Math.sin(z * 0.017) * 3.5 + Math.sin((x + z) * 0.05) * 1.2 + Math.sin(x * 0.11 - z * 0.07) * 0.5; }
 function groundH(x, z, d) { if (d === undefined) d = distToRoad(x, z); const t = clamp((d - ROAD_W * 0.5 - 3) / 40, 0, 1); return -0.15 + t * t * (3 - 2 * t) * (hills(x, z) + 2.5); }
+/* ---------- модели KayKit Space Base Bits (CC0, Kay Lousberg) — догружаются после первого кадра ---------- */
+let PLACES = [], colonyProc = null, MODELS = null; const modelsG = new THREE.Group(); scene.add(modelsG);
+const kkMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+function loadModels() {
+  Promise.all([fetch('assets/kaykit.json').then((r) => r.json()), fetch('assets/kaykit.bin').then((r) => r.arrayBuffer())]).then(([man, buf]) => {
+    const out = {};
+    for (const [name, m] of Object.entries(man)) {
+      const q = new Int16Array(buf, m.p, m.v * 3), pos = new Float32Array(m.v * 3);
+      for (let i = 0; i < pos.length; i++) { const a = i % 3; pos[i] = m.mn[a] + (q[i] + 32767) / 65534 * (m.mx[a] - m.mn[a]); }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(buf, m.n, m.v * 3), 3, true));
+      g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, m.c, m.v * 3), 3, true));
+      g.setIndex(new THREE.BufferAttribute(m.x32 ? new Uint32Array(buf, m.x, m.i) : new Uint16Array(buf, m.x, m.i), 1));
+      g.translate(-(m.mn[0] + m.mx[0]) / 2, -m.mn[1], -(m.mn[2] + m.mx[2]) / 2); // центр по низу
+      out[name] = g;
+    }
+    MODELS = out; placeModels(); initTrucks();
+  }).catch(() => {});
+}
+let MODEL_Q = [];
+function placeModels() { // модели вписываются в мир участками: свет запекается, невидимые участки не рисуются
+  MODEL_Q = []; if (!MODELS) return;
+  const bands = {};
+  for (const pl of PLACES) { let bi = 0, bd = 1e18; for (let i = 0; i < TRACK.length; i += 5) { const d = (TRACK[i].x - pl[1]) ** 2 + (TRACK[i].z - pl[3]) ** 2; if (d < bd) { bd = d; bi = i; } } (bands[Math.floor(bi / 110)] = bands[Math.floor(bi / 110)] || []).push(pl); }
+  MODEL_Q = Object.values(bands);
+  MODEL_Q.sort((a, b) => ((a[0][1] - car.x) ** 2 + (a[0][3] - car.z) ** 2) - ((b[0][1] - car.x) ** 2 + (b[0][3] - car.z) ** 2));
+  MODEL_Q.total = MODEL_Q.length;
+}
+function buildModelBand() {
+  const list = MODEL_Q.shift(); if (!list) return;
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, cx = 0, cz = 0; for (const pl of list) { x0 = Math.min(x0, pl[1]); x1 = Math.max(x1, pl[1]); z0 = Math.min(z0, pl[3]); z1 = Math.max(z1, pl[3]); cx += pl[1]; cz += pl[3]; }
+  const B = new Builder(LAMPS.filter((L) => L.x > x0 - 40 && L.x < x1 + 40 && L.z > z0 - 40 && L.z < z1 + 40).map((L) => Object.assign({}, L, { I: L.I * 0.45 })));
+  for (const pl of list) if (MODELS[pl[0]]) B.add(MODELS[pl[0]], mat(pl[1], pl[2], pl[3], pl[4], pl[4], pl[4], pl[5]), null, { vcol: true, vk: 0.72 });
+  const m = new THREE.Mesh(B.build(), bakedMat); m.userData.c = [cx / list.length, cz / list.length]; W.add(m);
+  if (!MODEL_Q.length && colonyProc) colonyProc.visible = false; // свои упрощённые постройки больше не нужны
+}
+/* встречные космогрузовики — дальнобойщики Марса */
+const TRUCKS = []; let truckG = null;
+function initTrucks() {
+  if (!MODELS || truckG) return;
+  truckG = new THREE.Group(); scene.add(truckG);
+  for (let k = 0; k < 4; k++) {
+    const m = new THREE.Mesh(MODELS[k % 2 ? 'spacetruck_large' : 'spacetruck'], kkMat); m.scale.setScalar(6); truckG.add(m);
+    TRUCKS.push({ m, i: 0, lat: 0, sp: 0, hit: 0 });
+  }
+  resetTrucks();
+}
+function resetTrucks() {
+  TRUCKS.forEach((t, k) => { t.i = 140 + k * 170 + rnd(0, 60); t.lat = (k % 2 ? -1 : 1) * rnd(2.2, 3.4); t.sp = rnd(4.5, 6) / STEP; t.hit = 0; });
+}
+function stepTrucks(dt, now) {
+  if (!truckG) return;
+  for (const t of TRUCKS) {
+    t.i -= t.sp * dt; if (t.i < car.idx - 40 || t.i < 5) { t.i = Math.min(TRACK.length - 30, car.idx + rnd(110, 200)); t.lat = (Math.random() < 0.5 ? -1 : 1) * rnd(2.2, 3.4); }
+    const i0 = Math.floor(t.i), f = t.i - i0, a = TRACK[clamp(i0, 0, TRACK.length - 1)], b = TRACK[clamp(i0 + 1, 0, TRACK.length - 1)], n = nrm(a);
+    const x = a.x + (b.x - a.x) * f + n[0] * t.lat, z = a.z + (b.z - a.z) * f + n[1] * t.lat;
+    t.m.position.set(x, 0.1 + Math.abs(Math.sin(now * 0.01 + t.lat)) * 0.04, z); t.m.rotation.y = a.a + Math.PI;
+    t.m.visible = car.state !== 'boot';
+    if (car.state === 'go' && now - t.hit > 2500 && (x - car.x) ** 2 + (z - car.z) ** 2 < 10) {
+      t.hit = now; car.spin = 0.9; car.vx *= 0.4; car.vz *= 0.4; car.drift = 0; car.combo = 0; shake = 0.7;
+      showMsg('Дальнобойщик!', damage('') || dedSay(['Дед: «Куда прёшь, шоферюга!»', 'Дед: «Права купил, что ли?!»', 'Дед: «Нюра, это грузовик!»']), '#ff8a5a', 1500, true);
+    }
+  }
+}
+
 function buildWorld() {
   while (W.children.length) { const o = W.children.pop(); o.traverse && o.traverse((q) => q.geometry && q.geometry.dispose()); }
   LAMPS.length = 0;
@@ -387,13 +453,18 @@ function buildWorld() {
   }
   // постройки колонии одной сеткой (их немного)
   const B = new Builder(LAMPS), E = new Builder(null);
+  const CB = new Builder(LAMPS), CE = new Builder(null), cglows = new GlowList(); PLACES = [];
+  const place = (m, x, y, z, s, ry = 0) => PLACES.push([m, x, y, z, s, ry]);
+  const MODS = ['basemodule_A', 'basemodule_B', 'basemodule_C', 'basemodule_D', 'basemodule_garage', 'cargodepot_A'];
   for (const [x, z, R] of domes) {
-    const y = groundH(x, z);
+    const y = groundH(x, z); place(MODS[Math.floor(Math.random() * MODS.length)], x, y - 0.1, z, R * 0.62, rnd(0, 6.28));
+    if (Math.random() < 0.5) place('roofmodule_solarpanels', x + R * 1.6, groundH(x + R * 1.6, z) - 0.1, z, 5, rnd(0, 6.28));
+    { const B = CB, E = CE, glows = cglows;
     B.add(DOME, mat(x, y - 0.2, z, R, R * 0.8, R), (cx, cy, cz, nx, ny) => TC.set(ny > 0.85 ? '#d8c8c0' : '#a89a98'), { jit: 0.05 });
     B.add(CYL, mat(x, y + 0.4, z, R * 2.05, 0.8, R * 2.05), '#5a4a4e');
     // окна по кругу
     for (let k = 0; k < 7; k++) { const a = k / 7 * 6.283, wx = x + Math.cos(a) * R * 0.93, wz = z + Math.sin(a) * R * 0.93; if (Math.random() < 0.7) { E.add(BOX, mat(wx, y + R * 0.28, wz, 1.0, 0.7, 0.1, -a + Math.PI / 2), '#ffc878', { emit: true }); glows.add(wx, y + R * 0.28, wz, '#ffb060', 0.5); } }
-    E.add(BOX, mat(x, y + R * 0.8, z, 0.3, 0.3, 0.3), '#ff4a3a', { emit: true }); glows.add(x, y + R * 0.8 + 0.3, z, '#ff4a3a', 0.6);
+    E.add(BOX, mat(x, y + R * 0.8, z, 0.3, 0.3, 0.3), '#ff4a3a', { emit: true }); glows.add(x, y + R * 0.8 + 0.3, z, '#ff4a3a', 0.6); }
   }
   for (const [x, z, L, a] of greens) {
     const y = groundH(x, z), half = new THREE.CylinderGeometry(3, 3, L, 10, 1, false, 0, Math.PI); half.rotateZ(Math.PI / 2); half.rotateX(Math.PI / 2);
@@ -404,6 +475,7 @@ function buildWorld() {
   for (const [x, z, a] of solars) { // солнечное поле
     for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) {
       const lx = (c - 2.5) * 2.6, lz = (r - 1.5) * 3.2, wx = x + Math.cos(a) * lx + Math.sin(a) * lz, wz = z - Math.sin(a) * lx + Math.cos(a) * lz, y = groundH(wx, wz);
+      place('solarpanel', wx, y, wz, 4.2, a); const B = CB;
       B.add(CYL, mat(wx, y + 0.5, wz, 0.12, 1.0, 0.12), '#555058');
       B.add(BOX, mat(wx, y + 1.05, wz, 2.4, 0.06, 1.6, a, 0.5), (cx, cy, cz, nx, ny) => TC.set(ny > 0.3 ? '#4a7ac8' : '#2a2a34'));
     }
@@ -415,12 +487,13 @@ function buildWorld() {
     for (let k = -L / 2 + 1; k < L / 2; k += 3) glows.add(x + Math.sin(a) * k, y + 3.4, z + Math.cos(a) * k, '#ff4fd0', 0.7);
   }
   for (const [x, z, a] of conts) { // контейнеры
-    const cols = ['#e8783a', '#3ab0b8', '#e8e0d8', '#c8443a'];
+    { const y = groundH(x, z); place(Math.random() < 0.5 ? 'cargo_A_stacked' : 'cargo_B_stacked', x, y, z, 5.5, a); place(['containers_A', 'containers_B', 'containers_C'][Math.floor(Math.random() * 3)], x + Math.cos(a) * 8, y, z - Math.sin(a) * 8, 7, rnd(0, 6)); }
+    const B = CB; const cols = ['#e8783a', '#3ab0b8', '#e8e0d8', '#c8443a'];
     for (let k = 0; k < 5; k++) { const lx = (k % 3) * 6.3 - 6, ly = k < 3 ? 1.3 : 3.9, lx2 = k < 3 ? lx : lx + 3, wx = x + Math.cos(a) * lx2, wz = z - Math.sin(a) * lx2, y = groundH(x, z);
       B.add(BOX, mat(wx, y + ly, wz, 6, 2.6, 2.5, a + Math.PI / 2), (cx, cy, cz) => TC.set(cols[k % 4]).multiplyScalar(0.85 + ((Math.floor(cx * 2 + cz * 2) % 2) ? 0.1 : 0)), { jit: 0.05 }); }
   }
   for (const [x, z, a] of rovers) { // марсоход
-    const y = groundH(x, z), R = mat(x, y, z, 1, 1, 1, a);
+    const y = groundH(x, z), R = mat(x, y, z, 1, 1, 1, a), B = CB, E = CE; place(Math.random() < 0.5 ? 'spacetruck' : 'spacetruck_large', x, y, z, 6, a);
     B.add(BOX, R.clone().multiply(mat(0, 1.5, 0, 2.6, 0.9, 4)), '#e8e4dc'); B.add(BOX, R.clone().multiply(mat(0, 2.1, 0.8, 2.2, 0.5, 1.6)), '#c8c0b8');
     for (const sx of [-1.4, 1.4]) for (const sz of [-1.5, 0, 1.5]) B.add(CYL, R.clone().multiply(mat(sx, 0.55, sz, 1.1, 0.4, 1.1, 0, 0, Math.PI / 2)), '#2a262a');
     B.add(CYL, R.clone().multiply(mat(0.6, 3.0, -1.2, 0.08, 1.6, 0.08)), '#555'); E.add(BOX, R.clone().multiply(mat(0, 1.6, 2.02, 1.8, 0.25, 0.05)), '#bff4ff', { emit: true });
@@ -435,7 +508,7 @@ function buildWorld() {
     if (i % 30 === 0) { E.add(CYL, mat(ax, 1.4, az, 0.9, 0.25, 0.9, ang, Math.PI / 2), '#ffb04a', { emit: true }); glows.add(ax, 1.4, az, '#ffb04a', 0.6); }
   }
   for (const [x, z] of ants) {
-    const y = groundH(x, z);
+    const y = groundH(x, z), B = CB, E = CE, glows = cglows; place(['windturbine_tall', 'drill_structure', 'structure_tall', 'lander_A'][Math.floor(Math.random() * 4)], x, y, z, 6, rnd(0, 6.28));
     B.add(CYL, mat(x, y + 5, z, 0.25, 10, 0.25), '#8a8088'); B.add(DOME, mat(x, y + 9, z, 2.4, 1.0, 2.4, 0, 2.4), '#d0c8c8');
     E.add(BOX, mat(x, y + 10.4, z, 0.3, 0.3, 0.3), '#ff3a3a', { emit: true }); glows.add(x, y + 10.5, z, '#ff3a3a', 0.8);
   }
@@ -446,8 +519,12 @@ function buildWorld() {
   // финиш: купол внуков с вывеской
   const fa = fin.a, fn = nrm(fin);
   const gx = fin.x + Math.sin(fa) * 26, gz = fin.z + Math.cos(fa) * 26;
-  B.add(DOME, mat(gx, -0.2, gz, 14, 10, 14), '#e0d0c8'); B.add(CYL, mat(gx, 0.5, gz, 28.5, 1, 28.5), '#6a5258');
-  for (let k = 0; k < 9; k++) { const a = fa + Math.PI + (k - 4) * 0.22, wx = gx + Math.sin(a) * 13.2, wz = gz + Math.cos(a) * 13.2; E.add(BOX, mat(wx, 3.2, wz, 1.4, 1.1, 0.1, a), '#ffd28a', { emit: true }); glows.add(wx, 3.2, wz, '#ffb060', 0.6); }
+  CB.add(DOME, mat(gx, -0.2, gz, 14, 10, 14), '#e0d0c8'); CB.add(CYL, mat(gx, 0.5, gz, 28.5, 1, 28.5), '#6a5258');
+  for (let k = 0; k < 9; k++) { const a = fa + Math.PI + (k - 4) * 0.22, wx = gx + Math.sin(a) * 13.2, wz = gz + Math.cos(a) * 13.2; CE.add(BOX, mat(wx, 3.2, wz, 1.4, 1.1, 0.1, a), '#ffd28a', { emit: true }); cglows.add(wx, 3.2, wz, '#ffb060', 0.6); }
+  place('basemodule_E', gx, -0.2, gz, 12, fa + Math.PI); // дом внуков — модуль с золотым куполом
+  { const lx = gx + fn[0] * 30, lz = gz + fn[1] * 30; place('landingpad_large', lx, 0, lz, 7, 0); place('lander_A', lx, 3.4, lz, 6, fa); } // космодром — сюда потом прилетит билет на Землю
+  // россыпи камней набора у трассы
+  for (let k = 0; k < 40; k++) { const i = Math.floor(rnd(10, TRACK.length - 10)), p = TRACK[i], n = nrm(p), sd = Math.random() < 0.5 ? -1 : 1, off = ROAD_W / 2 + rnd(5, 30), x = p.x + n[0] * off * sd, z = p.z + n[1] * off * sd; place(['rocks_A', 'rocks_B', 'rock_A'][k % 3], x, groundH(x, z) - 0.2, z, rnd(3, 6), rnd(0, 6.28)); }
   for (const sd of [-1, 1]) { const px = fin.x + fn[0] * (ROAD_W / 2 + 1) * sd, pz = fin.z + fn[1] * (ROAD_W / 2 + 1) * sd; B.add(CYL, mat(px, 3, pz, 0.35, 6, 0.35), '#3a3036'); }
   E.add(BOX, mat(fin.x, 6.2, fin.z, ROAD_W + 2.6, 1.3, 0.25, fa + Math.PI / 2 - Math.PI / 2), (cx, cy, cz, nx, ny, nz) => TC.set('#ffcf6a'), { emit: true });
   const bannerG = new THREE.Group(); bannerG.position.set(fin.x, 6.2, fin.z); bannerG.rotation.y = fa; W.add(bannerG);
@@ -455,6 +532,8 @@ function buildWorld() {
   const ban = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W + 2, 1.1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bc), transparent: true })); ban.position.z = -0.14; ban.rotation.y = Math.PI; bannerG.add(ban);
   const ban2 = ban.clone(); ban2.position.z = 0.14; ban2.rotation.y = 0; bannerG.add(ban2);
   W.add(new THREE.Mesh(B.build(), bakedMat)); W.add(new THREE.Mesh(E.build(), bakedMat));
+  colonyProc = new THREE.Group(); colonyProc.add(new THREE.Mesh(CB.build(), bakedMat)); if (CE.p.length) colonyProc.add(new THREE.Mesh(CE.build(), bakedMat)); cglows.make(colonyProc); W.add(colonyProc);
+  placeModels();
   // дальние столовые горы — силуэты поверх тумана
   for (const [dist, k, hm] of [[420, 0.72, 60], [330, 0.6, 40]]) {
     const pos = [], col = [], top = FOG.clone().multiplyScalar(k), bot = FOG.clone().multiplyScalar(k * 0.9), cxm = (minX + maxX) / 2, czm = (minZ + maxZ) / 2;
@@ -682,7 +761,7 @@ function loadPost() {
       const rt = new THREE.WebGLRenderTarget(innerWidth * dpr, innerHeight * dpr, { samples: renderer.capabilities.isWebGL2 && tier === 2 ? 4 : 0 });
       composer = new THREE.EffectComposer(renderer, rt); composer.setPixelRatio(dpr); composer.setSize(innerWidth, innerHeight);
       composer.addPass(new THREE.RenderPass(scene, camera));
-      composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.85, 0.5, 0.72));
+      composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.85, 0.5, 0.8));
       gradePass = new THREE.ShaderPass(GRADE); composer.addPass(gradePass);
       postOn = true; document.body.classList.add('post');
     } catch (e) { composer = null; }
@@ -814,7 +893,7 @@ const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
   const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
   car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
-  planZones(); orderHud(); trailPts.length = 0;
+  planZones(); orderHud(); trailPts.length = 0; if (truckG) resetTrucks();
 }
 function startMsg(first) {
   const o = ORDERS[ORDER];
@@ -980,7 +1059,7 @@ function frame(now) {
   // предметы: анимация
   let n2 = 0; ITEMS.pots.forEach((p, k) => { if (!p.on) return; pots.setMatrixAt(n2++, mat(p.x, 0.75 + Math.sin(tsec * 3 + k) * 0.15, p.z, 1, 1, 1, tsec * 2 + k, 0.4)); }); pots.count = n2; pots.instanceMatrix.needsUpdate = true;
   ITEMS.beetles.forEach((b, k) => beetles.setMatrixAt(k, mat(b.x, 0.05 + Math.abs(Math.sin(tsec * 12 + k)) * 0.06, b.z, 1, 1, 1, b.a))); beetles.count = ITEMS.beetles.length; beetles.instanceMatrix.needsUpdate = true;
-  stepDust(dt);
+  stepDust(dt); stepTrucks(dt, now); if (MODEL_Q.length) buildModelBand();
   { const zn = car.state === 'go' ? zoneAt(car.idx) : null, storm = zn && zn.kind === 'storm';
     scene.fog.density += ((storm ? 0.02 : 0.0062) - scene.fog.density) * Math.min(1, dt * 1.5);
     $('storm').style.opacity = storm ? 1 : 0; stepMeteors(dt, now, zn && zn.kind === 'meteor');
@@ -1011,9 +1090,10 @@ requestAnimationFrame(frame);
 function afterFirst() {
   $('boot').classList.add('hide'); document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
+  setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
