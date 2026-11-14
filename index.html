@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Бабуля на Марсе</title>
+<meta name="description" content="Бабуля в турбо-кресле дрифтует по Марсу и везёт внукам картошку.">
+<meta name="theme-color" content="#2a1a2e">
+<link rel="preload" href="lib/three/three.min.js" as="script">
+<style>
+:root{--ink:#fff4ea;--dim:#e0c2b0;--hot:#ffb04a;--cyan:#7fe8ff;--glass:rgba(30,14,22,.55);--line:rgba(255,255,255,.14)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1a2e;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 80% 75% at 50% 45%,transparent 55%,rgba(20,6,12,.55) 100%)}
+#boot{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .7s;
+  background:radial-gradient(ellipse 60% 30% at 70% 72%,#9ec4e8 0%,rgba(158,196,232,.25) 30%,transparent 60%),linear-gradient(#1c1022,#5a2c34 55%,#b8603e 80%,#6e3426)}
+#boot h1{margin:0;font-size:clamp(32px,8vw,60px);font-weight:900;text-shadow:0 3px 24px rgba(0,0,0,.5)}
+#boot p{margin:0;color:var(--dim)}
+#boot.hide{opacity:0;pointer-events:none}
+.g{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#ui{opacity:0;transition:opacity .5s;pointer-events:none}body.play #ui{opacity:1}
+#tl{position:fixed;left:16px;top:calc(12px + env(safe-area-inset-top));z-index:5;border-radius:12px;padding:7px 12px;font-variant-numeric:tabular-nums}
+#tl b{font-size:22px}#tl small{display:block;color:var(--dim);font-size:12px}
+#tr{position:fixed;right:16px;top:calc(12px + env(safe-area-inset-top));z-index:5;border-radius:12px;padding:7px 12px;text-align:right;font-variant-numeric:tabular-nums}
+#tr b{font-size:22px;color:var(--hot)}#tr small{display:block;color:var(--dim);font-size:12px}
+#prog{position:fixed;left:50%;top:calc(18px + env(safe-area-inset-top));transform:translateX(-50%);width:min(240px,40vw);height:6px;border-radius:3px;background:rgba(255,255,255,.15);z-index:5;overflow:hidden}
+#prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--hot),#ffe08a)}
+#turbo{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(220px,46vw);z-index:5;text-align:center}
+#turbo .bar{height:8px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}#turbo .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),#fff)}
+#turbo small{display:block;margin-top:5px;font-size:11px;letter-spacing:.14em;color:var(--dim)}
+#spd{display:block;font-size:30px;font-weight:300;font-variant-numeric:tabular-nums;text-shadow:0 2px 10px #000;margin-bottom:4px}
+#combo{position:fixed;left:0;right:0;top:24%;text-align:center;z-index:6;pointer-events:none;font-weight:900;font-size:clamp(22px,6vw,40px);color:var(--cyan);text-shadow:0 0 20px rgba(127,232,255,.6),0 3px 12px #000;opacity:0;transition:opacity .2s}
+#combo.on{opacity:1}#combo small{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+#msg{position:fixed;left:0;right:0;top:38%;text-align:center;font-size:clamp(28px,7vw,50px);font-weight:900;pointer-events:none;z-index:6;opacity:0;transform:scale(.92);transition:opacity .2s,transform .2s;text-shadow:0 0 24px currentColor,0 3px 14px #000}
+#msg.on{opacity:1;transform:none}#msg small{display:block;font-size:16px;font-weight:600;color:var(--ink);margin-top:6px}
+#hint{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(440px,calc(100vw - 32px));text-align:center;z-index:6;opacity:0;transition:opacity .4s;pointer-events:none}
+#hint.on{opacity:1}#hint span{display:inline-block;border-radius:12px;padding:9px 14px;font-size:15px;line-height:1.35}
+.zone{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));width:74px;height:74px;border-radius:50%;z-index:5;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.75;transition:transform .08s,box-shadow .15s}
+#zl{left:16px}#zr{right:16px}.zone.dn{transform:scale(.92);box-shadow:0 0 0 2px var(--cyan),0 0 24px rgba(127,232,255,.5);opacity:1}
+#end{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,6,12,.55);z-index:10;padding:16px}
+#end.on{display:flex}#end .card{width:min(400px,100%);border-radius:18px;padding:22px;text-align:center}
+#end h2{margin:0;font-size:24px}#end .sub{color:var(--dim);font-size:13px;margin-top:3px}
+#end .stars{font-size:40px;color:var(--hot);letter-spacing:6px;margin:8px 0;text-shadow:0 0 18px rgba(255,176,74,.5)}
+#end table{width:100%;border-collapse:collapse;margin:6px 0 16px;font-size:15px}#end td{padding:6px 0;border-bottom:1px solid var(--line)}#end td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+#end button{width:100%;padding:15px;border-radius:14px;border:0;background:var(--hot);color:#2a1406;font:900 18px system-ui,sans-serif;cursor:pointer}
+#err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
+</style>
+</head>
+<body>
+<div id="vig"></div>
+<div id="boot"><h1>Бабуля на Марсе</h1><p>Прогреваем турбину…</p></div>
+<div id="ui">
+  <div id="tl" class="g"><b id="time">0:00</b><small>до внуков</small></div>
+  <div id="prog"><i id="progi"></i></div>
+  <div id="tr" class="g"><b id="pot">0</b><small>картошка</small></div>
+  <div id="turbo"><b id="spd">0</b><div class="bar"><i id="turboi"></i></div><small>ТУРБО</small></div>
+  <div class="zone g" id="zl">⟲</div><div class="zone g" id="zr">⟳</div>
+</div>
+<div id="combo"></div>
+<div id="msg"></div>
+<div id="hint"></div>
+<div id="end"><div class="card g"><h2>Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table><button id="again">Ещё заезд</button></div></div>
+<div id="err"></div>
+<script>
+/* Площадка: web / pikabu / vk / ok / tg / max / gamepush / rt. В прототипе — web. */
+const PLATFORM = (new URLSearchParams(location.search).get('p') || window.EL_PLATFORM || 'web');
+const T0 = performance.now();
+window.addEventListener('error', (e) => { const b = document.getElementById('err'); b.style.display = 'block'; b.textContent = 'Ошибка: ' + (e.message || e); });
+</script>
+<script src="lib/three/three.min.js"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- устройство и рендер ---------- */
+const UA = navigator.userAgent, mobile = /Android|iPhone|iPad|Mobile/i.test(UA);
+const lowEnd = (navigator.deviceMemory && navigator.deviceMemory <= 4) || /Mali-[GT][0-9]{1,2}\b|Adreno \(TM\) [3-5]/i.test(UA);
+const tier = lowEnd ? 0 : mobile ? 1 : 2;
+const renderer = new THREE.WebGLRenderer({ antialias: tier > 0, powerPreference: 'high-performance' });
+let dprMax = Math.min(window.devicePixelRatio || 1, tier === 0 ? 1.25 : tier === 1 ? 1.75 : 2), dpr = dprMax;
+renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+
+/* ---------- палитра: марсианские сумерки с голубым закатом ---------- */
+const FOG = new THREE.Color('#7a4a46');
+const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(FOG, 0.0062); scene.background = FOG;
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.3, 700);
+const AMB = [0.42, 0.30, 0.34], BOUNCE = [0.18, 0.09, 0.07], SUN = [0.40, 0.48, 0.62];
+const SUN_DIR = new THREE.Vector3(0.7, 0.35, 0.6).normalize();
+const LAMPS = [];
+const addLamp = (x, y, z, R, I, col) => { const c = new THREE.Color(col); LAMPS.push({ x, y, z, R, I, r: c.r, g: c.g, b: c.b }); };
+const soft = (v) => (v < 0.82 ? v : 0.82 + 0.18 * (1 - Math.exp(-(v - 0.82) * 4)));
+const TC = new THREE.Color(), C = (h) => new THREE.Color(h);
+
+/* сборщик геометрии с запечённым светом (цвет по вершинам) */
+class Builder {
+  constructor(lamps, keepN) { this.lamps = lamps || []; this.p = []; this.c = []; this.n = keepN ? [] : null; }
+  add(geo, m, col, o = {}) {
+    let g;
+    if (o.flat === false) { g = geo.clone(); if (m) g.applyMatrix4(m); g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
+    else { g = geo.index ? geo.toNonIndexed() : geo.clone(); if (m) g.applyMatrix4(m); g.computeVertexNormals(); }
+    const P = g.attributes.position.array, N = g.attributes.normal.array, fixed = typeof col !== 'function' ? new THREE.Color(col) : null;
+    for (let i = 0; i < P.length; i += 9) {
+      const cx = (P[i] + P[i + 3] + P[i + 6]) / 3, cy = (P[i + 1] + P[i + 4] + P[i + 7]) / 3, cz = (P[i + 2] + P[i + 5] + P[i + 8]) / 3;
+      const base = fixed || col(cx, cy, cz, N[i], N[i + 1], N[i + 2]);
+      const k = o.jit ? 1 + (Math.random() - 0.5) * o.jit : 1, ar = base.r * k, ag = base.g * k, ab = base.b * k;
+      for (let v = 0; v < 3; v++) {
+        const j = i + v * 3, px = P[j], py = P[j + 1], pz = P[j + 2], nx = N[j], ny = N[j + 1], nz = N[j + 2];
+        this.p.push(px, py, pz); if (this.n) this.n.push(nx, ny, nz);
+        if (o.emit || this.n) { this.c.push(ar, ag, ab); continue; }
+        const h = 0.5 + 0.5 * ny;
+        let r = AMB[0] * h + BOUNCE[0] * (1 - h), gg = AMB[1] * h + BOUNCE[1] * (1 - h), b = AMB[2] * h + BOUNCE[2] * (1 - h);
+        const sd = Math.max(0, nx * SUN_DIR.x + ny * SUN_DIR.y + nz * SUN_DIR.z); r += SUN[0] * sd; gg += SUN[1] * sd; b += SUN[2] * sd;
+        for (const L of this.lamps) {
+          const dx = L.x - px, dy = L.y - py, dz = L.z - pz, d2 = dx * dx + dy * dy + dz * dz;
+          if (d2 > L.R * L.R) continue;
+          const d = Math.sqrt(d2) + 1e-3, f = (1 - d / L.R) ** 2 * L.I / (1 + d2 * 0.05) * Math.max(0.15, (dx * nx + dy * ny + dz * nz) / d);
+          r += L.r * f; gg += L.g * f; b += L.b * f;
+        }
+        const ao = o.ao ? 0.5 + 0.5 * clamp((py - o.ao[0]) / o.ao[1], 0, 1) : 1;
+        this.c.push(soft(ar * r * ao), soft(ag * gg * ao), soft(ab * b * ao));
+      }
+    }
+    g.dispose();
+  }
+  build() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    if (this.n) g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
+    g.computeBoundingSphere(); return g;
+  }
+}
+const M4 = new THREE.Matrix4(), Qt = new THREE.Quaternion(), Sv = new THREE.Vector3(), Pv = new THREE.Vector3(), Eu = new THREE.Euler();
+const mat = (x, y, z, sx = 1, sy = 1, sz = 1, ry = 0, rx = 0, rz = 0) => M4.compose(Pv.set(x, y, z), Qt.setFromEuler(Eu.set(rx, ry, rz)), Sv.set(sx, sy, sz)).clone();
+const BOX = new THREE.BoxGeometry(1, 1, 1), CYL = new THREE.CylinderGeometry(0.5, 0.5, 1, 10), ICO = new THREE.IcosahedronGeometry(1, 0);
+const DOME = new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), BALL = new THREE.SphereGeometry(1, 10, 7);
+const bakedMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+function radial(stops, size = 64) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
+  const g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2); stops.forEach((s) => g.addColorStop(s[0], s[1]));
+  x.fillStyle = g; x.fillRect(0, 0, size, size); return new THREE.CanvasTexture(c);
+}
+const GLOW = radial([[0, '#fff'], [0.18, 'rgba(255,255,255,.75)'], [0.45, 'rgba(255,255,255,.18)'], [1, 'rgba(255,255,255,0)']]);
+const PUFF = radial([[0, 'rgba(255,255,255,.9)'], [0.5, 'rgba(255,255,255,.35)'], [1, 'rgba(255,255,255,0)']], 32);
+function GlowList() { this.p = []; this.c = []; }
+GlowList.prototype.add = function (x, y, z, col, k = 1) { this.p.push(x, y, z); TC.set(col); this.c.push(TC.r * k, TC.g * k, TC.b * k); };
+GlowList.prototype.make = function (parent, s = 1) {
+  if (!this.p.length) return;
+  for (const [size, op] of [[2.4 * s, 1], [9 * s, 0.22]]) {
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    const m = new THREE.Points(g, new THREE.PointsMaterial({ size, map: GLOW, vertexColors: true, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    m.frustumCulled = false; parent.add(m);
+  }
+};
+
+/* ---------- трасса: извилистая дорога вперёд ---------- */
+const ROAD_W = 12, STEP = 2;
+let TRACK = [], TOTAL = 0;
+function genTrack() {
+  const pts = []; let x = 0, z = 0, a = 0, s = 0;
+  const push = () => { pts.push({ x, z, a, s }); };
+  const go = (len, curv) => { const n = Math.max(1, Math.round(len / STEP)); for (let i = 0; i < n; i++) { a += curv * STEP; x += Math.sin(a) * STEP; z += Math.cos(a) * STEP; s += STEP; push(); } };
+  push(); go(50, 0);
+  while (s < 1500) {
+    go(rnd(18, 50), 0);
+    let sign = Math.random() < 0.5 ? -1 : 1; if (a > 0.6) sign = -1; if (a < -0.6) sign = 1;
+    let target = clamp(a + sign * rnd(0.8, 1.9), -1.6, 1.6), mag = Math.abs(target - a);
+    if (mag < 0.6) { sign = -sign; target = clamp(a + sign * rnd(0.8, 1.7), -1.6, 1.6); mag = Math.abs(target - a); }
+    const R = rnd(24, 42); go(mag * R, sign / R);
+  }
+  go(70, 0);
+  TRACK = pts; TOTAL = s;
+}
+const nrm = (p) => [Math.cos(p.a), -Math.sin(p.a)]; // вправо от направления движения
+
+/* ---------- сцена: небо, земля, колония ---------- */
+const skyG = new THREE.Group(); scene.add(skyG);
+const W = new THREE.Group(); scene.add(W);
+let SUN_SKY = new THREE.Vector3();
+function buildSky() {
+  const R = 600, g = new THREE.SphereGeometry(R, 32, 16), p = g.attributes.position, c = [];
+  const zen = C('#160c20'), mid = C('#5a2e3e'), hor = C('#c0704e'), blue = C('#a8d0f0'), t = new THREE.Color();
+  // на Марсе вокруг заходящего солнца небо голубое
+  const SD = new THREE.Vector3(Math.sin(TRACK[TRACK.length - 1].a * 0.3 + 0.35), 0, Math.cos(TRACK[TRACK.length - 1].a * 0.3 + 0.35)).normalize();
+  SUN_SKY.copy(SD);
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i) / R, y = p.getY(i) / R, z = p.getZ(i) / R, e = Math.max(0, y), h = Math.hypot(x, z) || 1, az = Math.max(0, (x * SD.x + z * SD.z) / h);
+    if (e < 0.015) t.copy(FOG); else if (e < 0.22) t.copy(FOG).lerp(hor, Math.min(1, (e - 0.015) / 0.06)).lerp(mid, Math.max(0, (e - 0.08) / 0.14)); else t.copy(mid).lerp(zen, Math.min(1, (e - 0.22) / 0.5));
+    t.lerp(blue, Math.pow(az, 10) * Math.exp(-e * 5) * 0.85 * Math.min(1, e / 0.02 + 0.2));
+    c.push(t.r, t.g, t.b);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+  const sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); sky.renderOrder = -3; skyG.add(sky);
+  const sp = [], sc = [];
+  for (let i = 0; i < 500; i++) { const a = Math.random() * 6.283, e = 0.25 + Math.random() * 1.2, r = R * 0.95; sp.push(Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, Math.sin(a) * Math.cos(e) * r); const b = 0.25 + Math.random() * 0.6; sc.push(b, b * 0.92, b * 0.9); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
+  const st = new THREE.Points(sg, new THREE.PointsMaterial({ size: 1.5, sizeAttenuation: false, vertexColors: true, fog: false, depthWrite: false })); st.renderOrder = -2; skyG.add(st);
+  const disc = (dir, r, col, halo, hc) => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 24), new THREE.MeshBasicMaterial({ color: col, fog: false, depthWrite: false }));
+    m.position.copy(dir).multiplyScalar(R * 0.9); m.lookAt(0, 0, 0); m.renderOrder = -1; skyG.add(m);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: hc, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    s.position.copy(m.position); s.scale.set(halo, halo, 1); s.renderOrder = -1; skyG.add(s);
+  };
+  disc(SD.clone().setY(0.035).normalize(), 7, '#eef6ff', 120, '#a8d0f0');     // маленькое марсианское солнце
+  disc(new THREE.Vector3(-0.5, 0.45, 0.7).normalize(), 6, '#d8c8b8', 30, '#c0a090'); // Фобос
+  disc(new THREE.Vector3(0.3, 0.6, 0.75).normalize(), 2.5, '#e0d4c8', 14, '#c0a090'); // Деймос
+}
+// высота грунта: ровно у дороги, холмы и кратеры дальше
+let coarse = [];
+function distToRoad(x, z) { let best = 1e9; for (const p of coarse) { const dx = p.x - x, dz = p.z - z, d = dx * dx + dz * dz; if (d < best) best = d; } return Math.sqrt(best); }
+function hills(x, z) { return Math.sin(x * 0.021 + 1.3) * 3.2 + Math.sin(z * 0.017) * 3.5 + Math.sin((x + z) * 0.05) * 1.2 + Math.sin(x * 0.11 - z * 0.07) * 0.5; }
+function groundH(x, z, d) { if (d === undefined) d = distToRoad(x, z); const t = clamp((d - ROAD_W * 0.5 - 3) / 40, 0, 1); return -0.15 + t * t * (3 - 2 * t) * (hills(x, z) + 2.5); }
+function buildWorld() {
+  while (W.children.length) { const o = W.children.pop(); o.traverse && o.traverse((q) => q.geometry && q.geometry.dispose()); }
+  LAMPS.length = 0;
+  coarse = TRACK.filter((_, i) => i % 5 === 0);
+  let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9; for (const p of TRACK) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
+  minX -= 260; maxX += 260; minZ -= 200; maxZ += 300;
+  const glows = new GlowList();
+  // фонари вдоль дороги (бирюзовые) — до запекания
+  const roadLamps = [];
+  for (let i = 10; i < TRACK.length - 10; i += 13) { const p = TRACK[i], n = nrm(p), side = (i / 13) % 2 ? 1 : -1, off = ROAD_W / 2 + 1.2; const lx = p.x + n[0] * off * side, lz = p.z + n[1] * off * side; roadLamps.push([lx, lz, p.a]); addLamp(lx, 3.4, lz, 13, 1.3, '#6fdcff'); }
+  // колония: купола, теплицы, антенны — раскладка вдоль трассы
+  const domes = [], greens = [], ants = [];
+  for (let i = 20; i < TRACK.length; i += Math.round(rnd(14, 30))) {
+    const p = TRACK[i], n = nrm(p), side = Math.random() < 0.5 ? 1 : -1, off = ROAD_W / 2 + rnd(12, 45);
+    const x = p.x + n[0] * off * side, z = p.z + n[1] * off * side; if (distToRoad(x, z) < ROAD_W / 2 + 9) continue;
+    const r = Math.random();
+    if (r < 0.45) { const R = rnd(5, 10); domes.push([x, z, R]); addLamp(x, 1.5, z, R + 8, 0.9, '#ffb060'); }
+    else if (r < 0.8) { const L = rnd(14, 24); greens.push([x, z, L, p.a + rnd(-0.3, 0.3)]); addLamp(x, 1.5, z, 14, 0.8, '#7dff9a'); }
+    else ants.push([x, z]);
+  }
+  const fin = TRACK[TRACK.length - 8]; addLamp(fin.x, 3, fin.z, 26, 1.6, '#ffc070');
+  // всё строим полосами по 220 м пути — для отсечения невидимого
+  const BAND = 110; // точек трассы на полосу (×2 м)
+  for (let b0 = 0; b0 < TRACK.length; b0 += BAND) {
+    const seg = TRACK.slice(Math.max(0, b0 - 1), Math.min(TRACK.length, b0 + BAND + 1));
+    let sx0 = 1e9, sx1 = -1e9, sz0 = 1e9, sz1 = -1e9; for (const p of seg) { sx0 = Math.min(sx0, p.x); sx1 = Math.max(sx1, p.x); sz0 = Math.min(sz0, p.z); sz1 = Math.max(sz1, p.z); }
+    const lamps = LAMPS.filter((L) => L.x > sx0 - 80 && L.x < sx1 + 80 && L.z > sz0 - 80 && L.z < sz1 + 80);
+    const B = new Builder(lamps), E = new Builder(null), grp = new THREE.Group();
+    // дорога: полоса из четырёхугольников
+    const rp = [], ri = []; const half = ROAD_W / 2;
+    seg.forEach((p) => { const n = nrm(p); for (const k of [-half - 0.6, -half, half, half + 0.6]) rp.push(p.x + n[0] * k, k === -half - 0.6 || k === half + 0.6 ? 0.0 : 0.06, p.z + n[1] * k); });
+    for (let i = 0; i < seg.length - 1; i++) for (let q = 0; q < 3; q++) { const a = i * 4 + q, b2 = a + 1, c = a + 4, d = c + 1; ri.push(a, c, b2, b2, c, d); }
+    const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); rg.setIndex(ri);
+    B.add(rg, null, (cx, cy) => (cy < 0.03 ? TC.set('#e0e4ea') : TC.set('#3a3036')), { flat: false });
+    // светящиеся бортики и пунктир посередине
+    seg.forEach((p, i) => {
+      if (i === seg.length - 1) return; const q = seg[i + 1], n = nrm(p);
+      const mx = (p.x + q.x) / 2, mz = (p.z + q.z) / 2, ang = Math.atan2(q.x - p.x, q.z - p.z);
+      if (Math.round(p.s / STEP) % 2) for (const sd of [-1, 1]) E.add(BOX, mat(mx + n[0] * (half + 0.3) * sd, 0.12, mz + n[1] * (half + 0.3) * sd, 0.25, 0.14, STEP, ang), Math.round(p.s / 4) % 2 ? '#ff6a3a' : '#f4f0e8', { emit: true });
+      if (Math.round(p.s / STEP) % 4 === 0) E.add(BOX, mat(mx, 0.075, mz, 0.18, 0.02, STEP * 0.9, ang), '#5fcfee', { emit: true });
+    });
+    // грунт: кусок сетки вокруг полосы
+    const gx0 = sx0 - 160, gx1 = sx1 + 160, gz0 = sz0 - 120, gz1 = sz1 + 120, NX = Math.ceil((gx1 - gx0) / 9), NZ = Math.ceil((gz1 - gz0) / 9);
+    const gp = [], gi = [];
+    for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = gx0 + i * 9, z = gz0 + j * 9; gp.push(x, groundH(x, z), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b2 = a + 1, c = a + NX + 1, d = c + 1; gi.push(a, c, b2, b2, c, d); }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gg.setIndex(gi);
+    B.add(gg, null, (cx, cy, cz) => TC.set('#b8603e').multiplyScalar(0.88 + Math.sin(cx * 0.13 + cz * 0.09) * 0.07 + cy * 0.012), { flat: false });
+    // камни
+    for (let k = 0; k < 140; k++) {
+      const p = seg[Math.floor(Math.random() * seg.length)], n = nrm(p), side = Math.random() < 0.5 ? 1 : -1, off = ROAD_W / 2 + 2 + Math.pow(Math.random(), 0.7) * 90;
+      const x = p.x + n[0] * off * side + rnd(-4, 4), z = p.z + n[1] * off * side + rnd(-4, 4), d = distToRoad(x, z); if (d < ROAD_W / 2 + 1.5) continue;
+      const s = rnd(0.3, 1.6) * (d > 30 ? 2.2 : 1), y = groundH(x, z, d);
+      B.add(ICO, mat(x, y + s * 0.3, z, s * rnd(0.8, 1.5), s * rnd(0.5, 0.9), s * rnd(0.8, 1.4), rnd(0, 6), rnd(-0.3, 0.3)), '#7a3a2a', { jit: 0.25 });
+    }
+    grp.add(new THREE.Mesh(B.build(), bakedMat)); if (E.p.length) grp.add(new THREE.Mesh(E.build(), bakedMat));
+    let cx = 0, cz = 0; seg.forEach((p) => { cx += p.x; cz += p.z; }); grp.userData.c = [cx / seg.length, cz / seg.length]; grp.userData.i0 = b0;
+    W.add(grp);
+  }
+  // постройки колонии одной сеткой (их немного)
+  const B = new Builder(LAMPS), E = new Builder(null);
+  for (const [x, z, R] of domes) {
+    const y = groundH(x, z);
+    B.add(DOME, mat(x, y - 0.2, z, R, R * 0.8, R), (cx, cy, cz, nx, ny) => TC.set(ny > 0.85 ? '#d8c8c0' : '#a89a98'), { jit: 0.05 });
+    B.add(CYL, mat(x, y + 0.4, z, R * 2.05, 0.8, R * 2.05), '#5a4a4e');
+    // окна по кругу
+    for (let k = 0; k < 7; k++) { const a = k / 7 * 6.283, wx = x + Math.cos(a) * R * 0.93, wz = z + Math.sin(a) * R * 0.93; if (Math.random() < 0.7) { E.add(BOX, mat(wx, y + R * 0.28, wz, 1.0, 0.7, 0.1, -a + Math.PI / 2), '#ffc878', { emit: true }); glows.add(wx, y + R * 0.28, wz, '#ffb060', 0.5); } }
+    E.add(BOX, mat(x, y + R * 0.8, z, 0.3, 0.3, 0.3), '#ff4a3a', { emit: true }); glows.add(x, y + R * 0.8 + 0.3, z, '#ff4a3a', 0.6);
+  }
+  for (const [x, z, L, a] of greens) {
+    const y = groundH(x, z), half = new THREE.CylinderGeometry(3, 3, L, 10, 1, false, 0, Math.PI); half.rotateZ(Math.PI / 2); half.rotateX(Math.PI / 2);
+    E.add(half, mat(x, y + 0.1, z, 1, 1, 1, a), (cx, cy) => TC.set('#5fe08a').multiplyScalar(0.55 + cy * 0.0), { emit: true });
+    for (let k = -L / 2; k <= L / 2; k += 3) B.add(new THREE.TorusGeometry(3.05, 0.08, 4, 10, Math.PI), mat(x + Math.sin(a) * k, y + 0.1, z + Math.cos(a) * k, 1, 1, 1, a + Math.PI / 2), '#d0c8c8');
+    glows.add(x, y + 3.3, z, '#7dff9a', 0.4);
+  }
+  for (const [x, z] of ants) {
+    const y = groundH(x, z);
+    B.add(CYL, mat(x, y + 5, z, 0.25, 10, 0.25), '#8a8088'); B.add(DOME, mat(x, y + 9, z, 2.4, 1.0, 2.4, 0, 2.4), '#d0c8c8');
+    E.add(BOX, mat(x, y + 10.4, z, 0.3, 0.3, 0.3), '#ff3a3a', { emit: true }); glows.add(x, y + 10.5, z, '#ff3a3a', 0.8);
+  }
+  for (const [x, z, a] of roadLamps) {
+    B.add(CYL, mat(x, 1.7, z, 0.18, 3.4, 0.18), '#4a4048');
+    E.add(BALL, mat(x, 3.5, z, 0.3, 0.3, 0.3), '#c8f4ff', { emit: true }); glows.add(x, 3.5, z, '#6fdcff', 0.9);
+  }
+  // финиш: купол внуков с вывеской
+  const fa = fin.a, fn = nrm(fin);
+  const gx = fin.x + Math.sin(fa) * 26, gz = fin.z + Math.cos(fa) * 26;
+  B.add(DOME, mat(gx, -0.2, gz, 14, 10, 14), '#e0d0c8'); B.add(CYL, mat(gx, 0.5, gz, 28.5, 1, 28.5), '#6a5258');
+  for (let k = 0; k < 9; k++) { const a = fa + Math.PI + (k - 4) * 0.22, wx = gx + Math.sin(a) * 13.2, wz = gz + Math.cos(a) * 13.2; E.add(BOX, mat(wx, 3.2, wz, 1.4, 1.1, 0.1, a), '#ffd28a', { emit: true }); glows.add(wx, 3.2, wz, '#ffb060', 0.6); }
+  for (const sd of [-1, 1]) { const px = fin.x + fn[0] * (ROAD_W / 2 + 1) * sd, pz = fin.z + fn[1] * (ROAD_W / 2 + 1) * sd; B.add(CYL, mat(px, 3, pz, 0.35, 6, 0.35), '#3a3036'); }
+  E.add(BOX, mat(fin.x, 6.2, fin.z, ROAD_W + 2.6, 1.3, 0.25, fa + Math.PI / 2 - Math.PI / 2), (cx, cy, cz, nx, ny, nz) => TC.set('#ffcf6a'), { emit: true });
+  const bannerG = new THREE.Group(); bannerG.position.set(fin.x, 6.2, fin.z); bannerG.rotation.y = fa; W.add(bannerG);
+  const bc = document.createElement('canvas'); bc.width = 512; bc.height = 64; const bx = bc.getContext('2d'); bx.fillStyle = '#2a1406'; bx.font = '900 44px system-ui,sans-serif'; bx.textAlign = 'center'; bx.textBaseline = 'middle'; bx.fillText('ВНУКИ · ФИНИШ', 256, 34);
+  const ban = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W + 2, 1.1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bc), transparent: true })); ban.position.z = -0.14; ban.rotation.y = Math.PI; bannerG.add(ban);
+  const ban2 = ban.clone(); ban2.position.z = 0.14; ban2.rotation.y = 0; bannerG.add(ban2);
+  W.add(new THREE.Mesh(B.build(), bakedMat)); W.add(new THREE.Mesh(E.build(), bakedMat));
+  // дальние столовые горы — силуэты поверх тумана
+  for (const [dist, k, hm] of [[420, 0.72, 60], [330, 0.6, 40]]) {
+    const pos = [], col = [], top = FOG.clone().multiplyScalar(k), bot = FOG.clone().multiplyScalar(k * 0.9), cxm = (minX + maxX) / 2, czm = (minZ + maxZ) / 2;
+    let prev = null;
+    for (let a = 0; a <= 6.2832 + 1e-6; a += 0.04) {
+      const h = Math.max(4, (Math.sin(a * 3 + dist) * 0.5 + 0.5) * hm * (Math.sin(a * 7.3) > 0.2 ? 1 : 0.45) + Math.sin(a * 17) * 3);
+      const x = cxm + Math.sin(a) * (dist + (maxX - minX) / 2), z = czm + Math.cos(a) * (dist + (maxZ - minZ) / 2), cur = [x, h, z];
+      if (prev) { pos.push(prev[0], -30, prev[2], x, -30, z, x, h, z, prev[0], -30, prev[2], x, h, z, prev[0], prev[1], prev[2]); for (const yy of [-30, -30, h, -30, h, prev[1]]) { const t = yy < 0 ? bot : top; col.push(t.r, t.g, t.b); } }
+      prev = cur;
+    }
+    const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); mg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    const m = new THREE.Mesh(mg, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide })); m.frustumCulled = false; m.renderOrder = -1; W.add(m);
+  }
+  glows.make(W);
+}
+
+/* ---------- бабуля в турбо-кресле ---------- */
+const babka = new THREE.Group(); scene.add(babka);
+const FX = {};
+(function buildBabka() {
+  const L = new Builder(null, true), E = new Builder(null);
+  // кресло на воздушной подушке
+  L.add(new THREE.CylinderGeometry(0.95, 1.1, 0.35, 16), mat(0, 0.45, 0), '#5a6270');
+  E.add(new THREE.TorusGeometry(1.0, 0.07, 6, 24), mat(0, 0.3, 0, 1, 1, 1, 0, Math.PI / 2), '#7fe8ff', { emit: true });
+  L.add(BOX, mat(0, 0.85, 0.05, 1.05, 0.22, 1.0), '#3a7a8a');                 // сиденье
+  L.add(BOX, mat(0, 1.12, -0.48, 1.0, 0.5, 0.14, 0, -0.12), '#3a7a8a');       // спинка (низкая — бабулю видно)
+  for (const s of [-1, 1]) { L.add(BOX, mat(s * 0.58, 1.12, 0.1, 0.12, 0.1, 0.9), '#30343c'); L.add(CYL, mat(s * 0.58, 0.95, 0.4, 0.06, 0.35, 0.06), '#30343c'); }
+  // турбина сзади
+  L.add(new THREE.CylinderGeometry(0.32, 0.4, 1.0, 12), mat(0, 1.15, -0.78, 1, 1, 1, 0, Math.PI / 2), '#9aa0a8');
+  L.add(new THREE.CylinderGeometry(0.36, 0.36, 0.14, 12), mat(0, 1.15, -1.25, 1, 1, 1, 0, Math.PI / 2), '#3a3c42');
+  E.add(new THREE.CircleGeometry(0.28, 12), mat(0, 1.15, -1.33, 1, 1, 1, Math.PI), '#ffb04a', { emit: true });
+  // бабуля
+  L.add(new THREE.CylinderGeometry(0.42, 0.55, 0.55, 10), mat(0, 1.15, 0.1), '#3a5a8a');        // юбка
+  L.add(new THREE.CylinderGeometry(0.34, 0.42, 0.6, 10), mat(0, 1.65, -0.05), '#7a3a6a');       // кофта
+  for (const s of [-1, 1]) { L.add(new THREE.CylinderGeometry(0.1, 0.11, 0.55, 6), mat(s * 0.38, 1.6, 0.15, 1, 1, 1, 0, 0.9, s * 0.2), '#7a3a6a'); L.add(BALL, mat(s * 0.36, 1.42, 0.42, 0.08, 0.08, 0.08), '#f0c8a8'); }
+  L.add(BALL, mat(0, 2.15, 0.0, 0.26, 0.28, 0.26), '#f0c8a8');                                   // голова
+  L.add(BALL, mat(0, 2.2, -0.04, 0.3, 0.3, 0.3), (cx, cy, cz, nx, ny, nz) => (nz > 0.55 && cy < 2.32 ? TC.set('#f0c8a8') : TC.set('#d8302a'))); // платок
+  L.add(new THREE.ConeGeometry(0.12, 0.2, 6), mat(0, 1.92, -0.12, 1, 1, 1, 0, 0.6), '#d8302a');   // узелок
+  for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283; L.add(BALL, mat(Math.cos(a) * 0.27, 2.24 + Math.sin(k) * 0.05, -0.04 + Math.sin(a) * 0.27, 0.035, 0.035, 0.035), '#ffe08a'); } // горошек
+  E.add(BOX, mat(0, 2.18, 0.25, 0.36, 0.07, 0.04), '#7fe8ff', { emit: true });                      // кибер-очки
+  // корзинка с банками и картошкой
+  L.add(BOX, mat(0, 1.05, 0.75, 0.8, 0.35, 0.45), '#9a6a3a');
+  for (const s of [-0.22, 0.08]) E.add(CYL, mat(s, 1.35, 0.75, 0.22, 0.32, 0.22), s < 0 ? '#e85a4a' : '#8adc6a', { emit: true });
+  L.add(BALL, mat(0.28, 1.28, 0.72, 0.13, 0.1, 0.12), '#a8784a');
+  // антенна на кресле с флажком
+  L.add(CYL, mat(0.5, 2.2, -0.5, 0.03, 1.5, 0.03), '#30343c'); E.add(BOX, mat(0.65, 2.85, -0.5, 0.3, 0.18, 0.02), '#ffb04a', { emit: true });
+  const body = new THREE.Group(); body.scale.setScalar(1.25); babka.add(body); FX.body = body;
+  body.add(new THREE.Mesh(L.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); body.add(new THREE.Mesh(E.build(), bakedMat));
+  // пламя турбины, свет подушки
+  const fl = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.6, 10, 1, true), new THREE.MeshBasicMaterial({ color: '#ffb04a', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  fl.rotation.x = -Math.PI / 2; fl.position.set(0, 1.15, -2.05); body.add(fl); FX.flame = fl;
+  const fl2 = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.0, 8, 1, true), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  fl2.rotation.x = -Math.PI / 2; fl2.position.set(0, 1.15, -1.75); body.add(fl2); FX.flame2 = fl2;
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 4.5), new THREE.MeshBasicMaterial({ map: GLOW, color: '#4fc8ff', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.09; babka.add(pool); FX.pool = pool;
+  const gl = new GlowList(); gl.add(0, 1.15, -1.4, '#ffb04a', 1); gl.make(body, 0.8);
+})();
+const hemi = new THREE.HemisphereLight('#d0a0a8', '#4a2018', 1.05); scene.add(hemi);
+const sunL = new THREE.DirectionalLight('#b8d4f0', 0.7); sunL.position.copy(SUN_DIR); scene.add(sunL);
+const fillL = new THREE.DirectionalLight('#ff9a6a', 0.35); fillL.position.set(-0.5, 0.4, -0.8); scene.add(fillL);
+
+/* ---------- картошка, жуки, ускорители ---------- */
+const potGeo = (function () { const b = new Builder(null); b.add(ICO, mat(0, 0, 0, 0.42, 0.32, 0.36), (cx, cy, cz, nx, ny, nz) => TC.set('#c8905a').multiplyScalar(0.7 + 0.3 * ny + 0.1 * nz), { emit: true }); return b.build(); })();
+const pots = new THREE.InstancedMesh(potGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 120); pots.frustumCulled = false; scene.add(pots);
+const beetleGeo = (function () {
+  const b = new Builder(null), sh = (hex) => (cx, cy, cz, nx, ny, nz) => TC.set(hex).multiplyScalar(0.6 + 0.35 * ny + 0.15 * nz);
+  b.add(BALL, mat(0, 0.75, 0, 1.0, 0.7, 1.35), (cx, cy, cz, nx, ny, nz) => TC.set(Math.abs(cx) % 0.6 < 0.3 && cy > 0.9 ? '#20140c' : '#f0b030').multiplyScalar(0.6 + 0.4 * ny), { emit: true });
+  b.add(BALL, mat(0, 0.6, 1.25, 0.5, 0.4, 0.45), sh('#d07020'), { emit: true });
+  for (const s of [-1, 1]) for (const z of [-0.6, 0, 0.6]) b.add(BOX, mat(s * 1.05, 0.35, z, 0.7, 0.08, 0.08, 0, 0, s * 0.6), sh('#20140c'), { emit: true });
+  for (const s of [-1, 1]) b.add(BALL, mat(s * 0.2, 0.75, 1.62, 0.1, 0.1, 0.1), '#ff3a2a', { emit: true });
+  return b.build();
+})();
+const beetles = new THREE.InstancedMesh(beetleGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 20); beetles.frustumCulled = false; scene.add(beetles);
+const padGeo = (function () { const b = new Builder(null); for (const z of [-1.2, 0, 1.2]) for (const s of [-1, 1]) b.add(BOX, mat(s * 0.55, 0, z + 0.25, 1.3, 0.04, 0.35, s * 0.6), '#7fe8ff', { emit: true }); return b.build(); })();
+const pads = new THREE.InstancedMesh(padGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 16); pads.frustumCulled = false; scene.add(pads);
+let ITEMS = { pots: [], beetles: [], pads: [] };
+const at = (i, lat) => { const p = TRACK[clamp(i, 0, TRACK.length - 1)], n = nrm(p); return [p.x + n[0] * lat, p.z + n[1] * lat, p.a]; };
+function placeItems() {
+  ITEMS = { pots: [], beetles: [], pads: [] };
+  for (let i = 30; i < TRACK.length - 30; i += Math.round(rnd(5, 9))) {
+    if (ITEMS.pots.length >= 120) break;
+    const lat = Math.sin(i * 0.07) * 3.3 + rnd(-0.6, 0.6);
+    // иногда — цепочка из 3
+    const n = Math.random() < 0.35 ? 3 : 1; for (let k = 0; k < n && ITEMS.pots.length < 120; k++) { const [x, z] = at(i + k * 2, lat); ITEMS.pots.push({ x, z, on: true }); }
+  }
+  for (let k = 0; k < 14; k++) { const i = Math.round(60 + (TRACK.length - 120) * (k + rnd(0.1, 0.9)) / 14); ITEMS.beetles.push({ i, ph: rnd(0, 6), sp: rnd(0.5, 0.9), x: 0, z: 0, hit: 0 }); }
+  for (let k = 0; k < 10; k++) { const i = Math.round(80 + (TRACK.length - 160) * (k + 0.5) / 10); const [x, z, a] = at(i, rnd(-2.5, 2.5)); ITEMS.pads.push({ x, z, a }); }
+  ITEMS.pads.forEach((p, k) => pads.setMatrixAt(k, mat(p.x, 0.09, p.z, 1, 1, 1, p.a))); pads.count = ITEMS.pads.length; pads.instanceMatrix.needsUpdate = true;
+}
+
+/* ---------- пыль из-под кресла ---------- */
+const DUST_N = tier === 0 ? 70 : 140, dustP = new Float32Array(DUST_N * 3), dustC = new Float32Array(DUST_N * 3), dust = [];
+for (let i = 0; i < DUST_N; i++) dust.push({ x: 0, y: -50, z: 0, vx: 0, vy: 0, vz: 0, t: 9 });
+const dustG = new THREE.BufferGeometry(); dustG.setAttribute('position', new THREE.BufferAttribute(dustP, 3)); dustG.setAttribute('color', new THREE.BufferAttribute(dustC, 3));
+const dustM = new THREE.Points(dustG, new THREE.PointsMaterial({ size: 2.2, map: PUFF, vertexColors: true, transparent: true, depthWrite: false })); dustM.frustumCulled = false; scene.add(dustM);
+let dustI = 0;
+function puff(x, z, k) { const d = dust[dustI++ % DUST_N]; d.x = x + rnd(-0.5, 0.5); d.y = 0.4; d.z = z + rnd(-0.5, 0.5); d.vx = rnd(-1, 1) * k; d.vy = rnd(0.6, 1.6); d.vz = rnd(-1, 1) * k; d.t = 0; }
+const DUSTC = C('#d8906a');
+function stepDust(dt) {
+  for (let i = 0; i < DUST_N; i++) {
+    const d = dust[i]; d.t += dt; d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.vy *= 0.97;
+    const f = clamp(1 - d.t / 1.3, 0, 1); dustP[i * 3] = d.x; dustP[i * 3 + 1] = f > 0 ? d.y : -50; dustP[i * 3 + 2] = d.z;
+    TC.copy(FOG).lerp(DUSTC, f); dustC[i * 3] = TC.r; dustC[i * 3 + 1] = TC.g; dustC[i * 3 + 2] = TC.b;
+  }
+  dustG.attributes.position.needsUpdate = true; dustG.attributes.color.needsUpdate = true;
+}
+
+/* ---------- заезд ---------- */
+const VMAX = 23, VBOOST = 35, TURN = 2.5;
+const car = { x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0 };
+const input = { l: false, r: false };
+function showMsg(t, sub, col, ms = 1500) { const m = $('msg'); m.innerHTML = t + (sub ? '<small>' + sub + '</small>' : ''); m.style.color = col || '#fff'; m.classList.add('on'); clearTimeout(showMsg.t); showMsg.t = setTimeout(() => m.classList.remove('on'), ms); }
+function hint(t, ms) { const h = $('hint'); h.innerHTML = '<span class="g">' + t + '</span>'; h.classList.add('on'); clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.classList.remove('on'), ms); }
+const OUCH = ['Ох, радикулит!', 'Батюшки!', 'Куда прёшь, жучара!', 'Ой, давление!', 'Хулиганьё!'];
+const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Вот это занос!', 'Дед бы обзавидовался!', 'Турбо-бабуля!'];
+function newRun(first) {
+  genTrack(); buildSky(); buildWorld(); placeItems();
+  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, state: 'go' });
+  $('end').classList.remove('on'); snapCam();
+  showMsg(first ? 'Бабуля, газу!' : 'Поехали!', 'внуки ждут картошку', '#ffcf8a', 1600);
+  hint('Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>', first ? 6000 : 3000);
+}
+function finish() {
+  car.state = 'end';
+  const par = TOTAL / 19, t = car.t, stars = t < par * 1.0 ? 3 : t < par * 1.2 ? 2 : 1;
+  const pension = car.pot * 30 + Math.round(car.score / 10) + Math.max(0, Math.round((par * 1.3 - t) * 20));
+  $('estars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('esub').textContent = 'Марс, колония «Заречная» · ' + Math.round(TOTAL) + ' м';
+  $('etab').innerHTML = `<tr><td>Время</td><td>${fmt(t)}</td></tr><tr><td>Картошка</td><td>${car.pot} шт.</td></tr><tr><td>Очки заноса</td><td>${Math.round(car.score)}</td></tr><tr><td><b>Пенсия за заезд</b></td><td><b>${pension} ₽</b></td></tr>`;
+  try { const best = +localStorage.getItem('bm_best') || 0; if (pension > best) localStorage.setItem('bm_best', pension); } catch (e) {}
+  setTimeout(() => $('end').classList.add('on'), 900);
+}
+$('again').onclick = () => newRun(false);
+const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+
+/* ---------- управление: левая/правая половина экрана ---------- */
+const touches = new Map();
+function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
+const up = (e) => { touches.delete(e.pointerId); updInput(); };
+addEventListener('pointerup', up); addEventListener('pointercancel', up);
+const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
+addEventListener('keydown', (e) => { if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
+addEventListener('keyup', (e) => { if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
+addEventListener('blur', () => { touches.clear(); input.kl = input.kr = input.tl = input.tr = false; });
+
+/* ---------- облегчение по fps ---------- */
+const perf = { frames: 0, acc: 0, level: 0 };
+function adapt(dt) {
+  perf.frames++; perf.acc += dt; if (perf.acc < 2) return;
+  const fps = perf.frames / perf.acc; perf.frames = 0; perf.acc = 0; window.EL_FPS = fps;
+  if (fps < 40 && dpr > 0.75) { dpr = Math.max(0.75, dpr - 0.25); renderer.setPixelRatio(dpr); perf.level++; }
+  else if (fps > 57 && dpr < dprMax) { dpr = Math.min(dprMax, dpr + 0.25); renderer.setPixelRatio(dpr); }
+}
+
+/* ---------- камера ---------- */
+function fitCam() { camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 74 : 58; camera.updateProjectionMatrix(); }
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); fitCam(); }); fitCam();
+const camPos = new THREE.Vector3(), look = new THREE.Vector3(), lookS = new THREE.Vector3(); let camH = 0;
+function camTarget(dt) {
+  const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 13 : 10.5) + spd * 0.12, up = (port ? 8.5 : 5.2) + spd * 0.03;
+  camH += Math.atan2(Math.sin(car.h - camH), Math.cos(car.h - camH)) * Math.min(1, dt * 3);
+  camPos.set(car.x - Math.sin(camH) * back, up, car.z - Math.cos(camH) * back);
+  look.set(car.x + Math.sin(camH) * 7, 1.2, car.z + Math.cos(camH) * 7);
+}
+function snapCam() { camH = car.h; camTarget(1); camera.position.copy(camPos); lookS.copy(look); }
+
+/* ---------- кадр ---------- */
+let last = performance.now(), firstFrame = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const tsec = now / 1000;
+  // руль
+  const L = input.tl || input.kl, R = input.tr || input.kr;
+  const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : 0) : 0;
+  $('zl').classList.toggle('dn', !!L); $('zr').classList.toggle('dn', !!R);
+  if (car.state === 'go' || car.state === 'end') {
+    if (car.state === 'go') car.t += dt;
+    let spd = Math.hypot(car.vx, car.vz);
+    if (car.spin > 0) { car.spin -= dt; car.h += dt * 9; }
+    else if (steer) car.h += steer * TURN * dt * (0.55 + 0.45 * Math.min(1, spd / 18));
+    const target = car.state === 'end' ? 0 : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1);
+    spd += (target - spd) * (spd < target ? 0.9 : 1.6) * dt;
+    const hx = Math.sin(car.h), hz = Math.cos(car.h);
+    let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
+    const grip = steer ? 2.6 : 8, f = 1 - Math.exp(-grip * dt);
+    vxn += (hx - vxn) * f; vzn += (hz - vzn) * f; const ln = Math.hypot(vxn, vzn) || 1; vxn /= ln; vzn /= ln;
+    car.vx = vxn * spd; car.vz = vzn * spd; car.x += car.vx * dt; car.z += car.vz * dt;
+    const slip = Math.acos(clamp(vxn * hx + vzn * hz, -1, 1));
+    // где мы на трассе
+    let best = 1e9, bi = car.idx;
+    for (let i = Math.max(0, car.idx - 30); i < Math.min(TRACK.length, car.idx + 80); i++) { const p = TRACK[i], d = (p.x - car.x) ** 2 + (p.z - car.z) ** 2; if (d < best) { best = d; bi = i; } }
+    car.idx = bi; const tp = TRACK[bi], n = nrm(tp), lat = (car.x - tp.x) * n[0] + (car.z - tp.z) * n[1];
+    car.off = Math.abs(lat) > ROAD_W / 2 + 0.4 ? 1 : 0;
+    if (Math.abs(lat) > ROAD_W / 2 + 9) { // упёрлась в камни
+      const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
+      car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * 0.5; // развернуло вдоль дороги
+      if (now - car.bump > 900) { car.vx *= 0.55; car.vz *= 0.55; car.drift = 0; car.combo = 0; }
+      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], '', '#ff9a7a', 1100);
+      car.bump = now;
+    }
+    // занос и турбо
+    if (car.state === 'go') {
+      if (steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
+      if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; showMsg('Ой, в песок!', '', '#ffb07a', 900); }
+      if (!steer && car.drift > 0) {
+        if (car.drift > 0.55) {
+          const mult = 1 + Math.min(2, car.drift * 0.6), pts = Math.round(car.combo * mult);
+          car.score += pts; car.boost = Math.min(3, 0.6 + car.drift * 0.8);
+          $('combo').innerHTML = '+' + pts + '<small>' + YAY[Math.floor(Math.random() * YAY.length)] + ' · турбо!</small>'; $('combo').classList.add('on'); clearTimeout(frame.ct); frame.ct = setTimeout(() => $('combo').classList.remove('on'), 1100);
+        }
+        car.drift = 0; car.combo = 0;
+      }
+      if (car.drift > 0.3) { $('combo').innerHTML = 'ЗАНОС ×' + (1 + Math.min(2, car.drift * 0.6)).toFixed(1) + '<small>' + Math.round(car.combo) + '</small>'; $('combo').classList.add('on'); }
+    }
+    if (car.boost > 0) car.boost -= dt;
+    // предметы
+    ITEMS.pots.forEach((p) => { if (p.on && (p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 4.4) { p.on = false; car.pot++; } });
+    ITEMS.pads.forEach((p) => { if ((p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 5 && car.boost < 1.2) { car.boost = 1.6; } });
+    ITEMS.beetles.forEach((b) => {
+      const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
+      if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
+        b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
+        showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], lost ? 'рассыпала ' + lost + ' картошки' : 'жук!', '#ff8a6a', 1300);
+      }
+    });
+    // пыль
+    if ((slip > 0.2 || car.off) && spd > 5 && Math.random() < 0.9) puff(car.x - Math.sin(car.h) * 0.8, car.z - Math.cos(car.h) * 0.8, 1.2);
+    if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg('Доехала!', 'внуки уже ставят чайник', '#ffcf8a', 1800); }
+    // интерфейс
+    $('time').textContent = fmt(car.t); $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
+    $('progi').style.width = (100 * TRACK[bi].s / TOTAL) + '%'; $('turboi').style.width = clamp(car.boost > 0 ? car.boost / 3 * 100 : car.drift / 3 * 100, 0, 100) + '%';
+    // бабуля
+    babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.06, car.z); babka.rotation.y = car.h;
+    FX.body.rotation.z = -steer * 0.18 * Math.min(1, slip * 3 + 0.3); FX.body.rotation.x = car.boost > 0 ? -0.08 : 0;
+    const fk = car.boost > 0 ? 1.8 : 0.6 + spd / VMAX * 0.5; FX.flame.scale.set(1, fk * (0.9 + Math.random() * 0.2), 1); FX.flame.position.z = -1.33 - 0.8 * fk; FX.flame2.scale.set(1, fk, 1); FX.flame2.position.z = -1.33 - 0.5 * fk;
+    FX.flame.material.color.set(car.boost > 0 ? '#7fe8ff' : '#ffb04a');
+  }
+  // предметы: анимация
+  let n2 = 0; ITEMS.pots.forEach((p, k) => { if (!p.on) return; pots.setMatrixAt(n2++, mat(p.x, 0.75 + Math.sin(tsec * 3 + k) * 0.15, p.z, 1, 1, 1, tsec * 2 + k, 0.4)); }); pots.count = n2; pots.instanceMatrix.needsUpdate = true;
+  ITEMS.beetles.forEach((b, k) => beetles.setMatrixAt(k, mat(b.x, 0.05 + Math.abs(Math.sin(tsec * 12 + k)) * 0.06, b.z, 1, 1, 1, b.a))); beetles.count = ITEMS.beetles.length; beetles.instanceMatrix.needsUpdate = true;
+  stepDust(dt);
+  // видимость полос мира
+  for (const g of W.children) if (g.userData.c) { const dx = g.userData.c[0] - car.x, dz = g.userData.c[1] - car.z; g.visible = dx * dx + dz * dz < 420 * 420; }
+  camTarget(dt);
+  const f = 1 - Math.exp(-dt * 5); camera.position.lerp(camPos, f); lookS.lerp(look, f);
+  if (car.boost > 0) camera.position.y += (Math.random() - 0.5) * 0.08;
+  camera.lookAt(lookS); camera.fov += ((camera.aspect < 1 ? 74 : 58) + (car.boost > 0 ? 8 : 0) - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
+  skyG.position.copy(camera.position);
+  renderer.render(scene, camera);
+  adapt(dt);
+  if (!firstFrame) { firstFrame = performance.now(); window.EL_FIRST = Math.round(firstFrame - T0); afterFirst(); }
+}
+
+/* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
+genTrack(); buildSky(); buildWorld(); placeItems();
+{ const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, idx: 3 }); }
+snapCam();
+requestAnimationFrame(frame);
+function afterFirst() {
+  $('boot').classList.add('hide'); document.body.classList.add('play');
+  setTimeout(() => { car.state = 'go'; showMsg('Бабуля, газу!', 'внуки ждут картошку', '#ffcf8a', 1600); hint('Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>', 6000); }, 1000);
+}
+window.BM = { car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+</script>
+</body>
+</html>
