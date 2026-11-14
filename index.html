@@ -374,7 +374,7 @@ function stepTrucks(dt, now) {
     t.m.visible = car.state !== 'boot';
     if (car.state === 'go' && now - t.hit > 2500 && (x - car.x) ** 2 + (z - car.z) ** 2 < 10) {
       t.hit = now; car.spin = 0.9; car.vx *= 0.4; car.vz *= 0.4; car.drift = 0; car.combo = 0; shake = 0.7;
-      showMsg('Дальнобойщик!', damage('') || dedSay(['Дед: «Куда прёшь, шоферюга!»', 'Дед: «Права купил, что ли?!»', 'Дед: «Нюра, это грузовик!»']), '#ff8a5a', 1500, true);
+      showMsg('Дальнобойщик!', damage('') || dedSay(['Дед: «Куда прёшь, шоферюга!»', 'Дед: «Права на рынке за картошку купил?!»', 'Дед: «Нюра, это грузовик! Размером с Валю!»']), '#ff8a5a', 1500, true);
     }
   }
 }
@@ -562,9 +562,10 @@ function buildWorld() {
   W.add(new THREE.Mesh(AB.build(), bakedMat));
   glows.make(W);
 }
-const ADS = [['КИСЛОРОД', 'по акции: 3 вдоха — 2 ₽', '#6fdcff'], ['СДАМ КУПОЛ', 'посуточно · без жуков', '#ffb04a'], ['ФОБОС-ТУР', 'горящие путёвки на Луну', '#ff6ad8'],
-  ['ЗЕМЛЯ — 225 млн км', 'позвони маме!', '#8fd0ff'], ['ПОЛИКЛИНИКА №1', 'запись на 2087 год', '#7dff9a'], ['КАРТОШКА МАРСИАНСКАЯ', 'без ГМО (почти)', '#ffd06a'],
-  ['ОСТОРОЖНО, ЖУКИ!', 'не кормить, не гладить', '#ff6a4a'], ['МАРС-ФМ 101.3', 'только хиты Земли', '#6fdcff'], ['АВТОШКОЛА «ДРИФТ»', 'скидки пенсионерам 50%', '#ff6ad8'], ['ЛАВОЧКА У КУПОЛА', 'сплетни бесплатно', '#ffb04a']];
+const ADS = [['КИСЛОРОД', 'по акции: 3 вдоха — 2 ₽', '#6fdcff'], ['СДАМ КУПОЛ', 'посуточно · жуки в подарок', '#ffb04a'], ['ФОБОС-ТУР', 'горящие путёвки · горят буквально', '#ff6ad8'],
+  ['ЗЕМЛЯ — 225 млн км', 'позвони маме! (звонок идёт 20 минут)', '#8fd0ff'], ['ПОЛИКЛИНИКА №1', 'запись на 2087 год', '#7dff9a'], ['КАРТОШКА МАРСИАНСКАЯ', 'одна картошина — на всю семью', '#ffd06a'],
+  ['ОСТОРОЖНО, ЖУКИ!', 'у них профсоюз', '#ff6a4a'], ['МАРС-ФМ 101.3', 'только хиты Земли 1987 года', '#6fdcff'], ['АВТОШКОЛА «ДРИФТ»', 'скидки пенсионерам 50%', '#ff6ad8'], ['ЛАВОЧКА У КУПОЛА', 'сплетни бесплатно · правда за деньги', '#ffb04a'],
+  ['ВАРЕНЬЕ СТРОИТЕЛЬНОЕ', 'заклеит любую пробоину', '#ff6a8a'], ['ЛОМБАРД «РАКЕТА»', 'меняем банку варенья на ракету', '#ffd06a'], ['ГИБДД МАРСА', 'ограничение для пенсионеров — 5 км/ч', '#ff6a4a']];
 function adTex([t1, t2, col]) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#2a1630'); g.addColorStop(1, '#120a18'); x.fillStyle = g; x.fillRect(0, 0, 512, 256);
@@ -779,17 +780,18 @@ const ORDERS = {
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
 const TICKET = 30000;
 let BANK = 0; try { BANK = +localStorage.getItem('bm_bank') || 0; } catch (e) {}
-const RADIO = ['<b>Марс-ФМ:</b> на Олимпе опять пробка из марсоходов', '<b>Соседка Валя:</b> опять твои жуки мои грядки сожрали!', '<b>Марс-ФМ:</b> курс картошки вырос на 3%',
-  '<b>Марс-ФМ:</b> в «Заречной» отключат гравитацию с 14 до 16, держитесь за что-нибудь', '<b>Дед:</b> не гони! Хотя нет — гони!', '<b>Марс-ФМ:</b> синоптики обещают пыль. Опять.',
-  '<b>Поликлиника:</b> ваша очередь к терапевту — через 40 лет', '<b>Марс-ФМ:</b> найдена вода! Оказалось — кто-то пролил чай', '<b>Марс-ФМ:</b> продаётся кресло, турбина б/у, пробег 2 млн км',
-  '<b>Марс-ФМ:</b> жуки объявили забастовку. Не верьте, это провокация', '<b>Соседка Валя:</b> видела твою турбину — у меня мощнее!', '<b>Марс-ФМ:</b> на Земле опять дожди. А у нас — пыль. Красота!'];
+const RADIO = ['<b>Марс-ФМ:</b> на Олимпе пробка из марсоходов 4 км, один стоит с 2079 года и уже оброс картошкой', '<b>Соседка Валя:</b> я твои грядки в телескоп с трёх километров вижу! Жуки — твои!', '<b>Марс-ФМ:</b> курс картошки обогнал биткоин. Бабушки колонии — теперь олигархи',
+  '<b>Марс-ФМ:</b> в «Заречной» отключат гравитацию с 14 до 16. Пенсионеров просим привязаться к лавочкам', '<b>Дед:</b> не гони! Хотя нет — гони!', '<b>Марс-ФМ:</b> синоптики обещают пыль. Опять. Синоптиков уволили, новые тоже обещают пыль',
+  '<b>Поликлиника:</b> ваш талон № 4 000 017. Ожидайте. Примерно 40 лет', '<b>Марс-ФМ:</b> найдена вода! Оказалось — кто-то пролил чай. Чай объявлен стратегическим запасом', '<b>Марс-ФМ:</b> продаётся кресло, турбина от ракеты б/у, пробег 2 млн км, торг у трапа',
+  '<b>Марс-ФМ:</b> профсоюз жуков объявил забастовку. Требования: ботва, каски и тринадцатая зарплата', '<b>Соседка Валя:</b> у меня турбина мощнее! И помидор больше! И давление выше!', '<b>Марс-ФМ:</b> на Земле опять дожди. А у нас — пыль. Красота!',
+  '<b>ГИБДД Марса:</b> пенсионерка в красном платке, остановитесь! Ах, ветеран труда… Проезжайте, мать', '<b>Марс-ФМ:</b> храп пенсионера из «Заречной» засекли сейсмографы. Учёные в восторге', '<b>Марс-ФМ:</b> рекорд колонии — картошина размером с холодильник. Грузят краном'];
 const RADIO_ORD = {
   potato: ['<b>Внук:</b> бабуль, ты где? Мы уже чайник поставили', '<b>Внучка:</b> ба, картошечку с укропчиком, да?'],
   jam: ['<b>Алёнка:</b> ба, варенье клубничное? Обожаю!', '<b>Алёнка:</b> только банки не разбей, мама ругаться будет'],
   pies: ['<b>Петя:</b> ба, пирожки с капустой? Я голодный как марсоход', '<b>Петя:</b> если остынут — я всё равно съем, но грустно'],
   seed: ['<b>Дед:</b> рассаду не растряси, это помидоры «Бычье сердце-3000»', '<b>Дед:</b> аккуратнее на поворотах, они нежные!'],
 };
-const BANK_JOKES = [[0.25, 'Хватит на чемодан. Пустой.'], [0.5, 'Половина! Уже можно купить билет до Фобоса.'], [0.75, 'Скоро Земля! Правнуки, готовьте пирожки.'], [1, 'БИЛЕТ КУПЛЕН! Земля ждёт бабулю!']];
+const BANK_JOKES = [[0.25, 'Хватит на чемодан. Пустой. Без ручки.'], [0.5, 'Половина! Уже можно купить билет до Фобоса. В одну сторону.'], [0.75, 'Скоро Земля! Правнуки уже лепят 400 пирожков.'], [1, 'БИЛЕТ КУПЛЕН! Земля, держись — бабуля летит!']];
 function orderHud() {
   const o = ORDERS[ORDER], el = $('order'); let t = o.icon + ' ';
   if (ORDER === 'potato') t += car.pot + ' шт.';
@@ -849,7 +851,7 @@ function stepMeteors(dt, now, inZone) {
         for (let q = 0; q < 10; q++) puff(m.x, m.z, 4);
         if ((m.x - car.x) ** 2 + (m.z - car.z) ** 2 < 400) flash('#fff2d0', 0.5);
         const d2 = (m.x - car.x) ** 2 + (m.z - car.z) ** 2; if (d2 < 900) shake = Math.max(shake, 0.6 * (1 - d2 / 900));
-        if (car.state === 'go' && d2 < 12) { car.spin = 0.8; car.drift = 0; car.combo = 0; showMsg('БАБАХ!', damage('метеорит прямо под колёса!'), '#ff6a4a', 1400, true); }
+        if (car.state === 'go' && d2 < 12) { car.spin = 0.8; car.drift = 0; car.combo = 0; showMsg('БАБАХ!', damage('метеорит! Приложи подорожник'), '#ff6a4a', 1400, true); }
       }
     }
     if (m.ft >= 0) { m.ft += dt; const s = 4 + m.ft * 40; m.flash.scale.set(s, s, 1); m.flash.material.opacity = Math.max(0, 1 - m.ft * 2.5); if (m.ft > 0.4) { m.ft = -1; m.flash.visible = false; } }
@@ -885,10 +887,10 @@ function confetti() {
 }
 function countUp(el, to, ms, suffix = '') { const t0 = performance.now(); const tick = (n) => { const k = Math.min(1, (n - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = (to < 0 ? '' : '') + Math.round(to * e).toLocaleString('ru') + suffix; if (k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
 function hint(t, ms) { const h = $('hint'); h.innerHTML = '<span class="g">' + t + '</span>'; h.classList.add('on'); clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.classList.remove('on'), ms); }
-const OUCH = ['Ох, радикулит!', 'Батюшки!', 'Куда прёшь, жучара!', 'Ой, давление!', 'Хулиганьё!'];
-const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Вот это занос!', 'Турбо-бабуля!', 'Нюра жжёт!'];
-const DED = ['Дед: «Нюра, тормози!»', 'Дед: «Я на „Урале“ в 72-м так же гонял!»', 'Дед: «Ух, с ветерком!»', 'Дед: «Мои вставные зубы!»', 'Дед: «Жми, Нюра, жми!»', 'Дед: «Газету сдуло!»', 'Дед: «Шапку держу, шапку!»'];
-const DED_HIT = ['Дед: «Я же говорил!»', 'Дед: «Нюра, ну куда ты!»', 'Дед: «Валидол где?!»', 'Дед: «Это всё твои жуки!»'];
+const OUCH = ['Ох, радикулит!', 'Батюшки-светы!', 'Куда прёшь, жучара!', 'Давление 300 на 200!', 'Хулиганьё марсианское!', 'Вставная челюсть улетела!', 'Корвалолу мне!', 'Я в 82 года такого не видала!'];
+const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Пенсия на форсаже!', 'Турбо-бабуля!', 'Нюра жжёт!', 'Звуковой барьер пройден!', 'Валя обзавидуется!', 'Радикулит отпустил!'];
+const DED = ['Дед: «Нюра, тормози!»', 'Дед: «Я на „Урале“ в 72-м так же гонял!»', 'Дед: «У меня усы отклеились!»', 'Дед: «Мои вставные зубы — догони их!»', 'Дед: «Жми, Нюра, жми!»', 'Дед: «Газету 1987 года сдуло!»', 'Дед: «Шапку держу, шапку!»', 'Дед: «Я поседел второй раз!»', 'Дед: «Обгоняем звук, Нюра!»'];
+const DED_HIT = ['Дед: «Я же говорил!»', 'Дед: «Нюра, ну куда ты!»', 'Дед: «Валидол где?!»', 'Дед: «Это всё твои жуки!»', 'Дед: «Я в люльке за 40 лет такого не видал!»', 'Дед: «Пиши завещание, Нюра!»'];
 const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
   const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
@@ -908,10 +910,10 @@ function finish() {
   car.state = 'end';
   const par = TOTAL / 19, t = car.t, o = ORDERS[ORDER];
   let ordPay = 0, ordRow = '', title = '', good = 0;
-  if (ORDER === 'potato') { ordPay = car.pot * 20; /* + 30 ₽ за штуку ниже — итого 50 */ ordRow = 'Картошка внукам: ' + car.pot + ' шт.'; good = car.pot >= 25 ? 1 : car.pot >= 12 ? 0.6 : 0.3; title = car.pot >= 12 ? 'Внуки накормлены!' : 'Внуки: «А где картошка?»'; }
-  if (ORDER === 'jam') { ordPay = car.cargo * 150; ordRow = 'Банок довезла: ' + car.cargo + ' из 6'; good = car.cargo / 6; title = car.cargo >= 4 ? 'Алёнка в варенье по уши!' : car.cargo ? 'Хоть одна баночка уцелела' : 'Все банки вдребезги…'; }
-  if (ORDER === 'pies') { const left = Math.max(0, car.pieLimit - t); ordPay = left > 0 ? 600 + Math.round(left * 15) : 150; ordRow = left > 0 ? 'Пирожки горячие! Запас ' + Math.round(left) + ' с' : 'Пирожки остыли'; good = left > 0 ? 1 : 0.3; title = left > 0 ? 'Петя уплетает горячие!' : 'Остыли, но Петя всё равно съел'; }
-  if (ORDER === 'seed') { ordPay = car.cargo * 100; ordRow = 'Рассады довезла: ' + car.cargo + ' из 8'; good = car.cargo / 8; title = car.cargo >= 6 ? 'Дед доволен, как слон!' : car.cargo ? 'Дед ворчит, но сажает' : 'Дед: «А рассада где?!»'; }
+  if (ORDER === 'potato') { ordPay = car.pot * 20; /* + 30 ₽ за штуку ниже — итого 50 */ ordRow = 'Картошка внукам: ' + car.pot + ' шт.'; good = car.pot >= 25 ? 1 : car.pot >= 12 ? 0.6 : 0.3; title = car.pot >= 25 ? 'Внуки объелись и легли!' : car.pot >= 12 ? 'Внуки накормлены!' : 'Внуки: «А где картошка?»'; }
+  if (ORDER === 'jam') { ordPay = car.cargo * 150; ordRow = 'Банок довезла: ' + car.cargo + ' из 6'; good = car.cargo / 6; title = car.cargo >= 6 ? 'Алёнка в варенье по самую макушку!' : car.cargo >= 4 ? 'Алёнка в варенье по уши!' : car.cargo ? 'Хоть одна баночка уцелела' : 'Варенье размазано по всему Марсу'; }
+  if (ORDER === 'pies') { const left = Math.max(0, car.pieLimit - t); ordPay = left > 0 ? 600 + Math.round(left * 15) : 150; ordRow = left > 0 ? 'Пирожки горячие! Запас ' + Math.round(left) + ' с' : 'Пирожки остыли'; good = left > 0 ? 1 : 0.3; title = left > 0 ? 'Петя съел 300 штук и просит ещё!' : 'Остыли, но Петя всё равно съел. Все.'; }
+  if (ORDER === 'seed') { ordPay = car.cargo * 100; ordRow = 'Рассады довезла: ' + car.cargo + ' из 8'; good = car.cargo / 8; title = car.cargo >= 6 ? 'Дед доволен, как слон на Марсе!' : car.cargo ? 'Дед ворчит, но сажает' : 'Дед: «А рассада где?! На Фобосе?!»'; }
   const timeBonus = Math.max(0, Math.round((par * 1.3 - t) * 20)), potPay = car.pot * 30, driftPay = Math.round(car.score / 10);
   const pension = potPay + driftPay + timeBonus + ordPay;
   const stars = good >= 0.8 && t < par * 1.15 ? 3 : good >= 0.5 ? 2 : 1;
@@ -1007,15 +1009,15 @@ function frame(now) {
     // занос и турбо
     if (car.state === 'go') {
       if (steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
-      if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'Дед: «Помидорчики мои!»', '#9aff8a', 1100); } } else car.seedT = 0;
-      if (ORDER === 'pies' && !car.cold && car.t > car.pieLimit) { car.cold = true; showMsg('Пирожки остыли!', 'эх, а были с пылу с жару', '#ffb07a', 1500); }
+      if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'Дед: «Помидорчики мои! Летите, родные!»', '#9aff8a', 1100); } } else car.seedT = 0;
+      if (ORDER === 'pies' && !car.cold && car.t > car.pieLimit) { car.cold = true; showMsg('Пирожки остыли!', 'а ведь плавили люльку!', '#ffb07a', 1500); }
       // радио и события зон
       car.radioT -= dt; if (car.radioT <= 0) { car.radioT = rnd(11, 16); radio(pickRadio()); }
       const zn = zoneAt(bi);
       if (zn && !zn.told) { zn.told = true; if (zn.kind === 'meteor') { warnBanner('МЕТЕОРИТНЫЙ ДОЖДЬ'); flash('#ff6a3a', 0.35); radio('<b>Марс-ФМ:</b> внимание, метеоритный дождь! Зонтики не помогут'); } else { warnBanner('ПЫЛЕВАЯ БУРЯ'); flash('#d08050', 0.4); radio('<b>Марс-ФМ:</b> пылевая буря! Закройте форточки в куполах'); } }
       car.wind = zn && zn.kind === 'storm' ? Math.sin(car.t * 0.7) * 7 : 0;
       if (car.wind) { car.vx += n[0] * car.wind * dt; car.vz += n[1] * car.wind * dt; }
-      if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; showMsg('Ой, в песок!', '', '#ffb07a', 900); }
+      if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; showMsg('Ой, в песок!', 'песок в тапках до пенсии', '#ffb07a', 900); }
       if (!steer && car.drift > 0) {
         if (car.drift > 0.55) {
           const mult = 1 + Math.min(2, car.drift * 0.6), pts = Math.round(car.combo * mult);
@@ -1034,12 +1036,12 @@ function frame(now) {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
         b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
-        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : dedSay(DED_HIT)), '#ff8a6a', 1300, true);
+        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : dedSay(DED_HIT)), '#ff8a6a', 1300, true);
       }
     });
     // пыль
     if ((slip > 0.2 || car.off) && spd > 5 && Math.random() < 0.9) puff(car.x - Math.sin(car.h) * 0.8, car.z - Math.cos(car.h) * 0.8, 1.2);
-    if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg('Доехала!', 'внуки уже ставят чайник', '#ffcf8a', 1800); confetti(); flash('#ffe0a0', 0.4); }
+    if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg('Доехала!', 'внуки уже ставят самовар на 40 литров', '#ffcf8a', 1800); confetti(); flash('#ffe0a0', 0.4); }
     // интерфейс
     orderHud();
     $('time').textContent = fmt(car.t); $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
