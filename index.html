@@ -48,6 +48,20 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
   background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,0) 0deg 5deg,rgba(200,240,255,.13) 5deg 5.5deg);
   -webkit-mask:radial-gradient(circle at 50% 50%,transparent 32%,#000 70%);mask:radial-gradient(circle at 50% 50%,transparent 32%,#000 70%)}
 body.post #vig{display:none}
+#order{position:fixed;left:50%;top:calc(32px + env(safe-area-inset-top));transform:translateX(-50%);z-index:5;border-radius:12px;padding:5px 12px;font-weight:800;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#order.bad{color:#ff8a6a}
+#radio{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);width:min(460px,calc(100vw - 32px));text-align:center;z-index:5;opacity:0;transition:opacity .4s;pointer-events:none}
+#radio.on{opacity:1}#radio span{display:inline-block;border-radius:10px;padding:6px 12px;font-size:13px;line-height:1.3;color:var(--ink)}#radio b{color:var(--cyan)}
+#storm{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity 1.2s;background:radial-gradient(ellipse at 50% 60%,rgba(220,120,70,.25),rgba(170,80,40,.7))}
+#end .card{max-height:calc(100vh - 32px);overflow:auto}
+#end .bank{margin:4px 0 14px;text-align:left}#end .bank .bl{font-size:12px;letter-spacing:.1em;color:var(--dim);margin-bottom:6px}
+#end .bank .bar{height:12px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}#end .bank .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fe8ff,#ffe08a);transition:width 1.2s ease-out}
+#end .bank small{display:block;margin-top:5px;font-size:13px;color:var(--ink)}
+#end .lab{font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:left;margin:4px 0 8px}
+#orders{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+#end .ord{width:auto;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);border-radius:12px;padding:9px 8px;text-align:left;cursor:pointer;font:600 13px system-ui,sans-serif;line-height:1.25}
+.ord b{display:block;font-size:14px;margin-bottom:3px}.ord small{color:var(--dim);font-size:11.5px;font-weight:500}
+#end .ord.on{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot),0 0 16px rgba(255,176,74,.25);background:rgba(255,176,74,.08)}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -57,15 +71,21 @@ body.post #vig{display:none}
 <div id="ui">
   <div id="tl" class="g"><b id="time">0:00</b><small>до внуков</small></div>
   <div id="prog"><i id="progi"></i></div>
+  <div id="order" class="g"></div>
+  <div id="radio"></div>
   <div id="tr" class="g"><b id="pot">0</b><small>картошка</small></div>
   <div id="turbo"><b id="spd">0</b><div class="bar"><i id="turboi"></i></div><small>ТУРБО</small></div>
   <div class="zone g" id="zl">⟲</div><div class="zone g" id="zr">⟳</div>
 </div>
+<div id="storm"></div>
 <div id="speedfx"></div>
 <div id="combo"></div>
 <div id="msg"></div>
 <div id="hint"></div>
-<div id="end"><div class="card g"><h2>Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table><button id="again">Ещё заезд</button></div></div>
+<div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
+  <div class="bank"><div class="bl">КОПИЛКА НА БИЛЕТ ДО ЗЕМЛИ</div><div class="bar"><i id="banki"></i></div><small id="bankt"></small></div>
+  <div class="lab">СЛЕДУЮЩИЙ ЗАКАЗ</div><div id="orders"></div>
+  <button id="again">Поехали!</button></div></div>
 <div id="err"></div>
 <script>
 /* Площадка: web / pikabu / vk / ok / tg / max / gamepush / rt. В прототипе — web. */
@@ -401,7 +421,31 @@ function buildWorld() {
     const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); mg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     const m = new THREE.Mesh(mg, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide })); m.frustumCulled = false; m.renderOrder = -1; W.add(m);
   }
+  // рекламные щиты колонии
+  const ads = ADS.slice().sort(() => Math.random() - 0.5), AB = new Builder(null);
+  for (let k = 0; k < 7; k++) {
+    const i = Math.round(50 + (TRACK.length - 100) * (k + rnd(0.2, 0.8)) / 7), p = TRACK[i], n = nrm(p), side = k % 2 ? 1 : -1;
+    const x = p.x + n[0] * (ROAD_W / 2 + 6) * side, z = p.z + n[1] * (ROAD_W / 2 + 6) * side;
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = p.a + Math.PI - side * 0.35; W.add(g);
+    const bd = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), new THREE.MeshBasicMaterial({ map: adTex(ads[k % ads.length]), color: '#e8e8e8' })); bd.position.y = 4.6; g.add(bd);
+    g.updateMatrix(); const GM = g.matrix;
+    AB.add(BOX, GM.clone().multiply(mat(0, 4.6, -0.12, 8.3, 4.3, 0.2)), '#2a2228', { emit: true });
+    for (const px of [-2.8, 2.8]) AB.add(BOX, GM.clone().multiply(mat(px, 1.3, -0.12, 0.25, 2.6, 0.25)), '#3a3036', { emit: true });
+    glows.add(x, 6.9, z, '#ffffff', 0.35);
+  }
+  W.add(new THREE.Mesh(AB.build(), bakedMat));
   glows.make(W);
+}
+const ADS = [['КИСЛОРОД', 'по акции: 3 вдоха — 2 ₽', '#6fdcff'], ['СДАМ КУПОЛ', 'посуточно · без жуков', '#ffb04a'], ['ФОБОС-ТУР', 'горящие путёвки на Луну', '#ff6ad8'],
+  ['ЗЕМЛЯ — 225 млн км', 'позвони маме!', '#8fd0ff'], ['ПОЛИКЛИНИКА №1', 'запись на 2087 год', '#7dff9a'], ['КАРТОШКА МАРСИАНСКАЯ', 'без ГМО (почти)', '#ffd06a'],
+  ['ОСТОРОЖНО, ЖУКИ!', 'не кормить, не гладить', '#ff6a4a'], ['МАРС-ФМ 101.3', 'только хиты Земли', '#6fdcff'], ['АВТОШКОЛА «ДРИФТ»', 'скидки пенсионерам 50%', '#ff6ad8'], ['ЛАВОЧКА У КУПОЛА', 'сплетни бесплатно', '#ffb04a']];
+function adTex([t1, t2, col]) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#2a1630'); g.addColorStop(1, '#120a18'); x.fillStyle = g; x.fillRect(0, 0, 512, 256);
+  x.strokeStyle = col; x.lineWidth = 8; x.strokeRect(10, 10, 492, 236);
+  x.textAlign = 'center'; x.fillStyle = col; x.font = '900 58px system-ui,sans-serif'; x.fillText(t1, 256, 112, 470);
+  x.fillStyle = '#fff4ea'; x.font = '600 34px system-ui,sans-serif'; x.fillText(t2, 256, 180, 470);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
 }
 
 /* ---------- бабуля в турбо-кресле ---------- */
@@ -564,30 +608,134 @@ function loadPost() {
   next(0);
 }
 
+/* ---------- заказы родни и копилка ---------- */
+const ORDERS = {
+  potato: { name: 'Картошка внукам', icon: '🥔', desc: 'Собери побольше картошки', who: 'Внуки' },
+  jam: { name: 'Варенье Алёнке', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внучка Алёнка' },
+  pies: { name: 'Пирожки Пете', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Петя' },
+  seed: { name: 'Рассада деду', icon: '🌱', desc: 'Долгие заносы — рассада вылетает', who: 'Дед' },
+};
+let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
+const TICKET = 30000;
+let BANK = 0; try { BANK = +localStorage.getItem('bm_bank') || 0; } catch (e) {}
+const RADIO = ['<b>Марс-ФМ:</b> на Олимпе опять пробка из марсоходов', '<b>Соседка Валя:</b> опять твои жуки мои грядки сожрали!', '<b>Марс-ФМ:</b> курс картошки вырос на 3%',
+  '<b>Марс-ФМ:</b> в «Заречной» отключат гравитацию с 14 до 16, держитесь за что-нибудь', '<b>Дед:</b> не гони! Хотя нет — гони!', '<b>Марс-ФМ:</b> синоптики обещают пыль. Опять.',
+  '<b>Поликлиника:</b> ваша очередь к терапевту — через 40 лет', '<b>Марс-ФМ:</b> найдена вода! Оказалось — кто-то пролил чай', '<b>Марс-ФМ:</b> продаётся кресло, турбина б/у, пробег 2 млн км',
+  '<b>Марс-ФМ:</b> жуки объявили забастовку. Не верьте, это провокация', '<b>Соседка Валя:</b> видела твою турбину — у меня мощнее!', '<b>Марс-ФМ:</b> на Земле опять дожди. А у нас — пыль. Красота!'];
+const RADIO_ORD = {
+  potato: ['<b>Внук:</b> бабуль, ты где? Мы уже чайник поставили', '<b>Внучка:</b> ба, картошечку с укропчиком, да?'],
+  jam: ['<b>Алёнка:</b> ба, варенье клубничное? Обожаю!', '<b>Алёнка:</b> только банки не разбей, мама ругаться будет'],
+  pies: ['<b>Петя:</b> ба, пирожки с капустой? Я голодный как марсоход', '<b>Петя:</b> если остынут — я всё равно съем, но грустно'],
+  seed: ['<b>Дед:</b> рассаду не растряси, это помидоры «Бычье сердце-3000»', '<b>Дед:</b> аккуратнее на поворотах, они нежные!'],
+};
+const BANK_JOKES = [[0.25, 'Хватит на чемодан. Пустой.'], [0.5, 'Половина! Уже можно купить билет до Фобоса.'], [0.75, 'Скоро Земля! Правнуки, готовьте пирожки.'], [1, 'БИЛЕТ КУПЛЕН! Земля ждёт бабулю!']];
+function orderHud() {
+  const o = ORDERS[ORDER], el = $('order'); let t = o.icon + ' ';
+  if (ORDER === 'potato') t += car.pot + ' шт.';
+  else if (ORDER === 'jam') t += car.cargo + ' / 6';
+  else if (ORDER === 'seed') t += car.cargo + ' / 8';
+  else { const left = car.pieLimit - car.t; t += left > 0 ? 'горячие · ' + fmt(left) : 'остыли'; }
+  el.textContent = t; el.classList.toggle('bad', (ORDER === 'pies' && car.pieLimit - car.t < 10) || ((ORDER === 'jam' || ORDER === 'seed') && car.cargo <= 2));
+}
+function damage(why) { // удар по грузу
+  if (ORDER === 'jam' && car.cargo > 0) { car.cargo--; return 'Дзынь! Минус банка варенья'; }
+  if (ORDER === 'seed' && car.cargo > 0) { car.cargo--; return 'Рассада вылетела!'; }
+  return why;
+}
+function radio(line) { const r = $('radio'); r.innerHTML = '<span class="g">📻 ' + line + '</span>'; r.classList.add('on'); clearTimeout(radio.t); radio.t = setTimeout(() => r.classList.remove('on'), 6000); }
+function pickRadio() { const pool = RADIO.concat(RADIO_ORD[ORDER], RADIO_ORD[ORDER]); return pool[Math.floor(Math.random() * pool.length)]; }
+
+/* ---------- события: метеоритный дождь и пылевая буря ---------- */
+let ZONES = [];
+function planZones() {
+  const n = TRACK.length; ZONES = [];
+  const a = Math.round(n * rnd(0.22, 0.35)), b = Math.round(n * rnd(0.55, 0.7)), c = Math.round(n * rnd(0.78, 0.86));
+  const kinds = Math.random() < 0.5 ? ['meteor', 'storm', 'meteor'] : ['storm', 'meteor', 'storm'];
+  [a, b, c].forEach((i0, k) => ZONES.push({ kind: kinds[k], i0, i1: i0 + (kinds[k] === 'storm' ? 75 : 60), told: false }));
+}
+const zoneAt = (i) => ZONES.find((z) => i >= z.i0 && i <= z.i1);
+const METEORS = [], mGroup = new THREE.Group(); scene.add(mGroup);
+const ringMat = new THREE.MeshBasicMaterial({ color: '#ff3a2a', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
+for (let k = 0; k < 5; k++) {
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.4, 3.2, 28), ringMat.clone()); ring.rotation.x = -Math.PI / 2; ring.visible = false; mGroup.add(ring);
+  const rock = new THREE.Group(); rock.visible = false; mGroup.add(rock);
+  rock.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), new THREE.MeshBasicMaterial({ color: '#ffcf8a' })));
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.9, 12, 10, 1, true), new THREE.MeshBasicMaterial({ color: '#ff8a3a', transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  tail.position.y = 6.5; rock.add(tail);
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: '#ffb060', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); flash.visible = false; mGroup.add(flash);
+  METEORS.push({ ring, rock, flash, t: -1, x: 0, z: 0, ft: -1 });
+}
+let mNext = 0, shake = 0;
+function stepMeteors(dt, now, inZone) {
+  if (inZone && car.state === 'go' && now > mNext) {
+    const m = METEORS.find((q) => q.t < 0);
+    if (m) { const [x, z] = at(car.idx + Math.round(rnd(14, 30)), rnd(-4.5, 4.5)); Object.assign(m, { x, z, t: 0 }); m.ring.position.set(x, 0.12, z); m.ring.visible = true; m.rock.visible = true; }
+    mNext = now + rnd(650, 1100);
+  }
+  for (const m of METEORS) {
+    if (m.t >= 0) {
+      m.t += dt; const k = m.t / 1.5;
+      m.ring.material.opacity = 0.4 + 0.5 * Math.abs(Math.sin(m.t * 10)); m.ring.scale.setScalar(1.3 - k * 0.4);
+      m.rock.position.set(m.x + (1 - k) * 25, 0.8 + (1 - k) * 80, m.z - (1 - k) * 12); m.rock.lookAt(m.x + 50, 160, m.z - 24); m.rock.rotateX(Math.PI / 2);
+      if (k >= 1) {
+        m.t = -1; m.ring.visible = false; m.rock.visible = false; m.ft = 0; m.flash.position.set(m.x, 1.5, m.z); m.flash.visible = true;
+        for (let q = 0; q < 10; q++) puff(m.x, m.z, 4);
+        const d2 = (m.x - car.x) ** 2 + (m.z - car.z) ** 2; if (d2 < 900) shake = Math.max(shake, 0.6 * (1 - d2 / 900));
+        if (car.state === 'go' && d2 < 12) { car.spin = 0.8; car.drift = 0; car.combo = 0; showMsg('БАБАХ!', damage('метеорит прямо под колёса!'), '#ff6a4a', 1400); }
+      }
+    }
+    if (m.ft >= 0) { m.ft += dt; const s = 4 + m.ft * 40; m.flash.scale.set(s, s, 1); m.flash.material.opacity = Math.max(0, 1 - m.ft * 2.5); if (m.ft > 0.4) { m.ft = -1; m.flash.visible = false; } }
+  }
+}
+
 /* ---------- заезд ---------- */
 const VMAX = 23, VBOOST = 35, TURN = 2.5;
-const car = { x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0 };
+const car = { x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0, cargo: 0, pieLimit: 0, seedT: 0, cold: false, radioT: 0, wind: 0 };
 const input = { l: false, r: false };
 function showMsg(t, sub, col, ms = 1500) { const m = $('msg'); m.innerHTML = t + (sub ? '<small>' + sub + '</small>' : ''); m.style.color = col || '#fff'; m.classList.add('on'); clearTimeout(showMsg.t); showMsg.t = setTimeout(() => m.classList.remove('on'), ms); }
 function hint(t, ms) { const h = $('hint'); h.innerHTML = '<span class="g">' + t + '</span>'; h.classList.add('on'); clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.classList.remove('on'), ms); }
 const OUCH = ['Ох, радикулит!', 'Батюшки!', 'Куда прёшь, жучара!', 'Ой, давление!', 'Хулиганьё!'];
 const YAY = ['Как в молодости!', 'Огонь, бабуля!', 'Вот это занос!', 'Дед бы обзавидовался!', 'Турбо-бабуля!'];
+function resetCar() {
+  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
+  car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
+  planZones(); orderHud(); trailPts.length = 0;
+}
+function startMsg(first) {
+  const o = ORDERS[ORDER];
+  showMsg(first ? 'Бабуля, газу!' : o.icon + ' ' + o.name, o.desc, '#ffcf8a', 1900);
+  hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
+}
 function newRun(first) {
-  genTrack(); buildSky(); buildWorld(); placeItems();
-  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, state: 'go' });
-  $('end').classList.remove('on'); snapCam();
-  showMsg(first ? 'Бабуля, газу!' : 'Поехали!', 'внуки ждут картошку', '#ffcf8a', 1600);
-  hint('Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>', first ? 6000 : 3000);
+  genTrack(); buildSky(); buildWorld(); placeItems(); resetCar(); car.state = 'go';
+  $('end').classList.remove('on'); snapCam(); startMsg(first);
 }
 function finish() {
   car.state = 'end';
-  const par = TOTAL / 19, t = car.t, stars = t < par * 1.0 ? 3 : t < par * 1.2 ? 2 : 1;
-  const pension = car.pot * 30 + Math.round(car.score / 10) + Math.max(0, Math.round((par * 1.3 - t) * 20));
+  const par = TOTAL / 19, t = car.t, o = ORDERS[ORDER];
+  let ordPay = 0, ordRow = '', title = '', good = 0;
+  if (ORDER === 'potato') { ordPay = car.pot * 20; /* + 30 ₽ за штуку ниже — итого 50 */ ordRow = 'Картошка внукам: ' + car.pot + ' шт.'; good = car.pot >= 25 ? 1 : car.pot >= 12 ? 0.6 : 0.3; title = car.pot >= 12 ? 'Внуки накормлены!' : 'Внуки: «А где картошка?»'; }
+  if (ORDER === 'jam') { ordPay = car.cargo * 150; ordRow = 'Банок довезла: ' + car.cargo + ' из 6'; good = car.cargo / 6; title = car.cargo >= 4 ? 'Алёнка в варенье по уши!' : car.cargo ? 'Хоть одна баночка уцелела' : 'Все банки вдребезги…'; }
+  if (ORDER === 'pies') { const left = Math.max(0, car.pieLimit - t); ordPay = left > 0 ? 600 + Math.round(left * 15) : 150; ordRow = left > 0 ? 'Пирожки горячие! Запас ' + Math.round(left) + ' с' : 'Пирожки остыли'; good = left > 0 ? 1 : 0.3; title = left > 0 ? 'Петя уплетает горячие!' : 'Остыли, но Петя всё равно съел'; }
+  if (ORDER === 'seed') { ordPay = car.cargo * 100; ordRow = 'Рассады довезла: ' + car.cargo + ' из 8'; good = car.cargo / 8; title = car.cargo >= 6 ? 'Дед доволен, как слон!' : car.cargo ? 'Дед ворчит, но сажает' : 'Дед: «А рассада где?!»'; }
+  const timeBonus = Math.max(0, Math.round((par * 1.3 - t) * 20)), potPay = car.pot * 30, driftPay = Math.round(car.score / 10);
+  const pension = potPay + driftPay + timeBonus + ordPay;
+  const stars = good >= 0.8 && t < par * 1.15 ? 3 : good >= 0.5 ? 2 : 1;
+  $('etitle').textContent = title;
   $('estars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-  $('esub').textContent = 'Марс, колония «Заречная» · ' + Math.round(TOTAL) + ' м';
-  $('etab').innerHTML = `<tr><td>Время</td><td>${fmt(t)}</td></tr><tr><td>Картошка</td><td>${car.pot} шт.</td></tr><tr><td>Очки заноса</td><td>${Math.round(car.score)}</td></tr><tr><td><b>Пенсия за заезд</b></td><td><b>${pension} ₽</b></td></tr>`;
-  try { const best = +localStorage.getItem('bm_best') || 0; if (pension > best) localStorage.setItem('bm_best', pension); } catch (e) {}
+  $('esub').textContent = o.icon + ' ' + o.name + ' · ' + fmt(t) + ' · ' + Math.round(TOTAL) + ' м';
+  $('etab').innerHTML = (ORDER === 'potato' ? `<tr><td>${ordRow}</td><td>${ordPay + potPay} ₽</td></tr>` : `<tr><td>${ordRow}</td><td>${ordPay} ₽</td></tr><tr><td>Картошка по пути: ${car.pot} шт.</td><td>${potPay} ₽</td></tr>`) + `<tr><td>Заносы</td><td>${driftPay} ₽</td></tr><tr><td>За скорость</td><td>${timeBonus} ₽</td></tr><tr><td><b>Пенсия за заезд</b></td><td><b>+${pension} ₽</b></td></tr>`;
+  const before = BANK; BANK += pension; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
+  const frac = Math.min(1, BANK / TICKET); let joke = '';
+  for (const [f, j] of BANK_JOKES) if (before / TICKET < f && BANK / TICKET >= f) joke = j;
+  $('banki').style.width = Math.min(100, before / TICKET * 100) + '%'; setTimeout(() => ($('banki').style.width = frac * 100 + '%'), 1100);
+  $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽' + (joke ? ' — ' + joke : '');
+  renderOrders();
   setTimeout(() => $('end').classList.add('on'), 900);
+}
+function renderOrders() {
+  $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.desc}</small></button>`).join('');
+  document.querySelectorAll('.ord').forEach((b) => (b.onclick = () => { ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (e) {} renderOrders(); }));
 }
 $('again').onclick = () => newRun(false);
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
@@ -659,12 +807,20 @@ function frame(now) {
       const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
       car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * 0.5; // развернуло вдоль дороги
       if (now - car.bump > 900) { car.vx *= 0.55; car.vz *= 0.55; car.drift = 0; car.combo = 0; }
-      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], '', '#ff9a7a', 1100);
+      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], damage(''), '#ff9a7a', 1300);
       car.bump = now;
     }
     // занос и турбо
     if (car.state === 'go') {
       if (steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
+      if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'дед будет ругаться', '#9aff8a', 1100); } } else car.seedT = 0;
+      if (ORDER === 'pies' && !car.cold && car.t > car.pieLimit) { car.cold = true; showMsg('Пирожки остыли!', 'эх, а были с пылу с жару', '#ffb07a', 1500); }
+      // радио и события зон
+      car.radioT -= dt; if (car.radioT <= 0) { car.radioT = rnd(11, 16); radio(pickRadio()); }
+      const zn = zoneAt(bi);
+      if (zn && !zn.told) { zn.told = true; if (zn.kind === 'meteor') { showMsg('Метеоритный дождь!', 'объезжай красные круги', '#ff8a5a', 1600); radio('<b>Марс-ФМ:</b> внимание, метеоритный дождь! Зонтики не помогут'); } else { showMsg('Пылевая буря!', 'держись, бабуля, сдувает!', '#ffc08a', 1600); radio('<b>Марс-ФМ:</b> пылевая буря! Закройте форточки в куполах'); } }
+      car.wind = zn && zn.kind === 'storm' ? Math.sin(car.t * 0.7) * 7 : 0;
+      if (car.wind) { car.vx += n[0] * car.wind * dt; car.vz += n[1] * car.wind * dt; }
       if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; showMsg('Ой, в песок!', '', '#ffb07a', 900); }
       if (!steer && car.drift > 0) {
         if (car.drift > 0.55) {
@@ -684,13 +840,14 @@ function frame(now) {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
         b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
-        showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], lost ? 'рассыпала ' + lost + ' картошки' : 'жук!', '#ff8a6a', 1300);
+        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : 'жук!'), '#ff8a6a', 1300);
       }
     });
     // пыль
     if ((slip > 0.2 || car.off) && spd > 5 && Math.random() < 0.9) puff(car.x - Math.sin(car.h) * 0.8, car.z - Math.cos(car.h) * 0.8, 1.2);
     if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg('Доехала!', 'внуки уже ставят чайник', '#ffcf8a', 1800); }
     // интерфейс
+    orderHud();
     $('time').textContent = fmt(car.t); $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
     $('progi').style.width = (100 * TRACK[bi].s / TOTAL) + '%'; $('turboi').style.width = clamp(car.boost > 0 ? car.boost / 3 * 100 : car.drift / 3 * 100, 0, 100) + '%';
     // бабуля
@@ -703,11 +860,16 @@ function frame(now) {
   let n2 = 0; ITEMS.pots.forEach((p, k) => { if (!p.on) return; pots.setMatrixAt(n2++, mat(p.x, 0.75 + Math.sin(tsec * 3 + k) * 0.15, p.z, 1, 1, 1, tsec * 2 + k, 0.4)); }); pots.count = n2; pots.instanceMatrix.needsUpdate = true;
   ITEMS.beetles.forEach((b, k) => beetles.setMatrixAt(k, mat(b.x, 0.05 + Math.abs(Math.sin(tsec * 12 + k)) * 0.06, b.z, 1, 1, 1, b.a))); beetles.count = ITEMS.beetles.length; beetles.instanceMatrix.needsUpdate = true;
   stepDust(dt);
+  { const zn = car.state === 'go' ? zoneAt(car.idx) : null, storm = zn && zn.kind === 'storm';
+    scene.fog.density += ((storm ? 0.02 : 0.0062) - scene.fog.density) * Math.min(1, dt * 1.5);
+    $('storm').style.opacity = storm ? 1 : 0; stepMeteors(dt, now, zn && zn.kind === 'meteor');
+    if (storm && Math.random() < 0.6) puff(car.x + rnd(-15, 15), car.z + rnd(-15, 15), 6); }
   // видимость полос мира
   for (const g of W.children) if (g.userData.c) { const dx = g.userData.c[0] - car.x, dz = g.userData.c[1] - car.z; g.visible = dx * dx + dz * dz < 420 * 420; }
   camTarget(dt);
   const f = 1 - Math.exp(-dt * 5); camera.position.lerp(camPos, f); lookS.lerp(look, f);
   if (car.boost > 0) camera.position.y += (Math.random() - 0.5) * 0.08;
+  if (shake > 0) { camera.position.x += (Math.random() - 0.5) * shake; camera.position.y += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.5); }
   camera.lookAt(lookS); camera.fov += ((camera.aspect < 1 ? 74 : 58) + (car.boost > 0 ? 8 : 0) - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
   skyG.position.copy(camera.position);
   stepTrail(car.boost > 0); motes.position.set(Math.round(car.x / 60) * 60, 0, Math.round(car.z / 60) * 60); stepMotes(dt);
@@ -720,16 +882,17 @@ function frame(now) {
 }
 
 /* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
-genTrack(); buildSky(); buildWorld(); placeItems();
-{ const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, idx: 3 }); }
+let firstEver = true; try { firstEver = !localStorage.getItem('bm_seen'); localStorage.setItem('bm_seen', '1'); } catch (e) {}
+if (firstEver) ORDER = 'potato';
+genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
 function afterFirst() {
   $('boot').classList.add('hide'); document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
-  setTimeout(() => { car.state = 'go'; showMsg('Бабуля, газу!', 'внуки ждут картошку', '#ffcf8a', 1600); hint('Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>', 6000); }, 1000);
+  setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
