@@ -61,6 +61,7 @@ body.post #vig{display:none}
 #orders{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 #end .ord{width:auto;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);border-radius:12px;padding:9px 8px;text-align:left;cursor:pointer;font:600 13px system-ui,sans-serif;line-height:1.25}
 .ord b{display:block;font-size:14px;margin-bottom:3px}.ord small{color:var(--dim);font-size:11.5px;font-weight:500}
+#end .ord.story{grid-column:1/-1;background:linear-gradient(90deg,rgba(90,110,80,.35),rgba(255,176,74,.12))}
 #end .ord.on{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot),0 0 16px rgba(255,176,74,.25);background:rgba(255,176,74,.08)}
 /* ---------- моушн-графика ---------- */
 @keyframes pop{0%{transform:scale(1.7) rotate(-5deg);opacity:0}55%{transform:scale(.93) rotate(1deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
@@ -528,7 +529,7 @@ function buildWorld() {
   for (const sd of [-1, 1]) { const px = fin.x + fn[0] * (ROAD_W / 2 + 1) * sd, pz = fin.z + fn[1] * (ROAD_W / 2 + 1) * sd; B.add(CYL, mat(px, 3, pz, 0.35, 6, 0.35), '#3a3036'); }
   E.add(BOX, mat(fin.x, 6.2, fin.z, ROAD_W + 2.6, 1.3, 0.25, fa + Math.PI / 2 - Math.PI / 2), (cx, cy, cz, nx, ny, nz) => TC.set('#ffcf6a'), { emit: true });
   const bannerG = new THREE.Group(); bannerG.position.set(fin.x, 6.2, fin.z); bannerG.rotation.y = fa; W.add(bannerG);
-  const bc = document.createElement('canvas'); bc.width = 512; bc.height = 64; const bx = bc.getContext('2d'); bx.fillStyle = '#2a1406'; bx.font = '900 44px system-ui,sans-serif'; bx.textAlign = 'center'; bx.textBaseline = 'middle'; bx.fillText('ВНУКИ · ФИНИШ', 256, 34);
+  const bc = document.createElement('canvas'); bc.width = 512; bc.height = 64; const bx = bc.getContext('2d'); bx.fillStyle = '#2a1406'; bx.font = '900 44px system-ui,sans-serif'; bx.textAlign = 'center'; bx.textBaseline = 'middle'; bx.fillText(ORDER === 'dimon' ? 'НОВОСЕЛЬЕ · ДАЧА' : 'ВНУКИ · ФИНИШ', 256, 34);
   const ban = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W + 2, 1.1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bc), transparent: true })); ban.position.z = -0.14; ban.rotation.y = Math.PI; bannerG.add(ban);
   const ban2 = ban.clone(); ban2.position.z = 0.14; ban2.rotation.y = 0; bannerG.add(ban2);
   W.add(new THREE.Mesh(B.build(), bakedMat)); W.add(new THREE.Mesh(E.build(), bakedMat));
@@ -669,6 +670,45 @@ const hemi = new THREE.HemisphereLight('#d0a0a8', '#4a2018', 1.05); scene.add(he
 const sunL = new THREE.DirectionalLight('#b8d4f0', 0.7); sunL.position.copy(SUN_DIR); scene.add(sunL);
 const fillL = new THREE.DirectionalLight('#ff9a6a', 0.35); fillL.position.set(-0.5, 0.4, -0.8); scene.add(fillL);
 
+/* ---------- «Танк 003» Димона, дрон ГИБДД, дюны ---------- */
+const tank = new THREE.Group(); tank.visible = false; scene.add(tank);
+(function buildTank() {
+  const T = new Builder(null, true), TE = new Builder(null), OL = '#3c4a38';
+  T.add(BOX, mat(0, 1.05, 0, 2.3, 0.9, 4.8), OL); T.add(BOX, mat(0, 1.95, -0.35, 2.15, 0.95, 3.0), OL);
+  T.add(BOX, mat(0, 0.62, 0, 2.36, 0.12, 4.86), '#22261f');                                   // пороги
+  T.add(BOX, mat(0, 0.9, 2.5, 2.1, 0.5, 0.16), '#1c1c20'); T.add(BOX, mat(0, 1.25, 2.5, 1.6, 0.1, 0.1), '#9aa0a8'); // кенгурятник
+  T.add(BOX, mat(0, 0.75, -2.45, 2.2, 0.3, 0.12), '#1c1c20');
+  for (const sx of [-1.15, 1.15]) for (const sz of [-1.55, 1.55]) { T.add(CYL2, mat(sx, 0.58, sz, 1.16, 0.5, 1.16, 0, 0, Math.PI / 2), '#141416', SMOOTH); T.add(CYL2, mat(sx * 1.04, 0.58, sz, 0.6, 0.52, 0.6, 0, 0, Math.PI / 2), '#8a9098', SMOOTH); }
+  T.add(CYL2, mat(0, 1.4, -2.55, 1.0, 0.36, 1.0, 0, Math.PI / 2), '#141416', SMOOTH);          // запаска
+  for (const z of [-1.4, -0.4, 0.6]) T.add(BOX, mat(0, 2.5, z, 2.0, 0.06, 0.08), '#1c1c20'); for (const x of [-0.95, 0.95]) T.add(BOX, mat(x, 2.5, -0.4, 0.06, 0.08, 2.4), '#1c1c20'); // багажник
+  T.add(BOX, mat(0, 2.62, -0.6, 1.2, 0.18, 1.0), '#5a6a4a');                                    // мешок с картошкой для мамы
+  // рука Димона в окне
+  T.add(new THREE.CylinderGeometry(0.09, 0.1, 0.5, 8), mat(1.22, 1.72, 0.45, 1, 1, 1, 0, 0, Math.PI / 2), '#2a4a8a', SMOOTH); T.add(BALL2, mat(1.5, 1.72, 0.45, 0.1, 0.09, 0.11), '#e8bc9c', SMOOTH);
+  // стёкла
+  TE.add(BOX, mat(0, 2.0, 1.16, 1.95, 0.7, 0.03), '#2a3a4e', { emit: true }); TE.add(BOX, mat(0, 2.0, -1.86, 1.8, 0.6, 0.03), '#2a3a4e', { emit: true });
+  for (const x of [-1.08, 1.08]) TE.add(BOX, mat(x, 2.0, -0.35, 0.03, 0.6, 2.6), '#2a3a4e', { emit: true });
+  for (const x of [-0.8, 0.8]) { TE.add(BOX, mat(x, 1.18, 2.41, 0.42, 0.22, 0.03), '#fff6dc', { emit: true }); TE.add(BOX, mat(x * 1.1, 1.2, -2.41, 0.22, 0.3, 0.03), '#ff3a2a', { emit: true }); }
+  tank.add(new THREE.Mesh(T.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); tank.add(new THREE.Mesh(TE.build(), bakedMat));
+  // номер «ф 037 эь» и надпись на заднем борту
+  const c = document.createElement('canvas'); c.width = 256; c.height = 112; const x = c.getContext('2d');
+  x.fillStyle = '#e8e4dc'; x.font = '900 22px system-ui,sans-serif'; x.textAlign = 'center'; x.fillText('ТАНК 003', 128, 22);
+  x.fillStyle = '#ffffff'; x.fillRect(8, 40, 240, 64); x.strokeStyle = '#111'; x.lineWidth = 4; x.strokeRect(10, 42, 236, 60);
+  x.fillStyle = '#111'; x.font = '900 40px system-ui,sans-serif'; x.fillText('ф 037 эь', 112, 86); x.font = '700 12px system-ui,sans-serif'; x.fillText('ЗЕМЛЯ', 216, 70);
+  x.fillStyle = '#2a6ad8'; x.fillRect(200, 76, 32, 9); x.fillStyle = '#d8302a'; x.fillRect(200, 85, 32, 9);
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.62), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+  plate.position.set(0, 0.95, -2.53); plate.rotation.y = Math.PI; tank.add(plate);
+  const gl = new GlowList(); for (const xx of [-0.8, 0.8]) gl.add(xx, 1.18, 2.5, '#fff6dc', 1); for (const xx of [-0.88, 0.88]) gl.add(xx, 1.2, -2.5, '#ff3a2a', 0.7); gl.make(tank);
+})();
+const drone = new THREE.Group(); drone.visible = false; scene.add(drone);
+(function buildDrone() {
+  const D = new Builder(null, true); D.add(BOX, mat(0, 0, 0, 0.9, 0.3, 0.9), '#e8e8f0'); D.add(BOX, mat(0, 0.2, 0, 0.5, 0.12, 0.5), '#2a4ad8');
+  for (const [a, b] of [[-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]) { D.add(BOX, mat(a / 2, 0, b / 2, 0.08, 0.06, 1.0, Math.atan2(a, b)), '#555'); D.add(new THREE.CylinderGeometry(0.35, 0.35, 0.03, 12), mat(a, 0.1, b), '#2a2a30'); }
+  drone.add(new THREE.Mesh(D.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  const r = new GlowList(); r.add(-0.25, 0.32, 0, '#ff2a2a', 1.2); const b = new GlowList(); b.add(0.25, 0.32, 0, '#2a6aff', 1.2);
+  const rg = new THREE.Group(), bg = new THREE.Group(); r.make(rg, 0.7); b.make(bg, 0.7); drone.add(rg, bg); drone.userData.lights = [rg, bg];
+})();
+const duneMesh = new THREE.InstancedMesh(DOME, new THREE.MeshLambertMaterial({ color: '#d8844a' }), 12); duneMesh.frustumCulled = false; duneMesh.count = 0; scene.add(duneMesh);
+
 /* ---------- картошка, жуки, ускорители ---------- */
 const potGeo = (function () { const b = new Builder(null); b.add(ICO, mat(0, 0, 0, 0.42, 0.32, 0.36), (cx, cy, cz, nx, ny, nz) => TC.set('#c8905a').multiplyScalar(0.7 + 0.3 * ny + 0.1 * nz), { emit: true }); return b.build(); })();
 const pots = new THREE.InstancedMesh(potGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 120); pots.frustumCulled = false; scene.add(pots);
@@ -685,6 +725,7 @@ const padGeo = (function () { const b = new Builder(null); for (const z of [-1.2
 const pads = new THREE.InstancedMesh(padGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 16); pads.frustumCulled = false; scene.add(pads);
 let ITEMS = { pots: [], beetles: [], pads: [] };
 const at = (i, lat) => { const p = TRACK[clamp(i, 0, TRACK.length - 1)], n = nrm(p); return [p.x + n[0] * lat, p.z + n[1] * lat, p.a]; };
+function updDunes() { let n = 0; (ITEMS.dunes || []).forEach((d) => { if (d.on) duneMesh.setMatrixAt(n++, mat(d.x, -0.3, d.z, 5.5, 1.6, 3.8, d.a)); }); duneMesh.count = n; duneMesh.instanceMatrix.needsUpdate = true; }
 function placeItems() {
   ITEMS = { pots: [], beetles: [], pads: [] };
   for (let i = 30; i < TRACK.length - 30; i += Math.round(rnd(5, 9))) {
@@ -696,6 +737,9 @@ function placeItems() {
   for (let k = 0; k < 14; k++) { const i = Math.round(60 + (TRACK.length - 120) * (k + rnd(0.1, 0.9)) / 14); ITEMS.beetles.push({ i, ph: rnd(0, 6), sp: rnd(0.5, 0.9), x: 0, z: 0, hit: 0 }); }
   for (let k = 0; k < 10; k++) { const i = Math.round(80 + (TRACK.length - 160) * (k + 0.5) / 10); const [x, z, a] = at(i, rnd(-2.5, 2.5)); ITEMS.pads.push({ x, z, a }); }
   ITEMS.pads.forEach((p, k) => pads.setMatrixAt(k, mat(p.x, 0.09, p.z, 1, 1, 1, p.a))); pads.count = ITEMS.pads.length; pads.instanceMatrix.needsUpdate = true;
+  ITEMS.dunes = [];
+  if (ORDER === 'dimon') for (let k = 0; k < 7; k++) { const i = Math.round(90 + (TRACK.length - 160) * (k + rnd(0.2, 0.8)) / 7), [x, z, a] = at(i, rnd(-2, 2)); ITEMS.dunes.push({ x, z, a, on: true }); }
+  updDunes();
 }
 
 /* ---------- пыль из-под кресла ---------- */
@@ -790,6 +834,7 @@ const ORDERS = {
   jam: { name: 'Варенье Лёхе', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внук Лёха ждёт' },
   pies: { name: 'Пирожки Максу', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Макс ждёт' },
   seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
+  dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
 const TICKET = 30000;
@@ -805,10 +850,23 @@ const RADIO_ORD = {
   jam: ['<b>Лёха:</b> ба, варенье клубничное? Я из пустых банок робота собираю!', '<b>Лёха:</b> только банки не разбей, папа ругаться будет'],
   pies: ['<b>Макс:</b> баб Тань, пирожки с капустой? Я голодный как марсоход', '<b>Макс:</b> 300 штук хватит? Ладно, вези 400'],
   seed: ['<b>Дед:</b> рассаду не растряси, это помидоры «Бычье сердце-3000»', '<b>Дед:</b> аккуратнее на поворотах, они нежные!'],
+  dimon: ['<b>Мама:</b> Дима, ты где? Уже горячее подали!', '<b>Мама:</b> Дима, дед уже третий тост сказал!', '<b>Жена:</b> Дима, это МарсЖЭК. Ты опять опаздываешь? Я маме не скажу. Уже сказала',
+    '<b>Эдуард Кузьмич:</b> Дмитрий, где квартальный отчёт? У нас синергия горит!', '<b>Макс:</b> пап, бабушка пирожки раздаёт! Твои уже съели', '<b>Лёха:</b> пап, мы тебе укроп оставили!',
+    '<b>Серёга:</b> Димон, вижу тебя с трассы. Ты опять в дюну целишься?', '<b>ГИБДД Марса:</b> водитель «Танка 003», номер ф 037 эь, региона «Земля» в базе нет. Остановитесь… или не останавливайтесь, мы не знаем',
+    '<b>Марс-ФМ:</b> на трассе к «Заречной» снова замечен «Танк 003». Жители, уберите заборы', '<b>Дед:</b> Дима, в 72-м я на «Урале» к шести успевал!', '<b>Мама:</b> Дима, Валя спрашивает, правда ли ты директор. Я сказала — почти'],
 };
+const isDim = () => (car.mode || ORDER) === 'dimon'; // режим заезда фиксируется на старте
+const plural = (n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10; return n + ' ' + (m > 10 && m < 20 ? c : k === 1 ? a : k > 1 && k < 5 ? b : c); };
+const DIM_OUCH = ['Ёлки-палки!', 'Мама убьёт!', 'Квартальный отчёт!', 'Только не бампер!', 'Танк, держись!', 'Это всё дюны!'];
+const DIM_HIT = ['Жена: «Дима, ты опять?!»', 'Мама: «Дима, ты где?!»', 'Эдуард Кузьмич: «Дмитрий, это не синергия!»', 'Серёга: «Димон, ты чё, ослеп?»'];
+const ouch = () => { const a = isDim() ? DIM_OUCH : OUCH; return a[Math.floor(Math.random() * a.length)]; };
+const hitSay = () => dedSay(isDim() ? DIM_HIT : DED_HIT);
+const clockMin = () => 17 * 60 + 58 + car.t * 1.2; // 1 секунда езды = 1,2 минуты: опоздание гарантировано
+const hhmm = (m) => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(Math.floor(m % 60)).padStart(2, '0');
 const BANK_JOKES = [[0.25, 'Хватит на чемодан. Пустой. Без ручки.'], [0.5, 'Половина! Уже можно купить билет до Фобоса. В одну сторону.'], [0.75, 'Скоро Земля! Правнуки уже лепят 400 пирожков.'], [1, 'БИЛЕТ КУПЛЕН! Земля, держись — бабуля летит!']];
 function orderHud() {
   const o = ORDERS[ORDER], el = $('order'); let t = o.icon + ' ';
+  if (isDim()) { const m = clockMin(); el.textContent = '⏰ ' + hhmm(m) + (m > 18 * 60 ? ' · +' + Math.round(m - 18 * 60) + ' мин' : ''); el.classList.toggle('bad', m > 18 * 60); return; }
   if (ORDER === 'potato') t += car.pot + ' шт.';
   else if (ORDER === 'jam') t += car.cargo + ' / 6';
   else if (ORDER === 'seed') t += car.cargo + ' / 8';
@@ -827,7 +885,7 @@ function radio(line) {
   const em = r.querySelector('em'); let i = 0; clearInterval(radio.iv); radio.iv = setInterval(() => { i += 2; em.textContent = body.slice(0, i); if (i >= body.length) { clearInterval(radio.iv); const c = r.querySelector('.cur'); if (c) c.remove(); } }, 28);
   clearTimeout(radio.t); radio.t = setTimeout(() => r.classList.remove('on'), 6500);
 }
-function pickRadio() { const pool = RADIO.concat(RADIO_ORD[ORDER], RADIO_ORD[ORDER]); return pool[Math.floor(Math.random() * pool.length)]; }
+function pickRadio() { const pool = isDim() ? RADIO_ORD.dimon.concat(RADIO_ORD.dimon, RADIO.slice(0, 4)) : RADIO.concat(RADIO_ORD[ORDER], RADIO_ORD[ORDER]); return pool[Math.floor(Math.random() * pool.length)]; }
 
 /* ---------- события: метеоритный дождь и пылевая буря ---------- */
 let ZONES = [];
@@ -910,11 +968,13 @@ const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
   const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
   car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
+  car.mode = ORDER; car.stuck = null; car.dunes = 0; car.bugs = 0; car.gibdd = 0; drone.position.set(car.x, 8, car.z - 10);
   planZones(); orderHud(); trailPts.length = 0; if (truckG) resetTrucks();
 }
 function startMsg(first) {
   const o = ORDERS[ORDER];
   if (first) showMsg('Бабуля, газу!', o.desc, '#ffcf8a', 1900); else introCard(o);
+  if (isDim()) { hint('Танк не заносит, зато прёт напролом. Застрял в дюне — <b>тапай быстрее</b>!', 4500); radio(RADIO_ORD.dimon[0]); return; }
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 function newRun(first) {
@@ -928,8 +988,21 @@ function finish() {
   if (ORDER === 'potato') { ordPay = car.pot * 20; /* + 30 ₽ за штуку ниже — итого 50 */ ordRow = 'Картошка внукам: ' + car.pot + ' шт.'; good = car.pot >= 25 ? 1 : car.pot >= 12 ? 0.6 : 0.3; title = car.pot >= 25 ? 'Внуки объелись и легли!' : car.pot >= 12 ? 'Внуки накормлены!' : 'Внуки: «А где картошка?»'; }
   if (ORDER === 'jam') { ordPay = car.cargo * 150; ordRow = 'Банок довезла: ' + car.cargo + ' из 6'; good = car.cargo / 6; title = car.cargo >= 6 ? 'Лёха в варенье по самую макушку!' : car.cargo >= 4 ? 'Лёха в варенье по уши!' : car.cargo ? 'Хоть одна баночка уцелела' : 'Варенье размазано по всему Марсу'; }
   if (ORDER === 'pies') { const left = Math.max(0, car.pieLimit - t); ordPay = left > 0 ? 600 + Math.round(left * 15) : 150; ordRow = left > 0 ? 'Пирожки горячие! Запас ' + Math.round(left) + ' с' : 'Пирожки остыли'; good = left > 0 ? 1 : 0.3; title = left > 0 ? 'Макс съел 300 штук и просит ещё!' : 'Остыли, но Макс всё равно съел. Все.'; }
+  if (isDim()) { const late = Math.round(clockMin() - 18 * 60); ordPay = 300 + car.bugs * 20; ordRow = 'Опоздание: ' + late + ' мин (приехал в ' + hhmm(clockMin()) + ')'; good = late < 75 ? 1 : late < 100 ? 0.6 : 0.3;
+    const lm = plural(late, 'минуту', 'минуты', 'минут'); title = late < 75 ? 'Опоздал всего на ' + lm + ' — для Димона рекорд!' : late < 100 ? 'Опоздал на ' + lm + '. Остался только укроп' : 'Опоздал на ' + lm + '. Даже укроп съели'; }
   if (ORDER === 'seed') { ordPay = car.cargo * 100; ordRow = 'Рассады довезла: ' + car.cargo + ' из 8'; good = car.cargo / 8; title = car.cargo >= 6 ? 'Дед доволен, как слон на Марсе!' : car.cargo ? 'Дед ворчит, но сажает' : 'Дед: «А рассада где?! На Фобосе?!»'; }
   const timeBonus = Math.max(0, Math.round((par * 1.3 - t) * 20)), potPay = car.pot * 30, driftPay = Math.round(car.score / 10);
+  if (isDim()) {
+    const pay = ordPay + potPay + timeBonus; $('etitle').innerHTML = letters(title, 0.025);
+    $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < (good >= 0.8 ? 3 : good >= 0.5 ? 2 : 1) ? '★' : '☆'}</span>`).join('');
+    $('esub').textContent = '🚙 Эпизод Д1 «Опоздание №1» · Танк 003, ф 037 эь';
+    $('etab').innerHTML = `<tr><td>${ordRow}</td><td>${ordPay} ₽</td></tr><tr><td>Дюн пробуксовал: ${car.dunes}</td><td>—</td></tr><tr><td>Жуков отлетело в профсоюз: ${car.bugs}</td><td>—</td></tr><tr><td>Штрафов ГИБДД (региона «Земля» нет)</td><td>0 ₽</td></tr><tr><td>Картошка маме: ${car.pot} шт.</td><td>${potPay} ₽</td></tr><tr><td><b>Димон скинулся маме на билет</b></td><td><b>+${pay} ₽</b></td></tr>`;
+    const before = BANK; BANK += pay; try { localStorage.setItem('bm_bank', BANK); localStorage.setItem('bm_d1', '1'); } catch (e) {}
+    $('banki').style.width = Math.min(100, before / TICKET * 100) + '%'; setTimeout(() => ($('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'), 1100);
+    $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽ — мама растрогана';
+    ORDER = 'potato'; try { localStorage.setItem('bm_order', 'potato'); } catch (e) {} renderOrders();
+    setTimeout(() => { $('end').classList.add('on'); }, 900); return;
+  }
   const pension = potPay + driftPay + timeBonus + ordPay;
   const stars = good >= 0.8 && t < par * 1.15 ? 3 : good >= 0.5 ? 2 : 1;
   $('etitle').innerHTML = letters(title, 0.025);
@@ -945,7 +1018,7 @@ function finish() {
   setTimeout(() => { $('end').classList.add('on'); document.querySelectorAll('#etab td:last-child').forEach((td, i) => { const v = parseInt(td.textContent.replace(/[^0-9]/g, ''), 10) || 0, b = td.querySelector('b'); setTimeout(() => countUp(b || td, v, 700, ' ₽'), 300 + i * 160); if (b) { b.textContent = '0 ₽'; } else td.textContent = '0 ₽'; }); }, 900);
 }
 function renderOrders() {
-  $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.desc}</small></button>`).join('');
+  $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}${o.story ? ' story' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.story ? 'Сюжет · играешь за Димона. ' : ''}${o.desc}</small></button>`).join('');
   document.querySelectorAll('.ord').forEach((b) => (b.onclick = () => { ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (e) {} renderOrders(); }));
 }
 $('again').onclick = () => newRun(false);
@@ -954,12 +1027,12 @@ const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStar
 /* ---------- управление: левая/правая половина экрана ---------- */
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { touches.delete(e.pointerId); updInput(); };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
 const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
-addEventListener('keydown', (e) => { if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
+addEventListener('keydown', (e) => { if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
 addEventListener('keyup', (e) => { if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
 addEventListener('blur', () => { touches.clear(); input.kl = input.kr = input.tl = input.tr = false; });
 
@@ -979,7 +1052,7 @@ function fitCam() { camera.aspect = innerWidth / innerHeight; camera.fov = camer
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); fitCam(); if (composer) composer.setSize(innerWidth, innerHeight); }); fitCam();
 const camPos = new THREE.Vector3(), look = new THREE.Vector3(), lookS = new THREE.Vector3(); let camH = 0;
 function camTarget(dt) {
-  const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 10.5 : 10) + spd * 0.1, up = (port ? 6.6 : 5.0) + spd * 0.03;
+  const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 10.5 : 10) + spd * 0.1 + (isDim() ? 2.5 : 0), up = (port ? 6.6 : 5.0) + spd * 0.03 + (isDim() ? 1 : 0);
   camH += Math.atan2(Math.sin(car.h - camH), Math.cos(car.h - camH)) * Math.min(1, dt * 3);
   camPos.set(car.x - Math.sin(camH) * back, up, car.z - Math.cos(camH) * back);
   look.set(car.x + Math.sin(camH) * 7, 1.2, car.z + Math.cos(camH) * 7);
@@ -1000,12 +1073,12 @@ function frame(now) {
     if (car.state === 'go') car.t += dt;
     let spd = Math.hypot(car.vx, car.vz);
     if (car.spin > 0) { car.spin -= dt; car.h += dt * 9; }
-    else if (steer) car.h += steer * TURN * dt * (0.55 + 0.45 * Math.min(1, spd / 18));
-    const target = car.state === 'end' ? 0 : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1);
-    spd += (target - spd) * (spd < target ? 0.9 : 1.6) * dt;
+    else if (steer) car.h += steer * (isDim() ? 1.9 : TURN) * dt * (0.55 + 0.45 * Math.min(1, spd / 18));
+    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1);
+    spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : 1.6) * dt;
     const hx = Math.sin(car.h), hz = Math.cos(car.h);
     let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
-    const grip = steer ? 2.6 : 8, f = 1 - Math.exp(-grip * dt);
+    const grip = isDim() ? 11 : steer ? 2.6 : 8, f = 1 - Math.exp(-grip * dt);
     vxn += (hx - vxn) * f; vzn += (hz - vzn) * f; const ln = Math.hypot(vxn, vzn) || 1; vxn /= ln; vzn /= ln;
     car.vx = vxn * spd; car.vz = vzn * spd; car.x += car.vx * dt; car.z += car.vz * dt;
     const slip = Math.acos(clamp(vxn * hx + vzn * hz, -1, 1));
@@ -1018,12 +1091,12 @@ function frame(now) {
       const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
       car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * 0.5; // развернуло вдоль дороги
       if (now - car.bump > 900) { car.vx *= 0.55; car.vz *= 0.55; car.drift = 0; car.combo = 0; }
-      if (now - car.bump > 1500) showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], damage('') || dedSay(DED_HIT), '#ff9a7a', 1300, true);
+      if (now - car.bump > 1500) showMsg(ouch(), damage('') || hitSay(), '#ff9a7a', 1300, true);
       car.bump = now;
     }
     // занос и турбо
     if (car.state === 'go') {
-      if (steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
+      if (!isDim() && steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
       if (ORDER === 'seed' && car.drift > 0) { car.seedT += dt; if (car.seedT > 1.5 && car.cargo > 0) { car.seedT = 0; car.cargo--; showMsg('Рассада вылетела!', 'Дед: «Помидорчики мои! Летите, родные!»', '#9aff8a', 1100); } } else car.seedT = 0;
       if (ORDER === 'pies' && !car.cold && car.t > car.pieLimit) { car.cold = true; showMsg('Пирожки остыли!', 'а ведь плавили люльку!', '#ffb07a', 1500); }
       // радио и события зон
@@ -1049,14 +1122,31 @@ function frame(now) {
     ITEMS.pads.forEach((p) => { if ((p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 5 && car.boost < 1.2) { car.boost = 1.6; flash('#5fe0ff', 0.3); floatText('ТУРБО!', p.x, 1.5, p.z, '#7fe8ff'); } });
     ITEMS.beetles.forEach((b) => {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
+      if (isDim() && car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 7) { b.hit = now; car.bugs++; car.vx *= 0.85; car.vz *= 0.85; flash('#ffcf3a', 0.3); showMsg('Хрусть!', 'Жук: «Профсоюз „ТрансМарсу“ этого не простит!»', '#ffcf6a', 1200); return; }
       if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
         b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
-        const dm = damage(''); showMsg(OUCH[Math.floor(Math.random() * OUCH.length)], dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : dedSay(DED_HIT)), '#ff8a6a', 1300, true);
+        const dm = damage(''); showMsg(ouch(), dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : hitSay()), '#ff8a6a', 1300, true);
       }
     });
     // пыль
     if ((slip > 0.2 || car.off) && spd > 5 && Math.random() < 0.9) puff(car.x - Math.sin(car.h) * 0.8, car.z - Math.cos(car.h) * 0.8, 1.2);
-    if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg('Доехала!', 'внуки уже ставят самовар на 40 литров', '#ffcf8a', 1800); confetti(); flash('#ffe0a0', 0.4); }
+    if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg(isDim() ? 'Приехал!' : 'Доехала!', isDim() ? 'Мама: «Дима, ну наконец-то!»' : 'внуки уже ставят самовар на 40 литров', '#ffcf8a', 1800); confetti(); flash('#ffe0a0', 0.4); }
+    // дюны: застрял — раскачивай тапами
+    if (isDim() && car.state === 'go') {
+      if (!car.stuck) for (const d of ITEMS.dunes) if (d.on && (d.x - car.x) ** 2 + (d.z - car.z) ** 2 < 11) { car.stuck = { d, taps: 0, need: 9, t: 0, told: false }; car.vx *= 0.1; car.vz *= 0.1; car.dunes++; showMsg('ЗАСТРЯЛ!', 'газ в пол — тапай быстрее!', '#ffb04a', 1300, true); break; }
+      if (car.stuck) {
+        const st = car.stuck; st.t += dt; car.vx *= 0.8; car.vz *= 0.8; if (Math.random() < 0.8) puff(car.x + rnd(-1.5, 1.5), car.z + rnd(-1.5, 1.5), 3);
+        $('combo').innerHTML = 'РАСКАЧКА ' + st.taps + ' / ' + st.need + '<small>тапай по экрану!</small>'; $('combo').classList.add('on');
+        if (!st.told && st.t > 1.2) { st.told = true; car.gibdd++; radio('<b>ГИБДД Марса:</b> водитель ф 037 эь, вы застряли. Региона «Земля» нет в базе, поэтому помочь не можем. И оштрафовать тоже. Хорошего дня'); }
+        if (st.taps >= st.need) { st.d.on = false; updDunes(); car.stuck = null; car.boost = 0.9; $('combo').classList.remove('on'); for (let q = 0; q < 12; q++) puff(car.x, car.z, 5); showMsg('Вырвался!', 'танки грязи не боятся', '#9aff8a', 1100); }
+      }
+      // дрон ГИБДД висит на хвосте
+      const dTx = car.x - Math.sin(car.h) * (car.stuck ? -2 : 8), dTz = car.z - Math.cos(car.h) * (car.stuck ? -2 : 8);
+      drone.position.x += (dTx - drone.position.x) * Math.min(1, dt * 1.5); drone.position.z += (dTz - drone.position.z) * Math.min(1, dt * 1.5); drone.position.y = 5.5 + Math.sin(tsec * 2) * 0.3;
+      drone.rotation.y = car.h; const blink = Math.floor(tsec * 6) % 2; drone.userData.lights[0].visible = !!blink; drone.userData.lights[1].visible = !blink;
+    }
+    babka.visible = !isDim(); tank.visible = isDim(); drone.visible = isDim() && car.state !== 'boot'; trail.visible = !isDim();
+    if (isDim()) { tank.position.set(car.x + (car.stuck ? Math.sin(tsec * 40) * 0.06 : 0), Math.abs(Math.sin(tsec * 9)) * 0.03 * Math.min(1, spd / 10), car.z); tank.rotation.y = car.h; tank.rotation.z = -steer * 0.04; }
     // интерфейс
     orderHud();
     $('time').textContent = fmt(car.t); $('pot').textContent = car.pot; $('spd').textContent = Math.round(spd * 3.6);
@@ -1091,7 +1181,7 @@ function frame(now) {
   if (shake > 0) { camera.position.x += (Math.random() - 0.5) * shake; camera.position.y += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.5); }
   camera.lookAt(lookS); camera.fov += ((camera.aspect < 1 ? 74 : 58) + (car.boost > 0 ? 8 : 0) - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
   skyG.position.copy(camera.position);
-  stepTrail(car.boost > 0); motes.position.set(Math.round(car.x / 60) * 60, 0, Math.round(car.z / 60) * 60); stepMotes(dt);
+  if (!isDim()) stepTrail(car.boost > 0); motes.position.set(Math.round(car.x / 60) * 60, 0, Math.round(car.z / 60) * 60); stepMotes(dt);
   if (FX.clouds) FX.clouds.rotation.y += dt * 0.004;
   const sfx = $('speedfx'); sfx.style.opacity = car.boost > 0 && car.state === 'go' ? 1 : 0; if (car.boost > 0) sfx.style.transform = 'rotate(' + (Math.random() * 6) + 'deg)';
   if (postOn && composer) { gradePass.uniforms.uTime.value = tsec % 100; gradePass.uniforms.uBoost.value += ((car.boost > 0 ? 1 : 0) - gradePass.uniforms.uBoost.value) * Math.min(1, dt * 5); composer.render(); }
@@ -1112,7 +1202,7 @@ function afterFirst() {
   setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
