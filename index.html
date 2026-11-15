@@ -1049,7 +1049,9 @@ function startMsg(first) {
   if (isDim()) { hint('Танк не заносит, зато прёт напролом. Застрял в дюне — <b>тапай быстрее</b>!', 4500); radio(RADIO_ORD.dimon[0]); return; }
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
+const hideMap = () => { $('map').classList.remove('on'); document.body.classList.remove('mapon'); };
 function newRun(first) {
+  hideMap();
   if (ORDER.startsWith('w_')) { startWalk(ORDER); return; }
   stopWalk();
   if (ORDER === 'defense') { startDefense(); return; }
@@ -1351,6 +1353,7 @@ function plantMesh(i) {
 }
 function invText() { return Object.entries(CROPS).map(([k, c]) => c.e + ' ' + (FARM.inv[k] || 0)).join('  ·  '); }
 function startFarm() {
+  hideMap();
   stopFishing(); stopDefense(); if (!farmScene) buildFarmScene();
   FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
@@ -1490,6 +1493,7 @@ function bearMesh(type) {
   g.scale.setScalar(t.s * 1.5); return g;
 }
 function startDefense() {
+  hideMap();
   stopFishing(); stopFarm(); if (!farmScene) buildFarmScene();
   DF.active = true; document.body.classList.add('def'); $('end').classList.remove('on');
   if (!DF.g) {
@@ -1762,6 +1766,7 @@ const WALKS = {
 };
 function g0() { if (FS.goat) { FS.goat.position.set(-6, 0, 0); FS.goat.scale.setScalar(1); FS.goat.rotation.set(0, 0, 0); } }
 function startWalk(id) {
+  hideMap();
   stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk();
   scene.add(babka); farmScene.add(skyG); if (DF.g) DF.g.visible = false; FS.plants.forEach((p) => (p.visible = true)); FS.sparks.forEach((p) => (p.visible = false)); FS.bugMesh.count = 0;
   WK.active = true; WK.id = id; WK.st = 'go'; WK.t = 0; WK.sayT = 6; WK.side = 1; WK.fenceOpen = false; WK.ptr = null; WK.vx = WK.vz = 0; WK.h = Math.PI; WK.ph = 0; WK.p = new THREE.Vector3(1.5, 0, 4.5);
@@ -1876,6 +1881,7 @@ function fishMesh(f) {
   g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true, emissive: f.glow ? f.col : '#000', emissiveIntensity: f.glow ? 0.6 : 0 })));
 }
 function startFishing() {
+  hideMap();
   stopFarm(); stopDefense(); if (!fishScene) buildFishScene();
   FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
   // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
@@ -1985,7 +1991,9 @@ function afterFirst() {
   $('boot').classList.add('hide'); document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
   setTimeout(loadModels, 150);
-  setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
+  // самый первый заход — заезд стартует сам; вернувшегося игрока встречает карта колонии
+  if (firstEver || /[?&]drive=1/.test(location.search)) setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
+  else setTimeout(() => { showMap(); hint('С возвращением, Таня! Выбирай, куда сегодня', 3000); }, 300);
 }
 window.BM = { WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
