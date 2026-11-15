@@ -16,40 +16,76 @@ function fbm(x, z) { let s = 0, a = 1, f = 1; for (let k = 0; k < 4; k++) { s +=
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // места главы 1 (x, z, радиус плато, высота плато)
-const POI = W.POI = [
-  { id: 'colony', name: 'Колония «Заречная»', e: '🏡', x: 0, z: 0, r: 70, col: '#7aff8a', kind: 'city' },
-  { id: 'farm', name: 'Теплицы колонии', e: '🌱', x: -150, z: 120, r: 40, col: '#9aff6a', kind: 'farm' },
-  { id: 'station', name: 'Заправка «У Петровича»', e: '⛽', x: 260, z: 170, r: 35, col: '#ffd24a', kind: 'fuel' },
-  { id: 'liner', name: 'Лайнер «Комсомолец-7»', e: '🛸', x: -330, z: 300, r: 55, col: '#7fe8ff', kind: 'wreck' },
-  { id: 'nest', name: 'Гнездо клопов', e: '🪲', x: 330, z: -300, r: 45, col: '#ff6ad5', kind: 'lair' },
-  { id: 'rzhav', name: 'Ржавобург', e: '🏭', x: -400, z: -260, r: 75, col: '#ffb04a', kind: 'city' },
-  { id: 'camp', name: 'Логово Бешеного Коляна', e: '🏴‍☠️', x: 470, z: 440, r: 60, col: '#ff4a3a', kind: 'boss' },
-];
-// дороги — ломаные между местами
-const ROADS = W.ROADS = [[[0, 0], [-60, 70], [-150, 120]], [[0, 0], [120, 60], [260, 170]], [[0, 0], [-180, -90], [-400, -260]], [[260, 170], [380, 330], [470, 440]], [[-150, 120], [-260, 230], [-330, 300]], [[0, 0], [170, -150], [330, -300]]];
-const CRATERS = []; for (let k = 0; k < 26; k++) { const x = (hash(k, 3) - 0.5) * SIZE * 0.9, z = (hash(k, 7) - 0.5) * SIZE * 0.9; if (POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + 60)) continue; CRATERS.push({ x, z, R: 14 + hash(k, 11) * 46, d: 3 + hash(k, 13) * 7 }); }
-function segDist(px, pz, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l)); return Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t); }
-function roadDist(x, z) { let d = 1e9; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) d = Math.min(d, segDist(x, z, r[i], r[i + 1])); return d; }
-W.roadDist = roadDist;
-// каньон: извилистое ущелье через всю карту (с востока на запад), мосты-пандусы там, где дороги
+// ===== главы: у каждой свой рельеф, места, дороги и цвета =====
+const POI = W.POI = [], ROADS = W.ROADS = []; let CRATERS = [], CHC = null; W.ch = 1;
+function genCraters(n, avoid) { const out = []; for (let k = 0; k < n; k++) { const x = (hash(k, 3 + W.ch) - 0.5) * SIZE * 0.9, z = (hash(k, 7 + W.ch) - 0.5) * SIZE * 0.9; if (avoid && avoid(x, z)) continue; if (POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + 60)) continue; out.push({ x, z, R: 14 + hash(k, 11) * 46, d: 3 + hash(k, 13) * 7 }); } return out; }
+const craterH = (x, z) => { let h = 0; for (const c of CRATERS) { const d = Math.hypot(x - c.x, z - c.z); if (d < c.R * 1.6) h += d < c.R ? -c.d * (1 - (d / c.R) ** 2) : 0; h += c.d * 0.55 * Math.exp(-(((d - c.R) / (c.R * 0.22)) ** 2)); } return h; };
+// глава 1: равнины у колонии с извилистым оврагом
 const canyonZ = (x) => -120 + Math.sin(x / 210) * 90 + Math.sin(x / 77) * 18;
-function rawH(x, z) {
-  let h = (fbm(x / 170 + 11, z / 170 - 7) - 0.45) * 46 + (fbm(x / 40, z / 40) - 0.5) * 4.2; // холмы и мелкая рябь
-  const mesa = fbm(x / 120 - 31, z / 120 + 17); if (mesa > 0.62) h += Math.min(1, (mesa - 0.62) * 9) * 16; // столовые горы с плоским верхом
-  h += Math.abs(fbm(x / 60 + 5, z / 60 + 9) - 0.5) * -10 + 2.5; // гребни и ложбины
-  h += Math.sin(x / 9 + Math.sin(z / 23) * 2) * 0.35; // рябь дюн
-  h += Math.max(0, (Math.abs(x) + Math.abs(z)) - 520) * 0.12; // к краям — горы
-  const cd = Math.abs(z - canyonZ(x)); h -= (1 - sstep(14, 44, cd)) * 24; // каньон
-  for (const c of CRATERS) { const d = Math.hypot(x - c.x, z - c.z); if (d < c.R * 1.6) h += d < c.R ? -c.d * (1 - (d / c.R) ** 2) : 0; h += c.d * 0.55 * Math.exp(-(((d - c.R) / (c.R * 0.22)) ** 2)); }
-  return h;
-}
+// глава 2: Долины Маринер — гигантский каньон с террасами, на востоке сужается в ущелье «Глотка»
+const zc2 = (x) => 40 * Math.sin(x / 260) + 15 * Math.sin(x / 97);
+const hw2 = (x) => { const hw = 150 + 45 * Math.sin(x / 190), g = sstep(140, 200, x) * (1 - sstep(300, 360, x)); return hw * (1 - g) + 24 * g; };
+const floor2 = (x, z) => -62 + (fbm(x / 90, z / 90) - 0.5) * 6 + Math.sin(x / 11 + Math.sin(z / 19) * 2) * 0.5;
+const plateau2 = (x, z) => 14 + (fbm(x / 150 + 3, z / 150 - 5) - 0.5) * 24 + (fbm(x / 35, z / 35) - 0.5) * 3;
+W.CHzc = zc2; W.river2 = (x, z) => Math.abs(z - (zc2(x) + 25 * Math.sin(x / 120))) < 9;
+const CH = W.CH = {
+  1: { name: 'Колония «Заречная»', fog: '#9a5a4a', pal: ['#c0603a', '#e8a070', '#6a2e24', '#4a2028', '#3a2a30'],
+    pois: [
+      { id: 'colony', name: 'Колония «Заречная»', e: '🏡', x: 0, z: 0, r: 70, col: '#7aff8a', kind: 'city' },
+      { id: 'farm', name: 'Теплицы колонии', e: '🌱', x: -150, z: 120, r: 40, col: '#9aff6a', kind: 'farm' },
+      { id: 'station', name: 'Заправка «У Петровича»', e: '⛽', x: 260, z: 170, r: 35, col: '#ffd24a', kind: 'fuel' },
+      { id: 'liner', name: 'Лайнер «Комсомолец-7»', e: '🛸', x: -330, z: 300, r: 55, col: '#7fe8ff', kind: 'wreck' },
+      { id: 'nest', name: 'Гнездо клопов', e: '🪲', x: 330, z: -300, r: 45, col: '#ff6ad5', kind: 'lair' },
+      { id: 'rzhav', name: 'Ржавобург', e: '🏭', x: -400, z: -260, r: 75, col: '#ffb04a', kind: 'city' },
+      { id: 'camp', name: 'Логово Бешеного Коляна', e: '🏴‍☠️', x: 470, z: 440, r: 60, col: '#ff4a3a', kind: 'boss' }],
+    roads: [[[0, 0], [-60, 70], [-150, 120]], [[0, 0], [120, 60], [260, 170]], [[0, 0], [-180, -90], [-400, -260]], [[260, 170], [380, 330], [470, 440]], [[-150, 120], [-260, 230], [-330, 300]], [[0, 0], [170, -150], [330, -300]]],
+    start: [6, 50, Math.PI],
+    raw(x, z) { let h = (fbm(x / 170 + 11, z / 170 - 7) - 0.45) * 46 + (fbm(x / 40, z / 40) - 0.5) * 4.2; const mesa = fbm(x / 120 - 31, z / 120 + 17); if (mesa > 0.62) h += Math.min(1, (mesa - 0.62) * 9) * 16;
+      h += Math.abs(fbm(x / 60 + 5, z / 60 + 9) - 0.5) * -10 + 2.5; h += Math.sin(x / 9 + Math.sin(z / 23) * 2) * 0.35; h += Math.max(0, (Math.abs(x) + Math.abs(z)) - 520) * 0.12;
+      const cd = Math.abs(z - canyonZ(x)); h -= (1 - sstep(14, 44, cd)) * 24; return h + craterH(x, z); },
+    road(x, z, h, k) { h = h * (1 - k * 0.65) + (fbm(x / 300, z / 300) - 0.45) * 12 * k * 0.65; if (Math.abs(z - canyonZ(x)) < 46) h += k * (1 - sstep(14, 44, Math.abs(z - canyonZ(x)))) * 24; return h; },
+    poiH: (p) => CH[1].raw(p.x, p.z) * 0.6, craters: 26 },
+  2: { name: 'Долины Маринер', fog: '#a86048', pal: ['#b0503a', '#d89068', '#5a2420', '#3a1820', '#2e2228'],
+    pois: [
+      { id: 'rim', name: 'Лагерь на краю Маринер', e: '⛺', x: -560, z: 0, r: 55, col: '#7aff8a', kind: 'city', side: 'n' },
+      { id: 'grave', name: 'Кладбище кораблей', e: '🚀', x: -300, z: 0, r: 75, col: '#7fe8ff', kind: 'wreck', side: 'f' },
+      { id: 'pip', name: 'Сбитый корабль марсианина', e: '🛸', x: -40, z: 0, r: 40, col: '#9aff6a', kind: 'wreck', side: 'f', dz: -40 },
+      { id: 'noctis', name: 'Колодцы Лабиринта Ночи', e: '🕳', x: 40, z: 0, r: 60, col: '#b07aff', kind: 'lair', side: 's' },
+      { id: 'gorge', name: 'Ущелье «Глотка»', e: '🪨', x: 250, z: 0, r: 26, col: '#ffb04a', kind: 'pass', side: 'f' },
+      { id: 'tower', name: 'Пиратская вышка', e: '📡', x: 240, z: 0, r: 30, col: '#ff6a4a', kind: 'outpost', side: 'n' },
+      { id: 'dock', name: 'Пиратская пристань', e: '⚓', x: 520, z: 0, r: 70, col: '#ff4a3a', kind: 'boss', side: 'f' }],
+    start: null,
+    raw(x, z) { const zc0 = zc2(x), hw = hw2(x), t = Math.abs(z - zc0) / hw, pl = plateau2(x, z) + Math.max(0, Math.abs(x) - 560) * 0.2; if (t >= 1.25) return pl + craterH(x, z) * 0.6;
+      const fl = floor2(x, z), rv = (1 - sstep(5, 14, Math.abs(z - (zc0 + 25 * Math.sin(x / 120))))) * -3.5; if (t < 0.55) return fl + rv;
+      const u = (t - 0.55) / 0.7, st = u * 4, f0 = Math.floor(st), fr = st - f0; return fl + (pl - fl) * ((f0 + sstep(0.55, 0.95, fr)) / 4); },
+    road(x, z, h, k, y) { return h * (1 - k) + y * k; },
+    poiH: (p) => CH[2].raw(p.x, p.z), craters: 18 },
+};
+// расставить места по каньону и проложить дороги главы 2
+(function () { const C = CH[2]; for (const p of C.pois) { const zc = zc2(p.x), hw = hw2(p.x); p.z = p.side === 'n' ? zc - hw * 1.25 - p.r - 20 : p.side === 's' ? zc + hw * 1.25 + p.r + 30 : zc + (p.dz || 0); }
+  const P = (id) => C.pois.find((q) => q.id === id), rim = P('rim'), fl = (x, dz = 0) => [x, zc2(x) + dz, 'raw'];
+  C.start = [rim.x + 10, rim.z + 30, Math.PI * 0.5];
+  C.roads = [ // серпантин с северного края вниз, дорога по дну, подъём на южный край к Лабиринту Ночи
+    [[rim.x, rim.z, 'raw'], [-480, zc2(-480) - hw2(-480) * 1.3, 'raw'], [-430, zc2(-430) - hw2(-430) * 0.75, -26], [-360, zc2(-360) - 18, 'raw']],
+    [fl(-360, -18), fl(-300), fl(-200), fl(-100), fl(-40, -40), fl(60), fl(150), fl(250), fl(350), fl(450), fl(520)],
+    [fl(-60, 20), [-20, zc2(-20) + hw2(-20) * 0.75, -24], [20, zc2(20) + hw2(20) * 1.3, 'raw'], [P('noctis').x, P('noctis').z, 'raw']]];
+})();
+function setChapter(n) { CHC = CH[n]; W.ch = n; POI.length = 0; CHC.pois.forEach((p) => POI.push(Object.assign({}, p))); ROADS.length = 0; CHC.roads.forEach((r) => ROADS.push(r.map((q) => q.slice())));
+  CRATERS = []; CRATERS = genCraters(CHC.craters, n === 2 ? (x, z) => Math.abs(z - zc2(x)) < hw2(x) * 1.3 : null);
+  for (const r of ROADS) for (const q of r) { if (q[2] === 'raw') q[2] = CHC.raw(q[0], q[1]); else if (q[2] === undefined) q[2] = 0; }
+  POI.forEach((p) => { p.h = CHC.poiH(p); }); W.mapImg = null; }
+function segDist(px, pz, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l)); return [Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t), t]; }
+function roadInfo(x, z) { let d = 1e9, y = 0; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) { const [dd, t] = segDist(x, z, r[i], r[i + 1]); if (dd < d) { d = dd; y = r[i][2] + (r[i + 1][2] - r[i][2]) * t; } } return [d, y]; }
+function roadDist(x, z) { return roadInfo(x, z)[0]; }
+W.roadDist = roadDist;
+function rawH(x, z) { return CHC.raw(x, z); }
 function H(x, z) {
   let h = rawH(x, z);
-  const rd = roadDist(x, z); if (rd < 16) { const k = 1 - sstep(5, 16, rd); h = h * (1 - k * 0.65) + (fbm(x / 300, z / 300) - 0.45) * 12 * k * 0.65; if (Math.abs(z - canyonZ(x)) < 46) h += k * (1 - sstep(14, 44, Math.abs(z - canyonZ(x)))) * 24; } // дорога сглажена и пересекает каньон по насыпи
-  for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r * 1.8) { if (p.h === undefined) p.h = 0; const k = 1 - sstep(p.r, p.r * 1.8, d); h = h * (1 - k) + p.h * k; } }
+  const [rd, ry] = roadInfo(x, z); if (rd < 16) { const k = 1 - sstep(5, 16, rd); h = CHC.road(x, z, h, k, ry); }
+  for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r * 1.8) { const k = 1 - sstep(p.r, p.r * 1.8, d); h = h * (1 - k) + p.h * k; } }
   return h;
 }
-POI.forEach((p) => { p.h = rawH(p.x, p.z) * 0.6; });
+setChapter(1);
 W.H = H;
 function normalAt(x, z) { const e = 1.5, hx = H(x + e, z) - H(x - e, z), hz = H(x, z + e) - H(x, z - e); const n = new THREE.Vector3(-hx, 2 * e, -hz); return n.normalize(); }
 W.normalAt = normalAt;
@@ -58,11 +94,11 @@ W.normalAt = normalAt;
 let S, sun, hemi, terrain, roadsM, beams = [];
 function buildTerrain() {
   const g = new THREE.PlaneGeometry(SIZE, SIZE, GRID, GRID); g.rotateX(-Math.PI / 2); const P = g.attributes.position, C = [];
-  const cRust = new THREE.Color('#c0603a'), cDust = new THREE.Color('#e8a070'), cRock = new THREE.Color('#6a2e24'), cDark = new THREE.Color('#4a2028'), cRoad = new THREE.Color('#3a2a30'), t = new THREE.Color();
+  const [cRust, cDust, cRock, cDark, cRoad] = CHC.pal.map((c) => new THREE.Color(c)), t = new THREE.Color(); const cRiver = new THREE.Color('#d8b088');
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); P.setY(i, H(x, z)); }
   g.computeVertexNormals(); const N = g.attributes.normal;
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), ny = N.getY(i), slope = 1 - ny;
-    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7);
+    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
     const rd = roadDist(x, z); if (rd < 7) t.lerp(cRoad, (1 - sstep(3, 7, rd)) * 0.75);
     for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color('#8a5048'), 0.35 * (1 - d / p.r)); }
     C.push(t.r, t.g, t.b); }
@@ -71,23 +107,43 @@ function buildTerrain() {
 }
 function place(B, m, x, z, s, ry = 0, dy = 0) { if (!MODELS || !MODELS[m]) return; B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { vcol: true, vk: 1.08 }); }
 function buildPOIs() {
-  const B = new Builder([]);
+  const B = new Builder([]); W.COLL = []; const addC = (x, z, r) => W.COLL.push({ x, z, r }), byId = (id) => POI.find((p) => p.id === id);
+  if (W.ch === 1) {
   // колония: купола, ангары, ветряки, площадка
-  const c = POI[0];
-  [['basemodule_A', -18, -10], ['basemodule_B', 14, -16], ['basemodule_C', -8, 18], ['basemodule_D', 20, 12], ['basemodule_E', -26, 10], ['basemodule_garage', 4, -30], ['structure_tall', 30, -4], ['windturbine_tall', -36, -24], ['windturbine_tall', 38, 26], ['landingpad_large', -30, 34], ['solarpanel', 10, 34], ['solarpanel', 18, 34], ['roofmodule_solarpanels', -14, -30], ['cargo_A_stacked', 30, -24]].forEach(([m, x, z], k) => place(B, m, c.x + x, c.z + z, m.startsWith('base') ? 7 : m === 'landingpad_large' ? 6 : 6, (k * 1.3) % 6.28));
-  place(B, 'k_rocket_baseA', c.x - 30, c.z + 34, 5); place(B, 'k_rocket_fuelA', c.x - 30, c.z + 34, 5, 0, 8); place(B, 'k_rocket_topA', c.x - 30, c.z + 34, 5, 0, 13);
-  // теплицы
-  const f = POI[1]; for (let k = 0; k < 4; k++) place(B, 'k_hangar_roundGlass', f.x - 18 + k * 12, f.z + (k % 2) * 8, 6, Math.PI / 2); place(B, 'k_machine_generator', f.x + 20, f.z - 12, 5);
-  // заправка
-  const st = POI[2]; place(B, 'cargodepot_A', st.x, st.z, 7); place(B, 'k_machine_barrelLarge', st.x + 14, st.z + 6, 6); place(B, 'k_machine_barrelLarge', st.x + 14, st.z - 6, 6); place(B, 'lights', st.x - 10, st.z + 10, 6); place(B, 'k_barrels', st.x - 12, st.z - 8, 5);
-  // лайнер
-  const ln = POI[3]; place(B, 's_Spaceship3', ln.x, ln.z, 2.4, 0.6, 2); place(B, 'k_craterLarge', ln.x + 25, ln.z + 10, 14); for (let k = 0; k < 6; k++) place(B, k % 2 ? 'containers_A' : 'cargo_B_stacked', ln.x - 30 + k * 11, ln.z - 26 + (k % 3) * 6, 5, k);
-  // гнездо клопов — кристаллы
-  const ns = POI[4]; for (let k = 0; k < 9; k++) { const a = k / 9 * 6.28; place(B, k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', ns.x + Math.cos(a) * 26, ns.z + Math.sin(a) * 26, 8 + (k % 3) * 2, a); }
-  // Ржавобург: город на остатках грузовиков и тоннелей
-  const rz = POI[5]; [['spacetruck_large', -20, 0, 9], ['spacetruck', 18, -14, 9], ['tunnel_straight_A', 0, 26, 9], ['drill_structure', 30, 20, 8], ['structure_tall', -34, -24, 8], ['cargodepot_A', 8, -36, 7], ['containers_C', -10, -20, 7], ['lander_A', -40, 26, 7], ['windturbine_tall', 40, -30, 7], ['basemodule_D', -2, 0, 7]].forEach(([m, x, z, s], k) => place(B, m, rz.x + x, rz.z + z, s, k * 0.8));
-  // лагерь Коляна
-  const cp = POI[6]; [['k_craft_cargoA', 0, 0, 7], ['k_craft_miner', -24, 14, 6], ['containers_B', 20, 18, 6], ['k_barrels', -12, -20, 6], ['k_machine_wireless', 24, -18, 6], ['k_satelliteDish', -30, -10, 6]].forEach(([m, x, z, s], k) => place(B, m, cp.x + x, cp.z + z, s, k));
+    const c = POI[0];
+    [['basemodule_A', -18, -10], ['basemodule_B', 14, -16], ['basemodule_C', -8, 18], ['basemodule_D', 20, 12], ['basemodule_E', -26, 10], ['basemodule_garage', 4, -30], ['structure_tall', 30, -4], ['windturbine_tall', -36, -24], ['windturbine_tall', 38, 26], ['landingpad_large', -30, 34], ['solarpanel', 10, 34], ['solarpanel', 18, 34], ['roofmodule_solarpanels', -14, -30], ['cargo_A_stacked', 30, -24]].forEach(([m, x, z], k) => place(B, m, c.x + x, c.z + z, m.startsWith('base') ? 7 : m === 'landingpad_large' ? 6 : 6, (k * 1.3) % 6.28));
+    place(B, 'k_rocket_baseA', c.x - 30, c.z + 34, 5); place(B, 'k_rocket_fuelA', c.x - 30, c.z + 34, 5, 0, 8); place(B, 'k_rocket_topA', c.x - 30, c.z + 34, 5, 0, 13);
+    // теплицы
+    const f = POI[1]; for (let k = 0; k < 4; k++) place(B, 'k_hangar_roundGlass', f.x - 18 + k * 12, f.z + (k % 2) * 8, 6, Math.PI / 2); place(B, 'k_machine_generator', f.x + 20, f.z - 12, 5);
+    // заправка
+    const st = POI[2]; place(B, 'cargodepot_A', st.x, st.z, 7); place(B, 'k_machine_barrelLarge', st.x + 14, st.z + 6, 6); place(B, 'k_machine_barrelLarge', st.x + 14, st.z - 6, 6); place(B, 'lights', st.x - 10, st.z + 10, 6); place(B, 'k_barrels', st.x - 12, st.z - 8, 5);
+    // лайнер
+    const ln = POI[3]; place(B, 's_Spaceship3', ln.x, ln.z, 2.4, 0.6, 2); place(B, 'k_craterLarge', ln.x + 25, ln.z + 10, 14); for (let k = 0; k < 6; k++) place(B, k % 2 ? 'containers_A' : 'cargo_B_stacked', ln.x - 30 + k * 11, ln.z - 26 + (k % 3) * 6, 5, k);
+    // гнездо клопов — кристаллы
+    const ns = POI[4]; for (let k = 0; k < 9; k++) { const a = k / 9 * 6.28; place(B, k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', ns.x + Math.cos(a) * 26, ns.z + Math.sin(a) * 26, 8 + (k % 3) * 2, a); }
+    // Ржавобург: город на остатках грузовиков и тоннелей
+    const rz = POI[5]; [['spacetruck_large', -20, 0, 9], ['spacetruck', 18, -14, 9], ['tunnel_straight_A', 0, 26, 9], ['drill_structure', 30, 20, 8], ['structure_tall', -34, -24, 8], ['cargodepot_A', 8, -36, 7], ['containers_C', -10, -20, 7], ['lander_A', -40, 26, 7], ['windturbine_tall', 40, -30, 7], ['basemodule_D', -2, 0, 7]].forEach(([m, x, z, s], k) => place(B, m, rz.x + x, rz.z + z, s, k * 0.8));
+    // лагерь Коляна
+    const cp = POI[6]; [['k_craft_cargoA', 0, 0, 7], ['k_craft_miner', -24, 14, 6], ['containers_B', 20, 18, 6], ['k_barrels', -12, -20, 6], ['k_machine_wireless', 24, -18, 6], ['k_satelliteDish', -30, -10, 6]].forEach(([m, x, z, s], k) => place(B, m, cp.x + x, cp.z + z, s, k));
+    [[-18, -10, 6], [14, -16, 6], [-8, 18, 6], [20, 12, 6], [-26, 10, 6], [4, -30, 6], [30, -4, 4]].forEach(([x, z, r]) => addC(c.x + x, c.z + z, r));
+    addC(ln.x, ln.z, 14); [[-20, 0, 9], [18, -14, 8], [-2, 0, 6], [30, 20, 5]].forEach(([x, z, r]) => addC(rz.x + x, rz.z + z, r)); addC(cp.x, cp.z, 9); addC(st.x, st.z, 7); }
+  if (W.ch === 2) {
+    // лагерь на краю: палатки-модули, ветряк, антенна
+    const rim = byId('rim'); [['basemodule_A', -14, -8, 6], ['basemodule_garage', 14, -10, 6], ['r_corridor_detailed', 0, -22, 6], ['windturbine_tall', -24, 14, 6], ['r_satelliteDish_detailed', 22, 12, 6], ['k_barrels', 6, 16, 5]].forEach(([m, x, z, sc], k) => place(B, m, rim.x + x, rim.z + z, sc, k * 0.9));
+    [[-14, -8, 5], [14, -10, 5], [0, -22, 5]].forEach(([x, z, r]) => addC(rim.x + x, rim.z + z, r));
+    // кладбище кораблей: лайнеры лежат на боку, кости древнего зверя, рампы-крылья
+    const gv = byId('grave'); [['s_Spaceship', -30, -20, 2.6, 0.4], ['s_Spaceship2', 28, 18, 2.8, 2.2], ['s_Spaceship4', -8, 34, 2.4, 1.2], ['r_craft_cargoB', 36, -26, 9, 0.8], ['k_craft_miner', -40, 22, 7, 2.6], ['r_bones', 6, -6, 22, 0.3]].forEach(([m, x, z, sc, ry]) => { place(B, m, gv.x + x, gv.z + z, sc, ry, 1.2); addC(gv.x + x, gv.z + z, m === 'r_bones' ? 5 : 9); });
+    [[-12, 10, 0.2], [20, -6, 2.6], [-26, 4, 1.4]].forEach(([x, z, ry]) => place(B, 'r_pipe_rampLarge', gv.x + x, gv.z + z, 5, ry)); W.ramps2 = [[-12, 10, 0.2], [20, -6, 2.6], [-26, 4, 1.4]].map(([x, z, ry]) => ({ x: gv.x + x, z: gv.z + z, ry }));
+    // корабль марсианина Пипа
+    const pp = byId('pip'); place(B, 's_Spaceship5', pp.x, pp.z, 1.8, 1.1, 1.5); for (let k = 0; k < 5; k++) place(B, 'k_rock_crystals', pp.x + Math.cos(k * 1.3) * 14, pp.z + Math.sin(k * 1.3) * 14, 5, k); addC(pp.x, pp.z, 7);
+    // колодцы Лабиринта Ночи — провалы и кристаллы
+    const nc = byId('noctis'); for (let k = 0; k < 7; k++) place(B, k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', nc.x + Math.cos(k * 0.9) * 40, nc.z + Math.sin(k * 0.9) * 40, 7, k);
+    // пиратская вышка над ущельем и пристань
+    const tw = byId('tower'); [['r_platform_high', 0, 0, 9], ['r_gate_complex', 12, 6, 7], ['r_supports_high', -10, 8, 8], ['r_satelliteDish_detailed', 8, -10, 6]].forEach(([m, x, z, sc], k) => place(B, m, tw.x + x, tw.z + z, sc, k)); addC(tw.x, tw.z, 6);
+    const dk = byId('dock'); for (let k = 0; k < 4; k++) { place(B, 'r_platform_long', dk.x - 30 + k * 18, dk.z + 26, 9, 0); place(B, 'r_supports_high', dk.x - 30 + k * 18, dk.z + 34, 6); }
+    [['r_craft_speederA', -20, -10, 4, 0.5], ['r_craft_speederC', -8, -16, 4, 1.4], ['r_craft_speederD', 6, -20, 4, 2.3], ['r_barrels_rail', 24, -6, 7, 0], ['k_barrels', 30, 10, 6, 1], ['r_machine_wirelessCable', -30, 14, 6, 0.4], ['r_rocket_baseB', 40, -24, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, dk.x + x, dk.z + z, sc, ry));
+    place(B, 'r_rocket_fuelB', dk.x + 40, dk.z - 24, 6, 0, 7.5); place(B, 'r_rocket_topB', dk.x + 40, dk.z - 24, 6, 0, 13.5); addC(dk.x + 40, dk.z - 24, 6);
+  }
   // разброс: камни, кристаллы, метеориты, кратеры-модели
   for (let k = 0; k < 220; k++) { const x = (hash(k, 21) - 0.5) * SIZE * 0.95, z = (hash(k, 23) - 0.5) * SIZE * 0.95; if (roadDist(x, z) < 9 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r)) continue; const r = hash(k, 29);
     place(B, r < 0.45 ? 'rocks_A' : r < 0.7 ? 'rocks_B' : r < 0.85 ? 'k_rock_largeA' : r < 0.95 ? 'k_rocks_smallA' : 'k_meteor_detailed', x, z, 3 + hash(k, 31) * 6, hash(k, 37) * 6.28, -0.3); }
@@ -100,15 +156,15 @@ function buildPOIs() {
   POI.forEach((p) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 160, 10, 1, true), new THREE.MeshBasicMaterial({ color: p.col, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
     m.position.set(p.x, p.h + 80, p.z); S.add(m); p.beam = m; beams.push(m); });
   // столкновения с постройками (упрощённо — круги)
-  W.COLL = []; const addC = (x, z, r) => W.COLL.push({ x, z, r });
-  [[-18, -10, 6], [14, -16, 6], [-8, 18, 6], [20, 12, 6], [-26, 10, 6], [4, -30, 6], [30, -4, 4]].forEach(([x, z, r]) => addC(c.x + x, c.z + z, r));
-  addC(ln.x, ln.z, 14); [[-20, 0, 9], [18, -14, 8], [-2, 0, 6], [30, 20, 5]].forEach(([x, z, r]) => addC(rz.x + x, rz.z + z, r)); addC(cp.x, cp.z, 9); addC(st.x, st.z, 7);
 }
 function buildScene() {
-  S = W.scene = new THREE.Scene(); const fogC = new THREE.Color('#9a5a4a'); S.fog = new THREE.Fog(fogC, 120, 520); S.background = fogC;
+  const old = S, keep = old ? old.children.filter((o) => o.userData.keep) : [];
+  if (old) old.traverse((o) => { if (o.geometry && !o.userData.keep && o.geometry !== MODELS[o.name]) { /* общие геометрии моделей не трогаем */ } });
+  S = W.scene = new THREE.Scene(); const fogC = new THREE.Color(CHC.fog); S.fog = new THREE.Fog(fogC, 120, 520); S.background = fogC;
   hemi = new THREE.HemisphereLight('#ffe0c8', '#5a2a28', 0.9); S.add(hemi); sun = new THREE.DirectionalLight('#ffd0a0', 0.8); sun.position.set(0.5, 1, 0.3); S.add(sun);
-  buildTerrain(); buildPOIs(); buildRover(); W.ready = true;
+  beams = []; buildTerrain(); buildPOIs(); if (!roverG) buildRover(); else S.add(roverG); keep.forEach((o) => S.add(o)); W.ready = true;
 }
+W.loadChapter = function (n) { setChapter(n); buildScene(); const st = CHC.start; R.x = st[0]; R.z = st[1]; R.h = st[2]; R.v = 0; R.y = H(R.x, R.z); R.vy = 0; R.air = 0; S.add(skyG); camP.set(R.x, R.y + 8, R.z - 12); if (W.onChapter) W.onChapter(n); };
 
 /* ---------- марсоход ---------- */
 const R = W.rover = { x: 6, z: 50, y: 0, h: Math.PI, v: 0, steer: 0, pitch: 0, roll: 0, sy: 0, svy: 0, air: 0, vy: 0 };
@@ -141,7 +197,7 @@ function buildRover() {
   gunT = new THREE.Group(); gunT.position.y = 0.4; dedT.add(gunT);
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.5, 8), new THREE.MeshLambertMaterial({ color: '#2a2a30' })); barrel.rotation.x = Math.PI / 2; barrel.position.set(0.32, 0.25, 0.75); gunT.add(barrel); W.barrel = barrel;
   if (FX.ded) { const d = FX.ded.clone(true); d.position.set(0, -0.1, -0.1); d.rotation.set(0, 0, 0); d.scale.setScalar(0.95); gunT.add(d); W.dedFig = d; }
-  S.add(roverG); W.roverG = roverG; W.dedT = dedT; W.gunT = gunT;
+  roverG.userData.keep = true; W.wheels.userData.keep = true; S.add(roverG); W.roverG = roverG; W.dedT = dedT; W.gunT = gunT;
 }
 function wheelsStep(dt) { const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YXZ'), sc = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(); W.wrot += R.v * dt / 0.62; roverG.updateMatrixWorld();
   W.wpos.forEach(([lx, lz], k) => { p.set(lx, 0.62, lz).applyMatrix4(roverG.matrixWorld); const gy = H(p.x, p.z) + 0.62, t = R.air > 0 ? -0.25 : Math.max(-0.35, Math.min(0.35, gy - p.y)); W.wsus[k] += (t - W.wsus[k]) * Math.min(1, dt * 18);
@@ -154,7 +210,7 @@ function roverStep(dt) {
   if (keys.has('KeyW') || keys.has('ArrowUp')) thr = 1; if (keys.has('KeyS') || keys.has('ArrowDown')) thr = -1; if (keys.has('KeyA') || keys.has('ArrowLeft')) st = 1; if (keys.has('KeyD') || keys.has('ArrowRight')) st = -1;
   if (W.view === 2 && W.auto) { const a = W.auto; thr = a.thr; st = a.st; } // в турели ведёт бабка
   if (W.lock > 0) { thr = 0; st = 0; }
-  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1), n = normalAt(R.x, R.z);
+  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1), n = normalAt(R.x, R.z);
   const fwd = new THREE.Vector3(Math.sin(R.h), 0, Math.cos(R.h)), slope = fwd.x * n.x + fwd.z * n.z; // спуск разгоняет, подъём тормозит
   if (R.air <= 0) { if (thr > 0) R.v += (thr * 9 - (R.v < 0 ? -6 : 0)) * dt; else if (thr < 0) R.v += thr * (R.v > 0 ? 14 : 6) * dt; else R.v -= Math.sign(R.v) * Math.min(Math.abs(R.v), (onRoad ? 2 : 4) * dt);
     R.v += slope * 9.8 * 0.55 * dt; R.v = Math.max(-6, Math.min(vmax, R.v)); if (R.v > vmax) R.v += (vmax - R.v) * dt * 2; }
@@ -164,7 +220,9 @@ function roverStep(dt) {
   for (const c of W.COLL) { const dx = nx - c.x, dz = nz - c.z, d = Math.hypot(dx, dz), rr = c.r + 1.6; if (d < rr) { nx = c.x + dx / d * rr; nz = c.z + dz / d * rr; if (Math.abs(R.v) > 9) { W.hurt && W.hurt(Math.abs(R.v) * 0.35, 'Бум! Постройка'); shake = 0.4; } R.v *= 0.5; } }
   nx = Math.max(-HALF + 20, Math.min(HALF - 20, nx)); nz = Math.max(-HALF + 20, Math.min(HALF - 20, nz)); R.x = nx; R.z = nz;
   // высота: подвеска и прыжки с бугров
-  const gy = H(R.x, R.z); if (R.air > 0 || R.y > gy + 0.6) { R.vy -= 16 * dt; R.y += R.vy * dt; R.air = 1; if (R.y <= gy) { const imp = -R.vy; R.y = gy; R.vy = 0; R.air = 0; R.svy -= imp * 0.3; if (imp > 5) { shake = Math.min(0.6, imp * 0.05); sfx('thud', { vol: Math.min(1, imp / 12) }); buzz(Math.min(60, imp * 4)); } } }
+  const gy = H(R.x, R.z);
+  if (W.lift > 0) { W.lift -= dt; const ty = gy + 17 + Math.sin(W.t * 2) * 1.5; R.y += (ty - R.y) * Math.min(1, dt * 1.4); R.vy = 0; R.air = 1; R.h += dt * 0.9; R.v = Math.min(Math.max(R.v, 4), 7); if (Math.random() < 0.5) burst(S, R.x + (Math.random() - 0.5) * 8, R.y - 3, R.z + (Math.random() - 0.5) * 8, 'smoke', '#c88060', 5, 0.8); }
+  else if (R.air > 0 || R.y > gy + 0.6) { R.vy -= 16 * dt; R.y += R.vy * dt; R.air = 1; if (R.y <= gy) { const imp = -R.vy; R.y = gy; R.vy = 0; R.air = 0; R.svy -= imp * 0.3; if (imp > 5) { shake = Math.min(0.6, imp * 0.05); sfx('thud', { vol: Math.min(1, imp / 12) }); buzz(Math.min(60, imp * 4)); } } }
   else { const prevY = R.y; R.y = gy; const climb = (gy - prevY) / dt; if (climb < -7 && R.v > 9) { R.vy = -climb * 0.35 + 2; R.air = 1; R.y = prevY; } } // слетели с гребня — полёт
   R.svy += (-R.sy * 80 - R.svy * 9) * dt; R.sy += R.svy * dt;
   // наклон по рельефу + крен в повороте
@@ -255,7 +313,9 @@ W.hudStep = hudStep;
 
 /* ---------- вход и выход из режима ---------- */
 W.start = function () {
-  if (!W.ready) { if (!MODELS) { showMsg('Марс загружается…', '', '#ffcf8a', 900); setTimeout(W.start, 600); return; } buildScene(); buildUI(); }
+  if (!W.ready) { if (!MODELS) { showMsg('Марс загружается…', '', '#ffcf8a', 900); setTimeout(W.start, 600); return; }
+    if (!MODELS.r_craft_speederA) { if (!W.runLoading) { W.runLoading = 1; getPack('kn_run').then((k) => { Object.assign(MODELS, k); W.start(); }).catch(() => { MODELS.r_craft_speederA = MODELS.k_rover; W.start(); }); } return; }
+    try { const sv = JSON.parse(localStorage.getItem('bm_world') || 'null'); if (sv && sv.ch) setChapter(sv.ch); } catch (e) {} buildScene(); buildUI(); }
   W.active = true; document.body.classList.add('world'); $('end').classList.remove('on');
   S.add(skyG); skyG.visible = true; babka.visible = false; R.y = H(R.x, R.z); camP.set(R.x, R.y + 8, R.z - 12);
   W.st = W.st || { hull: 120, hullMax: 120, nerves: 100, fuel: 100, food: 6, ammo: 160, parts: 0, money: 150, xp: 0, need: 8, lvl: 1 };
