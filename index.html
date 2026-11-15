@@ -1422,17 +1422,17 @@ const PLACES_MAP = [
   { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', lock: 'Скоро: пешие миссии' },
   { id: 'clinic', e: '🏥', name: 'Поликлиника №1', x: 52, y: 58, d: 'Талон № 4 000 017', lock: 'Скоро: самая смешная очередь' },
   { id: 'port', e: '🚀', name: 'Космодром', x: 84, y: 54, d: 'Билет на Землю', lock: 'Финал: копилка' },
-  { id: 'olymp', e: '🌋', name: 'Гора Олимп', x: 22, y: 13, d: 'Спит. Пока', lock: 'Скоро: извержение' },
+  { id: 'olymp', e: '🌋', name: 'Гора Олимп', x: 22, y: 22, d: 'Спит. Пока', lock: 'Скоро: извержение' },
 ];
 function drawMapSvg() {
   const road = (pts, col, w, dash) => `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${w}" ${dash ? 'stroke-dasharray="' + dash + '"' : ''} stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
   let h = '<defs><radialGradient id="ice"><stop offset="0" stop-color="#e8f4ff"/><stop offset="1" stop-color="#9ab8d8"/></radialGradient></defs>';
   for (let k = 0; k < 40; k++) { const x = (k * 37) % 100, y = (k * 53) % 100; h += `<circle cx="${x}" cy="${y}" r="${0.6 + (k % 4) * 0.5}" fill="rgba(60,20,20,.25)"/>`; }
   h += '<ellipse cx="76" cy="30" rx="13" ry="8" fill="#6a3a2a"/><ellipse cx="76" cy="30" rx="10" ry="6" fill="url(#ice)" opacity=".9"/>';
-  h += '<polygon points="8,22 22,4 36,22" fill="#7a3828"/><polygon points="18,9 22,4 26,9" fill="#ff7a3a" opacity=".8"/>';
+  h += '<polygon points="8,30 22,14 36,30" fill="#7a3828"/><polygon points="18,18.5 22,14 26,18.5" fill="#ff7a3a" opacity=".8"/>';
   h += road('24,70 40,66 52,58 60,66 72,74', '#2a1a22', 7) + road('24,70 40,66 52,58 60,66 72,74', '#7fe8ff', 1.2, '3 3');
   h += road('52,58 44,42 60,34 76,30', '#2a1a22', 5) + road('52,58 44,42 60,34 76,30', '#ff6ad8', 1, '2 3');
-  h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,13', '#2a1a22', 3);
+  h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,22', '#2a1a22', 3);
   $('mapSvg').innerHTML = h;
 }
 function showMap() {
