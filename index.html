@@ -51,6 +51,7 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
   -webkit-mask:radial-gradient(circle at 50% 50%,transparent 32%,#000 70%);mask:radial-gradient(circle at 50% 50%,transparent 32%,#000 70%)}
 body.post #vig{display:none}
 #order{position:fixed;left:50%;top:calc(32px + env(safe-area-inset-top));transform:translateX(-50%);z-index:5;border-radius:12px;padding:5px 12px;font-weight:800;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}
+body:not(.walk):not(.farm):not(.def):not(.fish) #order{max-width:calc(100vw - 230px);overflow:hidden;text-overflow:ellipsis}
 #order.bad{color:#ff8a6a}
 #radio{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);width:min(460px,calc(100vw - 32px));text-align:center;z-index:5;opacity:0;transition:opacity .4s;pointer-events:none}
 #radio.on{opacity:1}#radio span{display:inline-block;border-radius:10px;padding:6px 12px;font-size:13px;line-height:1.3;color:var(--ink)}#radio b{color:var(--cyan)}
@@ -181,6 +182,29 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
 #haggle .hw{font-weight:800;font-size:15px;color:var(--dim)}#haggle .hp{font-size:28px;font-weight:900;margin:4px 0 10px}#haggle .hp small{display:block;font-size:14px;color:var(--dim);font-weight:600;margin-top:2px}#haggle .btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}#haggle .hs{min-height:20px;margin:8px 0;font-size:14px;color:#ffd27a}
 #haggle .hb{position:relative;height:22px;border-radius:11px;background:linear-gradient(90deg,#ff5a4a,#ffb04a 50%,#ff5a4a)}#hgOk{position:absolute;top:0;bottom:0;border-radius:11px;background:#4ad86a;box-shadow:0 0 12px #4ad86a}#hgNd{position:absolute;top:-5px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 8px #000}
 #haggle button{border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:var(--hot);color:#2a1406}#haggle button.alt{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--line)}
+#stBtn{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2;border:1px solid var(--line);border-radius:16px;padding:10px 14px;color:var(--ink);font:800 15px system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px}#stBtn small{color:var(--hot);font-weight:900}
+#stNext{display:none;width:100%;margin:10px 0 8px;border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:linear-gradient(90deg,#ffb04a,#ff7a5a);color:#2a1406;cursor:pointer}body.storyon #stNext{display:block}
+#story{position:fixed;inset:0;z-index:20;display:none;background:linear-gradient(180deg,#3a1a2a,#1a0c16);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px calc(20px + env(safe-area-inset-bottom))}#story.on{display:block}
+#story .sh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(12px + env(safe-area-inset-top)) 4px 10px;background:linear-gradient(180deg,#3a1a2a 70%,rgba(58,26,42,0));font-size:19px}#story .sh small{color:var(--dim);font-size:13px;flex:1}
+#stClose{border:0;background:rgba(255,255,255,.1);color:var(--ink);width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer}
+#stList h4{margin:16px 4px 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#ffb04a}
+#stList .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+#stList .sc{position:relative;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);border-radius:12px;padding:9px 10px 8px;font:700 13px/1.25 system-ui,sans-serif;cursor:pointer;min-height:74px}
+#stList .sc i{font-style:normal;color:var(--dim);font-size:11px;font-weight:800;display:block}#stList .sc em{font-style:normal;display:block;margin-top:4px;color:#ffcf4a;font-size:12px;letter-spacing:1px}
+#stList .sc.lock{opacity:.38;cursor:default}#stList .sc.next{border-color:#ffb04a;box-shadow:0 0 0 2px rgba(255,176,74,.35)}#stList .sc.done{background:rgba(120,200,120,.1)}
+#stCard{position:fixed;left:16px;right:16px;top:calc(96px + env(safe-area-inset-top));margin:0 auto;max-width:460px;z-index:9;border-radius:16px;padding:12px 14px;display:none;font-size:14px;line-height:1.35}#stCard.on{display:block;animation:pop .35s cubic-bezier(.2,1.5,.4,1) both}#stCard b{color:#ffb04a}#stCard .g2{margin-top:6px;font-weight:800;color:#9aff8a}
+#mg{position:fixed;inset:0;z-index:8;display:none;background:radial-gradient(ellipse at 50% 30%,rgba(90,40,70,.92),rgba(20,8,18,.97));padding:calc(70px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));flex-direction:column;align-items:center}#mg.on{display:flex}
+body.mgon #snd{top:auto!important;bottom:calc(16px + env(safe-area-inset-bottom))!important;left:16px!important}body.mgon #stCard{top:auto;bottom:calc(80px + env(safe-area-inset-bottom));z-index:9}
+body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body.mgon #order,body.mgon #brk{display:none!important}
+#mg .mgh{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:480px;font-size:18px;margin-bottom:10px}#mg .mgh span{color:var(--hot);font-weight:900;font-size:15px}
+#mgB{width:100%;max-width:480px;flex:1;display:flex;flex-direction:column;gap:14px;min-height:0}.mgsay{min-height:40px;color:#ffd27a;font-size:15px;text-align:center}
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;max-height:420px}.sim button{border:0;border-radius:24px;font-size:56px;cursor:pointer;opacity:.55;transition:transform .08s,opacity .08s;touch-action:manipulation}
+.sim .s0{background:#c8905a}.sim .s1{background:#ff8a3a}.sim .s2{background:#e8403a}.sim .s3{background:#5ab84a}.sim button.lit{opacity:1;transform:scale(1.06);box-shadow:0 0 40px rgba(255,255,255,.7)}
+.lane{position:relative;flex:1;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.1));overflow:hidden}.lane b{position:absolute;left:50%;transform:translate(-50%,-50%);font-size:40px}.lane .hitz{position:absolute;left:50%;top:92%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;border:4px solid #7fe8ff;box-shadow:0 0 22px #7fe8ff}
+#mg button.big{border:0;border-radius:20px;padding:22px;font:900 24px system-ui,sans-serif;background:linear-gradient(90deg,#ffb04a,#ff7a5a);color:#2a1406;touch-action:manipulation}
+.qq{font-size:22px;font-weight:800;text-align:center;line-height:1.3}.qbar{height:8px;border-radius:4px;background:rgba(255,255,255,.1)}.qbar i{display:block;height:100%;border-radius:4px;background:#ffb04a}
+.qa{display:grid;gap:10px}.qa button{border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--ink);border-radius:14px;padding:16px;font:700 17px system-ui,sans-serif;touch-action:manipulation}.qa button.ok{background:#3a9a5a}.qa button.no{background:#b03a3a}
+.belt{position:relative;flex:1;border-radius:20px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 30px,rgba(255,255,255,.1) 30px 60px);overflow:hidden}.belt button{position:absolute;border:0;background:none;font-size:46px;transform:translate(-50%,-50%);cursor:pointer;touch-action:manipulation;transition:transform .2s,opacity .2s}.belt button.pop{transform:translate(-50%,-50%) scale(1.8);opacity:0}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -212,15 +236,18 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
 <div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
   <div class="bank"><div class="bl">КОПИЛКА НА БИЛЕТ ДО ЗЕМЛИ</div><div class="bar"><i id="banki"></i></div><small id="bankt"></small></div>
   <div class="lab" style="display:none">СЛЕДУЮЩИЙ ЗАКАЗ</div><div id="orders" style="display:none"></div>
-  <div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
+  <button id="stNext">📖 Следующая история ▶</button><div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
 <div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
   <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
-  <div id="pins"></div>
+  <div id="pins"></div><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <button id="snd" aria-label="Звук"></button>
 <div id="haggle" class="g"><div class="hw" id="hgWho"></div><div class="hp"><span id="hgItem"></span> <b id="hgPrice">0</b> ₽ <small id="hgPat"></small></div><div class="hb"><i id="hgOk"></i><i id="hgNd"></i></div><div class="hs" id="hgSay"></div><div class="btns2"><button id="hgTalk" class="alt">🗣 Торговаться</button><button id="hgSell">🤝 Продать</button></div></div>
 <div id="joy"><i><b>◀</b><b>▶</b></i><div id="knob"></div></div>
+<div id="story"><div class="sh"><b>📖 150 историй</b><small id="stProg"></small><button id="stClose" aria-label="Закрыть">✕</button></div><div id="stList"></div></div>
+<div id="stCard" class="g"></div>
+<div id="mg"></div>
 <div id="err"></div>
 <script>
 /* Площадка: web / pikabu / vk / ok / tg / max / gamepush / rt. В прототипе — web. */
@@ -838,14 +865,15 @@ const rampGeo = (function () { const g = new THREE.BoxGeometry(1, 1, 1, 6, 1, 1)
 const ramps = new THREE.InstancedMesh(rampGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 8); ramps.frustumCulled = false; scene.add(ramps);
 /* конусы у дороги: сбиваются и разлетаются по физике (скорость, тяжесть, кувырок, отскок от земли) */
 const DYN0 = [], DYN = []; let dynMesh = null; const DQ = new THREE.Quaternion(), DE = new THREE.Euler(), DM = new THREE.Matrix4(), DS = new THREE.Vector3(1.7, 1.7, 1.7), DP = new THREE.Vector3();
-function initDyn() { if (!MODELS || !MODELS.a_cone || !DYN0.length) return; if (!dynMesh) { const b = new Builder(null); b.add(MODELS.a_cone, null, null, { vcol: true, vk: 1.08 }); dynMesh = new THREE.InstancedMesh(b.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), DYN0.length); dynMesh.frustumCulled = false; scene.add(dynMesh); }
-  DYN.length = 0; for (const [x, y, z, r] of DYN0) DYN.push({ x, y, z, y0: y, vx: 0, vy: 0, vz: 0, rx: 0, ry: r, rz: 0, wx: 0, wy: 0, wz: 0, live: false }); dynMesh.count = DYN.length; DYN.forEach((d, k) => dynSet(d, k)); dynMesh.instanceMatrix.needsUpdate = true; }
+function initDyn() { if (!MODELS || !MODELS.a_cone || !DYN0.length) return; if (!dynMesh) { const b = new Builder(null); b.add(MODELS.a_cone, null, null, { vcol: true, vk: 1.08 }); dynMesh = new THREE.InstancedMesh(b.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), DYN0.length + 48); dynMesh.frustumCulled = false; scene.add(dynMesh); }
+  const LIST = DYN0.slice(); if (ORDER === 'd_cones') for (let k = 0; k < 16; k++) { const i = Math.round(90 + (TRACK.length - 150) * (k + 0.5) / 16), l0 = rnd(-2.5, 2.5); for (let q = 0; q < 3; q++) { const [x, z] = at(i + q, l0 + (q - 1) * 1.6); LIST.push([x, 0, z, rnd(0, 6)]); } }
+  DYN.length = 0; for (const [x, y, z, r] of LIST) DYN.push({ x, y, z, y0: y, vx: 0, vy: 0, vz: 0, rx: 0, ry: r, rz: 0, wx: 0, wy: 0, wz: 0, live: false }); dynMesh.count = DYN.length; DYN.forEach((d, k) => dynSet(d, k)); dynMesh.instanceMatrix.needsUpdate = true; }
 function dynSet(d, k) { DE.set(d.rx, d.ry, d.rz); DQ.setFromEuler(DE); DP.set(d.x, d.y, d.z); DM.compose(DP, DQ, DS); dynMesh.setMatrixAt(k, DM); }
 function stepDyn(dt) { if (!dynMesh) return; let ch = false;
   DYN.forEach((d, k) => {
     if (!d.live && car.state === 'go' && car.y < 1.5 && Math.abs(d.x - car.x) < 2 && Math.abs(d.z - car.z) < 2 && (d.x - car.x) ** 2 + (d.z - car.z) ** 2 < 2.6) { // удар креслом
       const spd = Math.hypot(car.vx, car.vz), nx = (d.x - car.x) || 0.01, nz = (d.z - car.z) || 0.01, nl = Math.hypot(nx, nz);
-      d.live = true; d.vx = car.vx * 1.15 + nx / nl * 4; d.vz = car.vz * 1.15 + nz / nl * 4; d.vy = 4 + spd * 0.22; d.wx = rnd(-12, 12); d.wy = rnd(-6, 6); d.wz = rnd(-12, 12);
+      d.live = true; if (DXS) DXS.cones = (DXS.cones || 0) + 1; d.vx = car.vx * 1.15 + nx / nl * 4; d.vz = car.vz * 1.15 + nz / nl * 4; d.vy = 4 + spd * 0.22; d.wx = rnd(-12, 12); d.wy = rnd(-6, 6); d.wz = rnd(-12, 12);
       car.vx *= 0.97; car.vz *= 0.97; car.score += 10; sfx('thud', { vol: 0.5, rate: 1.4, rnd: 0.3 }); buzz(15); floatText('+10', d.x, 1.6, d.z, '#ffb04a'); burst(scene, d.x, 0.5, d.z, 'smoke', '#c08060', 1.6, 0.4); }
     if (!d.live) return; ch = true;
     d.vy -= 22 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.rx += d.wx * dt; d.ry += d.wy * dt; d.rz += d.wz * dt;
@@ -867,7 +895,7 @@ function placeItems() {
   for (let k = 0; k < 14; k++) { const i = Math.round(60 + (TRACK.length - 120) * (k + rnd(0.1, 0.9)) / 14); ITEMS.beetles.push({ i, ph: rnd(0, 6), sp: rnd(0.5, 0.9), x: 0, z: 0, hit: 0 }); }
   for (let k = 0; k < 10; k++) { const i = Math.round(80 + (TRACK.length - 160) * (k + 0.5) / 10); const [x, z, a] = at(i, rnd(-2.5, 2.5)); ITEMS.pads.push({ x, z, a }); }
   ITEMS.pads.forEach((p, k) => pads.setMatrixAt(k, mat(p.x, 0.09, p.z, 1, 1, 1, p.a))); pads.count = ITEMS.pads.length; pads.instanceMatrix.needsUpdate = true;
-  if (ORDER !== 'dimon') for (let k = 0; k < 6; k++) { const i = Math.round(130 + (TRACK.length - 220) * (k + 0.3) / 6), lat = rnd(-2.6, 2.6), [x, z, a] = at(i, lat); ITEMS.ramps.push({ i, lat, x, z, a }); }
+  { const NR = ORDER === 'd_jump' ? 8 : 6; if (ORDER !== 'dimon') for (let k = 0; k < NR; k++) { const i = Math.round(130 + (TRACK.length - 220) * (k + 0.3) / NR), lat = rnd(-2.6, 2.6), [x, z, a] = at(i, lat); ITEMS.ramps.push({ i, lat, x, z, a }); } }
   ITEMS.ramps.forEach((r, k) => ramps.setMatrixAt(k, mat(r.x, 0, r.z, 1, 1, 1, r.a))); ramps.count = ITEMS.ramps.length; ramps.instanceMatrix.needsUpdate = true; initDyn();
   ITEMS.dunes = [];
   if (ORDER === 'dimon') for (let k = 0; k < 7; k++) { const i = Math.round(90 + (TRACK.length - 160) * (k + rnd(0.2, 0.8)) / 7), [x, z, a] = at(i, rnd(-2, 2)); ITEMS.dunes.push({ x, z, a, on: true }); }
@@ -1007,7 +1035,8 @@ const clockMin = () => 17 * 60 + 58 + car.t * 1.2; // 1 секунда езды 
 const hhmm = (m) => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(Math.floor(m % 60)).padStart(2, '0');
 const BANK_JOKES = [[0.25, 'Хватит на чемодан. Пустой. Без ручки.'], [0.5, 'Половина! Уже можно купить билет до Фобоса. В одну сторону.'], [0.75, 'Скоро Земля! Правнуки уже лепят 400 пирожков.'], [1, 'БИЛЕТ КУПЛЕН! Земля, держись — бабуля летит!']];
 function orderHud() {
-  const o = ORDERS[ORDER], el = $('order'); let t = o.icon + ' ';
+  const o = ORDERS[ORDER], el = $('order'); let t = (SM() && SM().ic ? SM().ic : o.icon) + ' ';
+  if (dxOn() && DXS) { el.textContent = DX[ORDER].hud(DXS); el.classList.toggle('bad', !!(DX[ORDER].bad && DX[ORDER].bad(DXS))); return; }
   if (isDim()) { const m = clockMin(); el.textContent = '⏰ ' + hhmm(m) + (m > 18 * 60 ? ' · +' + Math.round(m - 18 * 60) + ' мин' : ''); el.classList.toggle('bad', m > 18 * 60); return; }
   if (ORDER === 'potato') t += car.pot + ' шт.';
   else if (ORDER === 'jam') t += car.cargo + ' / 6';
@@ -1138,8 +1167,184 @@ function spawnLocals() { // «местные» Quaternius: кактусёнок 
   [0.08, 0.22, 0.36, 0.5, 0.64, 0.78, 0.92].forEach((f, k) => { const i = Math.floor(TRACK.length * f), p = TRACK[i], n = nrm(p), sd = k % 2 ? 1 : -1, x = p.x + n[0] * (ROAD_W / 2 + 3.2) * sd, z = p.z + n[1] * (ROAD_W / 2 + 3.2) * sd;
     monster(WHO[k][0], WHO[k][1], WHO[k][2]).then((r) => { if (spawnLocals.run !== run) return; r.position.set(x, groundH(x, z) - 0.05, z); r.rotation.y = Math.atan2(-n[0] * sd, -n[1] * sd); scene.add(r); LOCALS.push(r); }).catch(() => {}); });
 }
+/* ---------- 🚗 НОВЫЕ ТИПЫ ЗАЕЗДОВ: у каждого свои правила (гонка, погоня, слалом, почта, топливо, буря…) ---------- */
+const DX = {}; let DXS = null; const DXG = new THREE.Group(); scene.add(DXG);
+const dxOn = () => ORDER.startsWith('d_') && !!DX[ORDER];
+const dxIc = (def) => (SM() && SM().ic) || def;
+function dxSpr(e, x, y, z, s = 1.6) { const sp = emojiSprite(e, s); sp.position.set(x, y, z); DXG.add(sp); return sp; }
+function dxRing(x, z, r, col) { const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.25, r, 32), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.12, z); DXG.add(m); return m; }
+function dxNight(on) { scene.fog.color.set(on ? '#06040c' : FOG); scene.background = on ? new THREE.Color('#06040c') : FOG; skyG.traverse((o) => { if (o.material && o.material.color) o.material.color.setScalar(on ? 0.1 : 1); }); pots.material.fog = !on; pots.material.needsUpdate = true; }
+function dxStart() {
+  while (DXG.children.length) DXG.remove(DXG.children[0]); car.lim = 1; dxNight(false); DXS = null; if (!dxOn()) return;
+  DXS = { t: 0, n: 0, miss: 0, fail: '', d: SM() ? SM().d || 2 : 2 }; DX[ORDER].init(DXS); }
+function dxFrame(dt, spd, bi, lat, now) { if (!DXS || car.state !== 'go') return; DXS.t += dt; DX[ORDER].frame(DXS, dt, spd, bi, lat, now);
+  for (const c of DXG.children) { if (c.userData.keep) continue; const dx = c.position.x - car.x, dz = c.position.z - car.z; c.visible = !c.userData.off && dx * dx + dz * dz < 170 * 170; } }
+function dxFail(t) { if (!DXS || DXS.fail) return; DXS.fail = t; sfx('j_fail'); showMsg(t, '', '#ff8a6a', 1600, true); setTimeout(() => car.state === 'go' && finish(), 900); }
+const dxIdx = (k, n, from = 70, to = 30) => Math.round(from + (TRACK.length - from - to) * (k + 0.5) / n);
+
+// 🏁 гонка с соседкой Валей на её кресле
+DX.d_race = { name: 'Гонка с Валей', icon: '🏁', desc: 'Валя на своём кресле. Приедь первой',
+  init(S) { S.ri = 6; S.rl = 2; const g = new THREE.Group(), disk = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.8, 0.35, 16), new THREE.MeshLambertMaterial({ color: '#c04a8a' })); disk.position.y = 0.4; g.add(disk);
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.4, 8), new THREE.MeshBasicMaterial({ color: '#ff6ad5' })); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0.5, -1.2); g.add(fl); S.fl = fl;
+    monster('h_oldclassy_female', 1.5, 'Idle').then((r) => { r.position.y = 0.55; g.add(r); }).catch(() => {}); DXG.add(g); g.userData.keep = 1; S.rv = g; S.lead = 0; },
+  frame(S, dt, spd) { const v = VMAX * (0.9 + 0.04 * S.d) * (S.ri < car.idx - 25 ? 1.18 : S.ri > car.idx + 40 ? 0.9 : 1) * (S.t < 1.5 ? 0.5 : 1); S.ri = Math.min(TRACK.length - 1, S.ri + v * dt / STEP);
+    S.rl += (Math.sin(S.t * 0.4) * 3 - S.rl) * dt; const [x, z, a] = at(Math.floor(S.ri), S.rl); S.rv.position.set(x, 0.1 + Math.sin(S.t * 6) * 0.05, z); S.rv.rotation.y = a; S.fl.scale.y = 0.8 + Math.random() * 0.4;
+    if (Math.hypot(x - car.x, z - car.z) < 2.2) { const nx = (car.x - x) || 0.1, nz = (car.z - z) || 0.1, l = Math.hypot(nx, nz); car.vx += nx / l * 6; car.vz += nz / l * 6; if (!S.bt || S.t - S.bt > 2) { S.bt = S.t; sfx('thud'); buzz(30); showMsg('Толкаемся!', pick(['Валя: «Подвинься, Таня!»', 'Валя: «У меня турбина мощнее!»']), '#ff9ad5', 900); } }
+    if (S.ri >= TRACK.length - 13 && !S.vf) { S.vf = 1; showMsg('Валя финишировала!', 'догоняй, хоть второй будь', '#ff9ad5', 1400, true); }
+    S.lead = Math.round((car.idx - S.ri) * STEP); },
+  hud(S) { return '🏁 ' + (S.lead >= 0 ? 'ты +' + S.lead + ' м' : 'Валя +' + -S.lead + ' м'); },
+  bad(S) { return S.lead < 0; },
+  res(S) { const win = !S.vf; return { good: win ? (S.lead > 60 ? 1 : 0.8) : 0.3, row: win ? 'Приехала раньше Вали' + (S.lead > 0 ? ' на ' + S.lead + ' м' : '') : 'Валя приехала первой', pay: win ? 700 : 150, title: win ? 'Валя глотает пыль!' : 'Валя первая. Хвастается в телескоп' }; } };
+
+// 🐐 погоня: беглец удирает по трассе, догони и схвати 3 раза
+DX.d_chase = { name: 'Погоня', icon: '🏃', desc: 'Догони беглеца 3 раза до конца трассы',
+  init(S) { S.ti = 60; S.need = 3; S.sp = dxSpr(dxIc('🐐'), 0, 1.6, 0, 2.2); S.sp.userData.keep = 1; S.tl = 0; },
+  frame(S, dt) { const v = VMAX * (0.82 + 0.04 * S.d) * (S.ti > car.idx + 80 ? 0.85 : 1); S.ti = Math.min(TRACK.length - 14, S.ti + v * dt / STEP); S.tl += (Math.sin(S.t * 0.9) * 3.5 - S.tl) * dt * 1.5;
+    const [x, z] = at(Math.floor(S.ti), S.tl); S.sp.position.set(x, 1.4 + Math.abs(Math.sin(S.t * 8)) * 0.6, z);
+    if (Math.hypot(x - car.x, z - car.z) < 3.2) { S.n++; sfx('found'); buzz(30); burst(scene, x, 1.5, z, 'spark', '#ffe08a', 3, 0.4); floatText('Попался! ' + S.n + '/' + S.need, x, 2.5, z, '#9aff8a'); S.ti = Math.min(TRACK.length - 14, S.ti + 45); if (S.n >= S.need) { S.sp.visible = false; S.sp.userData.off = 1; showMsg('Пойман!', 'теперь — до финиша', '#9aff8a', 1300); } } },
+  hud(S) { return dxIc('🐐') + ' ' + S.n + '/' + S.need + (S.n < S.need ? ' · ' + Math.max(0, Math.round((S.ti - car.idx) * STEP)) + ' м' : ' ✓'); },
+  res(S) { return { good: S.n / S.need, row: 'Поймала: ' + S.n + ' из ' + S.need, pay: 200 + S.n * 200, title: S.n >= S.need ? 'Беглец пойман и доставлен!' : 'Беглец ушёл. Обещал вернуться к ужину' }; } };
+
+// 🚩 слалом: проезжай между флажками
+DX.d_slalom = { name: 'Слалом', icon: '🚩', desc: 'Проезжай между флажками — не мимо',
+  init(S) { S.g = []; const N = 14 + S.d * 2; for (let k = 0; k < N; k++) { const i = dxIdx(k, N, 50, 30), l = Math.sin(k * 1.7) * 3.2, [x1, z1] = at(i, l - 2.6), [x2, z2] = at(i, l + 2.6); S.g.push({ i, l, a: dxSpr('🚩', x1, 1.3, z1, 1.4), b: dxSpr('🚩', x2, 1.3, z2, 1.4), done: 0 }); } S.tot = N; },
+  frame(S, dt, spd, bi, lat) { for (const g of S.g) if (!g.done && bi >= g.i) { g.done = 1; if (Math.abs(lat - g.l) < 2.6) { S.n++; sfx('coin'); floatText('✓', car.x, 2.2, car.z, '#9aff8a'); g.a.material.color.set('#7fff9a'); g.b.material.color.set('#7fff9a'); } else { S.miss++; sfx('dry'); floatText('Мимо!', car.x, 2.2, car.z, '#ff8a6a'); g.a.material.color.set('#ff5a4a'); g.b.material.color.set('#ff5a4a'); } } },
+  hud(S) { return '🚩 ' + S.n + ' ✓ · ' + S.miss + ' ✗'; }, bad(S) { return S.miss > 3; },
+  res(S) { return { good: S.n / S.tot, row: 'Ворот пройдено: ' + S.n + ' из ' + S.tot, pay: S.n * 50, title: S.miss === 0 ? 'Ни одного флажка мимо! Чемпионка' : S.miss <= 3 ? 'Почти чисто!' : 'Флажки остались в недоумении' }; } };
+
+// 📮 почта: остановись в кругу у каждого дома
+DX.d_post = { name: 'Почта по адресам', icon: '📮', desc: 'Остановись в светящемся кругу у каждого адреса',
+  init(S) { S.z = []; const N = 5 + S.d; for (let k = 0; k < N; k++) { const i = dxIdx(k, N, 80, 40), sd = k % 2 ? 1 : -1, [x, z] = at(i, sd * (ROAD_W / 2 - 1.5)); S.z.push({ i, x, z, r: dxRing(x, z, 2.6, '#7fe8ff'), s: dxSpr(pick(['🏠', '🏡', '🏚️', '🛖']), x + sd * 3, 2, z, 2.4), st: 0 }); } S.tot = N; },
+  frame(S, dt, spd, bi) { for (const q of S.z) { if (q.st) continue; const d = Math.hypot(q.x - car.x, q.z - car.z); q.r.material.opacity = 0.5 + Math.sin(S.t * 6) * 0.3;
+      if (d < 2.6 && spd < 5) { q.st = 1; S.n++; sfx('coins'); buzz(20); q.r.material.color.set('#7fff9a'); floatText(dxIc('📦') + ' доставлено!', q.x, 2.4, q.z, '#9aff8a'); }
+      else if (bi > q.i + 8) { q.st = 2; S.miss++; q.r.material.color.set('#ff5a4a'); showMsg('Проехала адрес!', pick(['Дед: «Таня, это был Петрович!»', 'посылка вернётся отправителю', 'тормози заранее — палец вниз']), '#ff9a7a', 1100, true); } } },
+  hud(S) { return dxIc('📦') + ' ' + S.n + '/' + S.tot + ' · стоп в ⭕'; }, bad(S) { return S.miss > 1; },
+  res(S) { return { good: S.n / S.tot, row: 'Доставлено: ' + S.n + ' из ' + S.tot, pay: S.n * 140, title: S.n === S.tot ? 'Все адреса обойдены! Почта в шоке' : S.n ? 'Часть адресов дождалась' : 'Ни одной посылки. Почта гордится' }; } };
+
+// ⛽ топливо: бак пустеет, лови канистры
+DX.d_fuel = { name: 'Последняя капля', icon: '⛽', desc: 'Бак пустеет. Лови канистры, чтобы дотянуть',
+  init(S) { S.f = 70; S.c = []; for (let k = 0; k < 14 - S.d * 2; k++) { const i = dxIdx(k, 14 - S.d * 2, 60, 40), [x, z] = at(i, rnd(-3.5, 3.5)); S.c.push({ x, z, s: dxSpr('⛽', x, 1.3, z, 1.5) }); } S.low = 0; },
+  frame(S, dt) { S.f -= dt * (1.6 + S.d * 0.25) * (car.boost > 0 ? 1.8 : 1); for (const c of S.c) if (!c.s.userData.off && Math.hypot(c.x - car.x, c.z - car.z) < 2.4) { c.s.userData.off = 1; S.f = Math.min(100, S.f + 30); S.n++; sfx('pot'); floatText('+30 ⛽', c.x, 2, c.z, '#ffcf6a'); }
+    car.lim = S.f > 0 ? 1 : 0.25; if (S.f <= 0) { S.low += dt; if (S.low > 7) dxFail('Бак пуст. Дед толкает'); } else S.low = 0; },
+  hud(S) { return '⛽ ' + Math.max(0, Math.round(S.f)) + '%' + (S.f <= 0 ? ' ПУСТО!' : ''); }, bad(S) { return S.f < 20; },
+  res(S) { const ok = !S.fail; return { good: ok ? (S.f > 30 ? 1 : 0.7) : 0.2, row: ok ? 'Дотянула! В баке ' + Math.round(Math.max(0, S.f)) + '%' : 'Встала на трассе', pay: ok ? 400 + Math.round(S.f * 5) : 100, title: ok ? 'Дотянула на последней капле!' : 'Дед толкал кресло три километра' }; } };
+
+// 🌪 пылевая стена догоняет
+DX.d_wall = { name: 'Пылевая стена', icon: '🌪', desc: 'Сзади идёт буря. Не дай ей догнать',
+  init(S) { S.wi = -30; const m = new THREE.Mesh(new THREE.PlaneGeometry(60, 26), new THREE.MeshBasicMaterial({ color: '#b0603a', transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false, fog: false })); DXG.add(m); m.userData.keep = 1; S.w = m; },
+  frame(S, dt) { const v = VMAX * (0.78 + S.d * 0.06) * (S.wi < car.idx - 70 ? 1.25 : 1) * Math.min(1, S.t / 4); S.wi += v * dt / STEP; const i = Math.max(0, Math.floor(S.wi)), [x, z, a] = at(i, 0); S.w.position.set(x, 12, z); S.w.rotation.y = a;
+    S.gap = Math.round((car.idx - S.wi) * STEP); if (S.gap < 25 && Math.random() < 0.6) puff(car.x + rnd(-4, 4), car.z + rnd(-4, 4), 4); if (S.gap < 18) shake = Math.max(shake, 0.15); if (S.gap <= 0) dxFail('Накрыло бурей!'); },
+  hud(S) { return '🌪 ' + Math.max(0, S.gap | 0) + ' м'; }, bad(S) { return S.gap < 30; },
+  res(S) { const ok = !S.fail; return { good: ok ? (S.gap > 60 ? 1 : 0.7) : 0.2, row: ok ? 'Ушла от бури на ' + S.gap + ' м' : 'Буря догнала', pay: ok ? 500 : 100, title: ok ? 'Ушла от бури! Пыль только на тапках' : 'Бабулю занесло песком по уши' }; } };
+
+// 🥚 полезное и гнилое: собирай своё, объезжай плохое
+DX.d_pick = { name: 'Хорошее и плохое', icon: '🧺', desc: 'Собирай хорошее, объезжай тухлое',
+  init(S) { S.b = []; for (let k = 0; k < 30 + S.d * 8; k++) { const i = dxIdx(k, 30 + S.d * 8, 50, 30), [x, z] = at(i, rnd(-4, 4)); S.b.push({ x, z, s: dxSpr(pick(['🦠', '🧨', '🤢']), x, 1.1, z, 1.4) }); } },
+  frame(S, dt) { for (const q of S.b) if (!q.s.userData.off && Math.hypot(q.x - car.x, q.z - car.z) < 2.2) { q.s.userData.off = 1; S.miss++; const lost = Math.min(car.pot, 3); car.pot -= lost; car.spin = 0.4; sfx('soft'); buzz(50); flash('#7aff5a', 0.25); floatText('Фу! −' + lost, q.x, 2, q.z, '#9aff6a'); } },
+  hud(S) { return dxIc('🥔') + ' ' + car.pot + ' · 🤢 ' + S.miss; }, bad(S) { return S.miss > 3; },
+  res(S) { return { good: car.pot >= 24 ? 1 : car.pot >= 12 ? 0.6 : 0.3, row: 'Собрала: ' + car.pot + ', тухлых: ' + S.miss, pay: car.pot * 25, title: S.miss === 0 ? 'Ни одного тухлого! Глаз-алмаз' : car.pot >= 12 ? 'Набрала, хоть и с запашком' : 'В корзине в основном запах' }; } };
+
+// 👴 дед за рулём: всё наоборот, держись дороги
+DX.d_ded = { name: 'Дед за рулём', icon: '👴', desc: 'Руль наоборот, кресло виляет. Не съезжай с дороги',
+  init(S) { S.off = 0; }, frame(S, dt) { car.h += Math.sin(S.t * 1.1) * (0.12 + S.d * 0.05) * dt; if (car.off) S.off += dt; if (Math.random() < dt * 0.1) radio(pick(['<b>Дед:</b> Таня, не учи меня! Я на «Запорожце» в 72-м…', '<b>Дед:</b> где тут тормоз? А, это гудок', '<b>Дед:</b> лево — это где часы? У меня часы справа'])); },
+  hud(S) { return '👴 песок ' + S.off.toFixed(1) + ' с'; }, bad(S) { return S.off > 10; },
+  res(S) { return { good: S.off < 4 ? 1 : S.off < 12 ? 0.6 : 0.3, row: 'В песке: ' + S.off.toFixed(1) + ' с', pay: Math.max(100, 600 - Math.round(S.off * 25)), title: S.off < 4 ? 'Дед доехал как по рельсам!' : S.off < 12 ? 'Почти по дороге. Почти' : 'Дед проложил новую трассу' }; } };
+
+// 🔶 снеси конусы: ГИБДД расставила, а мы против
+DX.d_cones = { name: 'Снеси конусы', icon: '🔶', desc: 'Сбей как можно больше конусов на дороге',
+  init(S) { S.need = 18 + S.d * 4; }, frame(S) { S.n = DXS.cones || 0; },
+  hud(S) { return '🔶 ' + (S.n || 0) + '/' + S.need; },
+  res(S) { const n = S.n || 0; return { good: n / S.need, row: 'Сбито конусов: ' + n, pay: n * 25, title: n >= S.need ? 'Ни одного конуса не стоит!' : n > S.need / 2 ? 'Неплохо подровняла' : 'Конусы выстояли' }; } };
+
+// 🛹 трамплины: чистые приземления
+DX.d_jump = { name: 'Трамплины', icon: '🛹', desc: 'Прыгай с трамплинов и приземляйся ровно',
+  init(S) { S.need = 5 + S.d; }, frame(S) { S.n = DXS.clean || 0; },
+  hud(S) { return '🛹 ' + (S.n || 0) + '/' + S.need; },
+  res(S) { const n = S.n || 0; return { good: n / S.need, row: 'Чистых приземлений: ' + n, pay: n * 120, title: n >= S.need ? 'Летающая бабушка! Валя в шоке' : n ? 'Полетала. Дед поседел второй раз' : 'Трамплины не впечатлены' }; } };
+
+// 🌙 ночная езда: видно только рядом, собирай светящееся
+DX.d_night = { name: 'Ночная езда', icon: '🌙', desc: 'Темно. Видно только рядом. Собирай светящуюся картошку',
+  init(S) { dxNight(true); }, frame() {},
+  hud() { return '🌙 ' + dxIc('🥔') + ' ' + car.pot; },
+  res() { return { good: car.pot >= 20 ? 1 : car.pot >= 10 ? 0.6 : 0.3, row: 'Собрала в темноте: ' + car.pot, pay: car.pot * 30, title: car.pot >= 20 ? 'Видит в темноте, как кот Гоша!' : 'Доехала на ощупь' }; } };
+
+// 🛒 прицеп: на резких поворотах переворачивается
+DX.d_tow = { name: 'С прицепом', icon: '🛒', desc: 'Прицеп с грузом. Резко повернёшь — опрокинется',
+  init(S) { S.c = 6; S.tx = car.x - Math.sin(car.h) * 3.4; S.tz = car.z - Math.cos(car.h) * 3.4; const g = new THREE.Group(), b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 2.2), new THREE.MeshLambertMaterial({ color: '#8a5a3a' })); b.position.y = 0.6; g.add(b);
+    for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.25, 12), new THREE.MeshLambertMaterial({ color: '#2a2024' })); w.rotation.z = Math.PI / 2; w.position.set(s * 1.0, 0.4, 0); g.add(w); }
+    const sp = emojiSprite(dxIc('📦'), 1.1); sp.position.y = 1.5; g.add(sp); DXG.add(g); g.userData.keep = 1; S.g = g; S.cd = 0; },
+  frame(S, dt, spd) { const dx = car.x - S.tx, dz = car.z - S.tz, d = Math.hypot(dx, dz) || 1; S.tx = car.x - dx / d * 3.4; S.tz = car.z - dz / d * 3.4; const ta = Math.atan2(dx, dz);
+    S.g.position.set(S.tx, car.y * 0.6, S.tz); S.g.rotation.y = ta; const ang = Math.abs(Math.atan2(Math.sin(car.h - ta), Math.cos(car.h - ta))); S.g.rotation.z = clamp((car.h - ta) * 0.4, -0.5, 0.5); S.cd -= dt;
+    if (S.cd <= 0 && spd > 10 && (ang > 0.75 - S.d * 0.05 || (car.off && spd > 16))) { S.cd = 1.4; if (S.c > 0) S.c--; sfx('glass'); buzz(50); flash('#ff6a4a', 0.3); shake = 0.3; showMsg('Прицеп накренился!', 'минус один груз · ' + S.c + ' осталось', '#ff9a7a', 1100, true); } },
+  hud(S) { return dxIc('📦') + ' ' + S.c + '/6'; }, bad(S) { return S.c <= 2; },
+  res(S) { return { good: S.c / 6, row: 'Довезла в прицепе: ' + S.c + ' из 6', pay: S.c * 130, title: S.c === 6 ? 'Прицеп как новенький! Ни царапины' : S.c ? 'Что-то доехало' : 'Прицеп приехал пустой и гордый' }; } };
+
+const DX_KEYS = Object.keys(DX); DX_KEYS.forEach((k) => (ORDERS[k] = { name: DX[k].name, icon: DX[k].icon, desc: DX[k].desc, who: 'Новое задание', hidden: true }));
+
+/* ---------- 🎮 МИНИ-ИГРЫ: повтори за роботом, танцы в ритм, викторина Гены, конвейер ---------- */
+const MG = { active: false, t: 0 };
+const mgD = () => (SM() && SM().d) || 2;
+function mgEnd(title, stars, rows, pay) { if (!MG.active || MG.done) return; MG.done = true; MG.active = false; $('mg').classList.remove('on'); document.body.classList.remove('mgon');
+  $('etitle').innerHTML = letters(title, 0.025); $('esub').textContent = MG.icon + ' ' + MG.name; $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < stars ? '★' : '☆'}</span>`).join('');
+  $('etab').innerHTML = rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('') + `<tr><td><b>Пенсия</b></td><td><b>+${pay} ₽</b></td></tr>`; BANK += pay; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
+  $('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'; $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; if (stars >= 2) confetti(); setTimeout(() => $('end').classList.add('on'), 700); }
+function stopMG() { MG.active = false; $('mg').classList.remove('on'); document.body.classList.remove('mgon'); clearTimeout(MG.to); }
+function startMG(id) { stopWalk(); stopFarm(); stopFishing(); stopDefense(); $('end').classList.remove('on'); const G = MGS[id]; Object.assign(MG, { active: true, done: false, id, t: 0, name: G.name, icon: G.icon });
+  $('mg').innerHTML = '<div class="mgh"><b>' + G.icon + ' ' + G.name + '</b><span id="mgS"></span></div><div id="mgB"></div>'; $('mg').classList.add('on'); document.body.classList.add('mgon'); G.start(); }
+function mgFrame(dt) { MG.t += dt; if (MGS[MG.id].frame) MGS[MG.id].frame(dt); }
+const tone = (n) => { const c = SND.ctx; if (!c || c.state !== 'running' || !SND.mode) return; const o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'triangle'; o.frequency.value = [262, 330, 392, 523, 659][n % 5]; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + 0.45); o.connect(g); g.connect(SND.master); o.start(t); o.stop(t + 0.5); };
+const QUIZ = [['Сколько лететь до Земли на рейсовой ракете?', ['Полгода', 'Два часа', 'Как повезёт'], 0], ['Как зовут кота бабы Тани?', ['Гоша', 'Барсик', 'Профсоюз'], 0], ['Кто ведёт «Марс-ФМ»?', ['Гена', 'Валя', 'Робот Валерий'], 0],
+  ['Сколько метров прыгает коза Зорька при марсианской тяжести?', ['Шесть', 'Полметра', 'Она летает'], 0], ['Что требует профсоюз жуков?', ['Ботву, каски и 13-ю зарплату', 'Тишины', 'Отпуск на Земле'], 0], ['На какой год выдают талоны в поликлинике?', ['На 2087', 'На завтра', 'На прошлый вторник'], 0],
+  ['Чем стреляет дробовик бабы Тани?', ['Солью', 'Вареньем', 'Укропом'], 0], ['Номер «Танка» Димона?', ['ф 037 эь', 'А 001 АА', 'Без номера'], 0], ['Как называется рынок колонии?', ['«Красная пыль»', '«Синий песок»', '«Фобос-маркет»'], 0],
+  ['Кто живёт подо льдом кратера Королёва?', ['Царь-сом', 'Кит', 'Подводная лодка'], 0], ['Чем светятся окуни в кратере?', ['Сами по себе', 'От фонарика', 'От стыда'], 0], ['Куда копит баба Таня?', ['На билет до Земли', 'На новый телескоп', 'На шубу'], 0],
+  ['Кто начальник Димона?', ['Эдуард Кузьмич', 'Гена', 'Мама'], 0], ['Что Валя видит в телескоп?', ['Чужие грядки', 'Звёзды', 'Сатурн'], 0], ['Какого цвета небо на Марсе на закате?', ['Голубое', 'Зелёное', 'В клеточку'], 0],
+  ['Где у Марса самая высокая гора?', ['Олимп', 'Эльбрус', 'Казбек'], 0], ['Сколько лун у Марса?', ['Две', 'Одна', 'Пять'], 0], ['Как называется колония?', ['«Заречная»', '«Кислородная»', '«Новая Земля»'], 0],
+  ['На чём ездит баба Таня?', ['На турбо-кресле', 'На верблюде', 'На метро'], 0], ['Что дед держит в люльке?', ['Рассаду', 'Удочку', 'Гирю'], 0], ['Кто охраняет медведей от бабы Тани?', ['Никто — это они к ней ходят', 'ГИБДД', 'Валя'], 0],
+  ['Сколько градусов ночью на Марсе?', ['Минус восемьдесят', 'Плюс двадцать', 'Ровно ноль'], 0], ['Как зовут робота в регистратуре?', ['Валерий', 'Робокоп', 'Вася'], 0], ['Что кладут в квас на Марсе?', ['Земной батон-сухарь', 'Метеорит', 'Песок'], 0]];
+const MGS = {
+  g_simon: { name: 'Повтори за роботом', icon: '🤖', desc: 'Робот Валерий показывает порядок — повтори без ошибок',
+    start() { MG.seq = []; MG.lv = 0; MG.need = 4 + mgD() * 2; MG.life = 2; $('mgB').innerHTML = '<div class="mgsay" id="mgSay">Робот Валерий: «Повторите порядок подачи справок»</div><div class="sim">' + ['🥔', '🥕', '🍅', '🥒'].map((e, k) => `<button data-k="${k}" class="s${k}">${e}</button>`).join('') + '</div>';
+      $('mgB').querySelectorAll('.sim button').forEach((b) => (b.onpointerdown = (e) => { e.stopPropagation(); MGS.g_simon.tap(+b.dataset.k); })); MGS.g_simon.next(); },
+    lit(k, ms) { const b = $('mgB').querySelector('.s' + k); if (!b) return; b.classList.add('lit'); tone(k); setTimeout(() => b.classList.remove('lit'), ms); },
+    next() { MG.seq.push(Math.floor(Math.random() * 4)); MG.lv = MG.seq.length; MG.pi = 0; MG.show = true; $('mgS').textContent = 'раунд ' + MG.lv + ' / ' + MG.need + ' · ' + '❤'.repeat(MG.life); $('mgSay').textContent = 'Смотри внимательно…';
+      MG.seq.forEach((k, i) => setTimeout(() => MG.active && MGS.g_simon.lit(k, 380), 700 + i * Math.max(330, 560 - MG.lv * 25))); MG.to = setTimeout(() => { MG.show = false; $('mgSay').textContent = 'Твоя очередь!'; }, 800 + MG.seq.length * Math.max(330, 560 - MG.lv * 25)); },
+    tap(k) { if (!MG.active || MG.show) return; MGS.g_simon.lit(k, 200); if (k === MG.seq[MG.pi]) { MG.pi++; if (MG.pi >= MG.seq.length) { sfx('coin'); if (MG.lv >= MG.need) { mgEnd('Робот Валерий: «Справка выдана!»', MG.life === 2 ? 3 : 2, [['Раундов', MG.lv]], 300 + MG.lv * 60); return; } $('mgSay').textContent = pick(['Верно! Дальше длиннее', 'Робот: «Удивительно. Следующий»', 'Дед: «Таня, ты гений!»']); setTimeout(() => MG.active && MGS.g_simon.next(), 900); } }
+      else { MG.life--; sfx('caught'); $('mgSay').textContent = 'Ошибка! Робот: «Начнём сначала этот раунд»'; if (MG.life <= 0) { mgEnd('Робот: «Приходите в 2087 году»', 1, [['Раундов', MG.lv - 1]], 100 + MG.lv * 30); return; } MG.seq.pop(); setTimeout(() => MG.active && MGS.g_simon.next(), 1000); } } },
+  g_dance: { name: 'Танцы', icon: '💃', desc: 'Жми, когда нотка в круге. Чем точнее — тем лучше',
+    start() { MG.notes = []; MG.hit = 0; MG.miss = 0; MG.tot = 26 + mgD() * 4; MG.sp = 0.42 + mgD() * 0.05; const bt = 60 / (100 + mgD() * 12); for (let k = 0; k < MG.tot; k++) MG.notes.push({ t: 2 + k * bt * (k % 4 === 3 ? 2 : 1) + (k > 12 ? -(k - 12) * bt * 0.2 : 0), st: 0 });
+      $('mgB').innerHTML = '<div class="mgsay" id="mgSay">Свадьба у Лёхи! Дед: «Таня, покажи им, как в 72-м!»</div><div class="lane" id="lane"><i class="hitz"></i></div><button class="big" id="mgTap">💃 ТОПНУТЬ</button>';
+      $('mgTap').onpointerdown = (e) => { e.stopPropagation(); MGS.g_dance.tap(); }; MG.els = MG.notes.map(() => { const d = document.createElement('b'); d.textContent = pick(['🎵', '🎶', '💃', '🥁']); $('lane').appendChild(d); return d; }); },
+    frame() { for (let k = 0; k < MG.notes.length; k++) { const n = MG.notes[k], y = 1 - (n.t - MG.t) * MG.sp; const el = MG.els[k]; if (n.st) { el.style.display = 'none'; continue; } el.style.display = y < -0.1 || y > 1.15 ? 'none' : ''; el.style.top = (y * 100) + '%';
+        if (y > 1.1) { n.st = 2; MG.miss++; $('mgSay').textContent = pick(['Мимо такта!', 'Дед: «Не в ногу!»', 'Валя хихикает']); } }
+      $('mgS').textContent = '✓ ' + MG.hit + ' · ✗ ' + MG.miss + ' · ' + MG.notes.filter((n) => !n.st).length + ' осталось';
+      if (MG.notes.every((n) => n.st)) { const r = MG.hit / MG.tot; mgEnd(r > 0.85 ? 'Королева танцпола! Все аплодируют' : r > 0.6 ? 'Хорошо станцевала! Дед прослезился' : 'Отдавила всем ноги. Но весело', r > 0.85 ? 3 : r > 0.6 ? 2 : 1, [['Попаданий в такт', MG.hit + ' из ' + MG.tot]], 100 + MG.hit * 25); } },
+    tap() { if (!MG.active) return; let best = null, bd = 1; for (const n of MG.notes) { if (n.st) continue; const y = 1 - (n.t - MG.t) * MG.sp, d = Math.abs(y - 0.92); if (d < bd) { bd = d; best = n; } }
+      if (best && bd < 0.07) { best.st = 1; MG.hit++; tone(MG.hit); $('mgSay').textContent = bd < 0.03 ? 'Идеально!' : 'Хорошо!'; bump($('mgTap')); } else { MG.miss++; sfx('dry'); $('mgSay').textContent = 'Рано!'; if (best && bd < 0.15) best.st = 2; } } },
+  g_quiz: { name: 'Викторина «Марс-ФМ»', icon: '📻', desc: 'Гена задаёт вопросы в прямом эфире. Отвечай, пока идёт время',
+    start() { MG.q = QUIZ.slice().sort(() => Math.random() - 0.5).slice(0, 5 + mgD()); MG.qi = -1; MG.ok = 0; MGS.g_quiz.next(); },
+    next() { MG.qi++; if (MG.qi >= MG.q.length) { const r = MG.ok / MG.q.length; mgEnd(r === 1 ? 'Все ответы верны! Гена в восторге' : r >= 0.6 ? 'Хорошо! Приз — банка от Вали' : 'Гена: «Ну, главное — участие»', r === 1 ? 3 : r >= 0.6 ? 2 : 1, [['Верных ответов', MG.ok + ' из ' + MG.q.length]], 100 + MG.ok * 80); return; }
+      const [q, a] = MG.q[MG.qi], ord = [0, 1, 2].sort(() => Math.random() - 0.5); MG.qt = 0; MG.lock = false;
+      $('mgB').innerHTML = `<div class="mgsay">Гена: «Вопрос ${MG.qi + 1} из ${MG.q.length}!»</div><div class="qq">${q}</div><div class="qbar"><i id="qbar"></i></div><div class="qa">${ord.map((k) => `<button data-k="${k}">${a[k]}</button>`).join('')}</div>`;
+      $('mgB').querySelectorAll('.qa button').forEach((b) => (b.onpointerdown = (e) => { e.stopPropagation(); MGS.g_quiz.ans(+b.dataset.k, b); })); $('mgS').textContent = '✓ ' + MG.ok; },
+    ans(k, b) { if (MG.lock) return; MG.lock = true; const right = MG.q[MG.qi][2]; if (k === right) { MG.ok++; sfx('coin'); if (b) b.classList.add('ok'); } else { sfx('caught'); if (b) b.classList.add('no'); $('mgB').querySelector(`.qa button[data-k="${right}"]`).classList.add('ok'); } setTimeout(() => MG.active && MGS.g_quiz.next(), 1100); },
+    frame(dt) { if (MG.lock) return; MG.qt += dt; const L = 12 - mgD() * 1.5; const e = $('qbar'); if (e) e.style.width = Math.max(0, 100 - MG.qt / L * 100) + '%'; if (MG.qt > L) MGS.g_quiz.ans(-1, null); } },
+  g_belt: { name: 'Лента', icon: '📦', desc: 'По ленте едет всякое. Хватай хорошее, плохое пропускай',
+    start() { MG.it = []; MG.ok = 0; MG.bad = 0; MG.lost = 0; MG.need = 14 + mgD() * 3; MG.sT = 0.5; MG.left = 45; MG.good = (SM() && SM().ic) || '🥔';
+      $('mgB').innerHTML = `<div class="mgsay" id="mgSay">Хватай ${MG.good} — тапни по нему. 🪨 🧦 💣 не трогай!</div><div class="belt" id="belt"></div>`; },
+    frame(dt) { MG.left -= dt; MG.sT -= dt; const sp = 0.22 + mgD() * 0.04 + MG.t * 0.002;
+      if (MG.sT <= 0) { MG.sT = rnd(0.45, 0.85); const good = Math.random() < 0.62, el = document.createElement('button'); el.textContent = good ? MG.good : pick(['🪨', '🧦', '💣', '🦴']); el.style.top = rnd(8, 78) + '%'; $('belt').appendChild(el); const it = { x: 1.05, good, el }; MG.it.push(it);
+        el.onpointerdown = (e) => { e.stopPropagation(); if (it.gone) return; it.gone = 1; el.classList.add('pop'); if (it.good) { MG.ok++; tone(MG.ok); } else { MG.bad++; sfx('caught'); $('mgSay').textContent = pick(['Фу! Это не то', 'Дед: «Таня, это мой носок!»', 'Бум!']); } setTimeout(() => el.remove(), 300); }; }
+      MG.it = MG.it.filter((it) => { if (it.gone) return false; it.x -= sp * dt; it.el.style.left = (it.x * 100) + '%'; if (it.x < -0.1) { if (it.good) MG.lost++; it.el.remove(); return false; } return true; });
+      $('mgS').textContent = MG.good + ' ' + MG.ok + '/' + MG.need + ' · ✗ ' + MG.bad + ' · ' + fmt(Math.max(0, MG.left));
+      if (MG.ok >= MG.need || MG.left <= 0) { const win = MG.ok >= MG.need; mgEnd(win ? (MG.bad === 0 ? 'Ни одной ошибки! Лента в шоке' : 'Всё собрала!') : 'Лента победила', !win ? 1 : MG.bad === 0 ? 3 : 2, [['Собрано', MG.ok + ' из ' + MG.need], ['Схватила лишнего', MG.bad]], 100 + MG.ok * 25); } } },
+};
+Object.entries(MGS).forEach(([k, d]) => (ORDERS[k] = { name: d.name, icon: d.icon, desc: d.desc, who: 'Мини-игра', km: false, hidden: true }));
+
 function newRun(first) {
-  hideMap();
+  hideMap(); setTimeout(storyBegin, 60);
+  if (!ORDER.startsWith('d_')) { DXS = null; while (DXG.children.length) DXG.remove(DXG.children[0]); dxNight(false); car.lim = 1; }
+  if (ORDER.startsWith('g_')) { startMG(ORDER); return; }
+  stopMG();
   if (ORDER.startsWith('w_')) { startWalk(ORDER); return; }
   stopWalk();
   if (ORDER === 'defense') { startDefense(); return; }
@@ -1148,7 +1353,7 @@ function newRun(first) {
   stopFarm();
   if (ORDER === 'fish') { startFishing(); return; }
   stopFishing();
-  genTrack(); buildSky(); buildWorld(); placeItems(); resetCar(); car.state = 'go'; spawnLocals();
+  DXS = null; genTrack(); buildSky(); buildWorld(); placeItems(); resetCar(); car.state = 'go'; spawnLocals(); dxStart(); orderHud();
   $('end').classList.remove('on'); snapCam(); startMsg(first);
 }
 function finish() {
@@ -1161,6 +1366,7 @@ function finish() {
   if (isDim()) { const late = Math.round(clockMin() - 18 * 60); ordPay = 300 + car.bugs * 20; ordRow = 'Опоздание: ' + late + ' мин (приехал в ' + hhmm(clockMin()) + ')'; good = late < 75 ? 1 : late < 100 ? 0.6 : 0.3;
     const lm = plural(late, 'минуту', 'минуты', 'минут'); title = late < 75 ? 'Опоздал всего на ' + lm + ' — для Димона рекорд!' : late < 100 ? 'Опоздал на ' + lm + '. Остался только укроп' : 'Опоздал на ' + lm + '. Даже укроп съели'; }
   if (ORDER === 'seed') { ordPay = car.cargo * 100; ordRow = 'Рассады довезла: ' + car.cargo + ' из 8'; good = car.cargo / 8; title = car.cargo >= 6 ? 'Дед доволен, как слон на Марсе!' : car.cargo ? 'Дед ворчит, но сажает' : 'Дед: «А рассада где?! На Фобосе?!»'; }
+  if (dxOn() && DXS) { const r = DX[ORDER].res(DXS); ordPay = r.pay; ordRow = r.row; good = r.good; title = r.title; }
   const timeBonus = Math.max(0, Math.round((par * 1.3 - t) * 20)), potPay = car.pot * 30, driftPay = Math.round(car.score / 10);
   if (isDim()) {
     const pay = ordPay + potPay + timeBonus; $('etitle').innerHTML = letters(title, 0.025);
@@ -1175,7 +1381,7 @@ function finish() {
   }
   const fu = farmUse(), farmPay = fu ? fu.pay : 0;
   const pension = potPay + driftPay + timeBonus + ordPay + farmPay;
-  const stars = good >= 0.8 && t < par * 1.15 ? 3 : good >= 0.5 ? 2 : 1;
+  const stars = good >= 0.8 && (dxOn() || t < par * 1.15) ? 3 : good >= 0.5 ? 2 : 1;
   $('etitle').innerHTML = letters(title, 0.025);
   $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < stars ? '★' : '☆'}</span>`).join('');
   $('esub').textContent = o.icon + ' ' + o.name + ' · ' + fmt(t) + ' · ' + Math.round(TOTAL) + ' м';
@@ -1193,7 +1399,7 @@ function renderOrders() {
   $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}${o.story ? ' story' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.story ? 'Сюжет · играешь за Димона. ' : ''}${o.desc}${ORDER_CROP[k] && FARM.inv[ORDER_CROP[k]] ? ' · с дачи: ' + CROPS[ORDER_CROP[k]].e + ' ' + Math.min(10, FARM.inv[ORDER_CROP[k]]) : ''}</small></button>`).join('');
   document.querySelectorAll('.ord').forEach((b) => (b.onclick = () => { ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (e) {} renderOrders(); }));
 }
-$('again').onclick = () => newRun(false);
+$('again').onclick = () => { if (SM()) ORDER = SM().base; newRun(false); };
 $('toMap').onclick = () => showMap();
 $('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin')) $('mapSheet').classList.remove('on'); });
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
@@ -1206,7 +1412,7 @@ function joyMove(e) { if (e.pointerId !== JOY.id) return; let dx = (e.clientX - 
 function joyEnd(e) { if (e && e.pointerId !== JOY.id) return; JOY.id = null; JOY.x = JOY.y = 0; joyPlace(); }
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#haggle')) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#haggle') || MG.active) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { joyMove(e); if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; joyEnd(e); touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -1253,9 +1459,10 @@ function frame(now) {
   if (FS.active) { farmFrame(dt, now); return; }
   if (DF.active) { defFrame(dt, now); return; }
   if (WK.active) { walkFrame(dt, now); return; }
+  if (MG.active) { mgFrame(dt); return; }
   // руль
   const L = input.kl, R = input.kr, ax = Math.abs(JOY.x), jx = ax < 0.1 ? 0 : -Math.sign(JOY.x) * Math.pow(Math.min(1, (ax - 0.1) / 0.85), 1.35); // мягкий центр, полный руль у края
-  const want = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0;
+  const want = (car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0) * (ORDER === 'd_ded' ? -1 : 1);
   car.steer += (want - car.steer) * Math.min(1, dt * (Math.abs(want) > Math.abs(car.steer) && Math.sign(want) === Math.sign(car.steer || want) ? 6 : 12)); // руль доворачивается плавно, отпускается быстро
   const steer = Math.abs(car.steer) < 0.03 ? 0 : car.steer, brake = car.state === 'go' && !car.stuck && (input.kb || (JOY.id != null && JOY.y > 0.55));
   $('brk').classList.toggle('on', !!brake);
@@ -1268,7 +1475,7 @@ function frame(now) {
     else if (car.state === 'go' && car.lat !== undefined) { // руль отпущен — кресло само понемногу выравнивается по дороге, из песка тянет обратно
       const tp0 = TRACK[car.idx], n0 = nrm(tp0), c = car.off ? clamp(car.lat * 0.09, -0.7, 0.7) : 0, ta = Math.atan2(Math.sin(tp0.a) - n0[0] * c, Math.cos(tp0.a) - n0[1] * c);
       car.h += Math.atan2(Math.sin(ta - car.h), Math.cos(ta - car.h)) * Math.min(1, dt * (car.off ? 1.6 : 0.9)); }
-    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1) * (brake ? 0.5 : 1);
+    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1) * (brake ? 0.5 : 1) * (car.lim || 1);
     spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : brake ? 2.6 : 1.6) * dt;
     const hx = Math.sin(car.h), hz = Math.cos(car.h);
     let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
@@ -1288,7 +1495,7 @@ function frame(now) {
     if (!onR && (car.y > 0 || car.vy > 0)) { car.vy -= 22 * dt; car.y += car.vy * dt; car.air += dt;
       if (car.y <= 0) { const imp = -car.vy; car.y = 0; car.vy = 0; car.sus.vy -= imp * 0.32; car.sus.vp += imp * 0.08; shake = Math.max(shake, Math.min(0.6, imp * 0.04)); buzz(Math.min(60, imp * 4)); sfx('thud', { vol: Math.min(1, imp / 12) }); for (let q = 0; q < 6; q++) puff(car.x + rnd(-1.2, 1.2), car.z + rnd(-1.2, 1.2), 2);
         if (car.air > 0.45 && car.state === 'go') { const clean = slip < 0.35 && !car.spin, pts = Math.round(car.air * 120);
-          if (clean) { car.score += pts; car.boost = Math.max(car.boost, 1.1); sfx('turbo', { vol: 0.6 }); flash('#ffc23a', 0.25); floatText('Чистое приземление! +' + pts, car.x, 2.4, car.z, '#ffc23a'); }
+          if (clean) { if (DXS) DXS.clean = (DXS.clean || 0) + 1; car.score += pts; car.boost = Math.max(car.boost, 1.1); sfx('turbo', { vol: 0.6 }); flash('#ffc23a', 0.25); floatText('Чистое приземление! +' + pts, car.x, 2.4, car.z, '#ffc23a'); }
           else { car.vx *= 0.8; car.vz *= 0.8; floatText('Ой, криво…', car.x, 2.4, car.z, '#ff9a7a'); } }
         car.air = 0; } }
     if (Math.abs(lat) > ROAD_W / 2 + 9) { // упёрлась в камни
@@ -1338,6 +1545,7 @@ function frame(now) {
         const dm = damage(''); showMsg(ouch(), dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : hitSay()), '#ff8a6a', 1300, true);
       }
     });
+    dxFrame(dt, spd, bi, lat, now); if (dxOn() && DXS && car.state === 'go') orderHud();
     // пыль
     if ((slip > 0.2 || car.off) && spd > 5 && Math.random() < 0.9) puff(car.x - Math.sin(car.h) * 0.8, car.z - Math.cos(car.h) * 0.8, 1.2);
     if (car.state === 'go' && bi >= TRACK.length - 12) { finish(); showMsg(isDim() ? 'Приехал!' : 'Доехала!', isDim() ? 'Мама: «Дима, ну наконец-то!»' : 'внуки уже ставят самовар на 40 литров', '#ffcf8a', 1800); confetti(); flash('#ffe0a0', 0.4); }
@@ -1386,7 +1594,7 @@ function frame(now) {
   ITEMS.beetles.forEach((b, k) => beetles.setMatrixAt(k, mat(b.x, 0.05 + Math.abs(Math.sin(tsec * 12 + k)) * 0.06, b.z, 1, 1, 1, b.a))); beetles.count = ITEMS.beetles.length; beetles.instanceMatrix.needsUpdate = true;
   stepDust(dt); stepTrucks(dt, now); stepDyn(dt); if (MODEL_Q.length) buildModelBand();
   { const zn = car.state === 'go' ? zoneAt(car.idx) : null, storm = zn && zn.kind === 'storm';
-    scene.fog.density += ((storm ? 0.02 : 0.0062) - scene.fog.density) * Math.min(1, dt * 1.5);
+    scene.fog.density += ((ORDER === 'd_night' ? 0.045 : storm ? 0.02 : 0.0062) - scene.fog.density) * Math.min(1, dt * 1.5);
     $('storm').style.opacity = storm ? 1 : 0; stepMeteors(dt, now, zn && zn.kind === 'meteor');
     if (storm && Math.random() < 0.6) puff(car.x + rnd(-15, 15), car.z + rnd(-15, 15), 6); }
   // видимость полос мира
@@ -1501,7 +1709,7 @@ function dressFarm() { // дача на моделях Kenney (Nature, Survival,
 function farmLife(dt, ts) { // анимированные куры клюют, голуби кружат над дачей
   (FS.beasts || []).forEach((r) => { if (Math.random() < dt * 0.08) { r.userData.play('Armature|Jump', 0.15); setTimeout(() => r.userData.play('Armature|Idle', 0.3), 900); } });
   FS.hens.forEach((h) => { const m = h.userData.mon; if (m && Math.random() < dt * 0.4) m.userData.play(Math.random() < 0.65 ? 'Bite_Front' : 'Idle'); });
-  (FS.pigeons || []).forEach((r, k) => { const a = ts * 0.35 + k * 3.1, R = 10 + k * 3; r.position.set(Math.cos(a) * R, 8 + Math.sin(ts * 0.8 + k) * 0.8, Math.sin(a) * R - 2); r.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)); });
+  (FS.pigeons || []).forEach((r, k) => { r.visible = !WK.active; /* в пеших миссиях камера низко — голуби лезли в кадр */ const a = ts * 0.35 + k * 3.1, R = 10 + k * 3; r.position.set(Math.cos(a) * R, 8 + Math.sin(ts * 0.8 + k) * 0.8, Math.sin(a) * R - 2); r.rotation.y = Math.atan2(-Math.sin(a), Math.cos(a)); });
 }
 const QMAP = { potato: ['Beet', 6, 1.05], straw: ['BushBerries', 4, 0.62], cabbage: ['Lettuce', 4, 1.0], dill: ['Carrot', 6, 0.95] };
 function plantQ(i) { // грядка на Ultimate Crops: 4 стадии роста, у спелой — урожай на земле
@@ -1544,7 +1752,7 @@ function openSeeds(i) {
   FS.sel = i; $('seedRow').innerHTML = Object.entries(CROPS).map(([k, c]) => `<button data-c="${k}"><i>${c.e}</i>${c.name.split(' ')[0]}<small>${Math.round(c.t / 60)} мин · ×${c.y}</small></button>`).join('');
   $('seeds').classList.add('on'); document.body.classList.add('seedson');
   $('seedRow').querySelectorAll('button').forEach((bt) => (bt.onclick = (e) => { e.stopPropagation(); const b = FARM.beds[FS.sel]; b.c = bt.dataset.c; b.g = 0; b.w = false; b.last = Date.now(); plantMesh(FS.sel); saveFarm(); $('seeds').classList.remove('on'); document.body.classList.remove('seedson');
-    const [x, , z] = bedPos(FS.sel); sfx('plant'); farmFloat('Посажено! Теперь полей 💧', x, z); }));
+    const [x, , z] = bedPos(FS.sel); sfx('plant'); stAct(1); farmFloat('Посажено! Теперь полей 💧', x, z); }));
 }
 function farmFloat(t, x, z, col) { const v = new THREE.Vector3(x, 1.4, z).project(farmCam); const e = document.createElement('div'); e.className = 'f'; e.textContent = t; if (col) e.style.color = col; e.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; e.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; $('fl').appendChild(e); setTimeout(() => e.remove(), 950); }
 function farmTap(cx, cy) {
@@ -1555,8 +1763,8 @@ function farmTap(cx, cy) {
   const hit = FS.ray.intersectObjects(FS.bedHit)[0]; if (!hit) return; const i = hit.object.userData.i, b = FARM.beds[i], [x, , z] = bedPos(i);
   if (!b.c) { openSeeds(i); return; }
   const cr = CROPS[b.c];
-  if (b.g >= cr.t) { sfx('harvest'); FARM.inv[b.c] = (FARM.inv[b.c] || 0) + cr.y; farmFloat('+' + cr.y + ' ' + cr.e, x, z); bump($('inv')); b.c = null; b.g = 0; b.w = false; plantMesh(i); saveFarm(); $('inv').textContent = invText(); confettiSmall(); return; }
-  if (!b.w) { b.w = true; sfx('water'); saveFarm(); farmFloat('Полито 💧 растёт втрое быстрее', x, z, '#9fd8ff'); for (let q = 0; q < 6; q++) puffDrop(x, z); return; }
+  if (b.g >= cr.t) { sfx('harvest'); stAct(3); FARM.inv[b.c] = (FARM.inv[b.c] || 0) + cr.y; farmFloat('+' + cr.y + ' ' + cr.e, x, z); bump($('inv')); b.c = null; b.g = 0; b.w = false; plantMesh(i); saveFarm(); $('inv').textContent = invText(); confettiSmall(); return; }
+  if (!b.w) { b.w = true; sfx('water'); stAct(1); saveFarm(); farmFloat('Полито 💧 растёт втрое быстрее', x, z, '#9fd8ff'); for (let q = 0; q < 6; q++) puffDrop(x, z); return; }
   const left = Math.ceil((cr.t - b.g) / (b.w ? 1 : 0.35)); farmFloat('ещё ' + fmt(left), x, z, '#e0c2b0');
 }
 const drops = [];
@@ -1586,6 +1794,7 @@ function farmFrame(dt, now) {
   for (let i = drops.length - 1; i >= 0; i--) { const m = drops[i]; m.position.y -= m.userData.v * dt; if (m.position.y < 0.35) { farmScene.remove(m); m.geometry.dispose(); drops.splice(i, 1); } }
   // интерфейс: спелые — подсказка
   const ripeN = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length; $('order').textContent = ripeN ? '✨ спелых грядок: ' + ripeN : '🌱 огород · жуков отогнано: ' + FARM.swats; $('order').classList.remove('bad');
+  if (ST.farm) storyFarmStep(dt);
   if (!FS.st || tsec - FS.st > 5) { FS.st = tsec; saveFarm(); }
   skyG.position.copy(farmCam.position); renderer.render(farmScene, farmCam); adapt(dt);
 }
@@ -1625,14 +1834,14 @@ function drawMapSvg() {
   $('mapSvg').innerHTML = h;
 }
 function showMap() {
-  stopWalk(); stopFarm(); stopFishing(); stopDefense(); $('end').classList.remove('on');
+  stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
   $('mapSub').textContent = '· копилка на билет: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; $('mapBank').style.width = frac * 100 + '%';
   const ripe = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length, d1 = (() => { try { return !!localStorage.getItem('bm_d1'); } catch (e) { return false; } })();
   $('pins').innerHTML = PLACES_MAP.map((p) => { const bdg = p.id === 'dacha' && ripe ? `<em class="bdg">✨${ripe}</em>` : p.id === 'trans' && !d1 ? '<em class="bdg">!</em>' : p.id === 'port' ? `<em class="bdg" style="background:#3a8a5a">${Math.round(frac * 100)}%</em>` : '';
     return `<button class="pin${p.lock ? ' lock' : ''}" data-p="${p.id}" style="left:${p.x}%;top:${p.y}%"><i>${p.e}</i>${bdg}<span>${p.name}</span></button>`; }).join('');
   $('pins').querySelectorAll('.pin').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openPlace(b.dataset.p); }));
-  $('mapSheet').classList.remove('on'); $('map').classList.add('on'); document.body.classList.add('mapon');
+  $('mapSheet').classList.remove('on'); $('map').classList.add('on'); document.body.classList.add('mapon'); stBtn();
 }
 function openPlace(id) {
   sfx('open');
@@ -1640,9 +1849,48 @@ function openPlace(id) {
   if (p.lock) { $('msL').innerHTML = `<button class="m" disabled>🔒 ${p.lock}${p.id === 'port' ? '<small>Билет до Земли: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽</small>' : ''}</button>`; }
   else $('msL').innerHTML = p.m.map((k) => { const o = ORDERS[k], st = ORDER_CROP[k] && FARM.inv[ORDER_CROP[k]] ? ' · с дачи: ' + CROPS[ORDER_CROP[k]].e + ' ' + Math.min(10, FARM.inv[ORDER_CROP[k]]) : '';
     return `<button class="m${o.story ? ' story' : ''}" data-o="${k}">${o.icon} ${o.name}<small>${o.story ? 'Сюжет · ' : ''}${o.desc}${st}</small></button>`; }).join('');
-  $('msL').querySelectorAll('button[data-o]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (er) {} $('map').classList.remove('on'); document.body.classList.remove('mapon'); newRun(false); }));
+  $('msL').querySelectorAll('button[data-o]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); ST.cur = 0; document.body.classList.remove('storyon'); ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (er) {} $('map').classList.remove('on'); document.body.classList.remove('mapon'); newRun(false); }));
   $('mapSheet').classList.add('on');
 }
+
+/* ---------- 📖 150 ИСТОРИЙ: каждая — своя история на готовой механике (езда, дача, рыбалка, пешие сцены) ---------- */
+let STORY = null; const ST = { cur: 0, done: {}, farm: null };
+try { ST.done = JSON.parse(localStorage.getItem('bm_story') || '{}') || {}; } catch (e) {}
+const SM = () => (ST.cur && STORY ? STORY[ST.cur - 1] : null), stThing = (e, n) => (SM() && SM().thing ? SM().thing : [e, n]);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+function loadStory() { return STORY ? Promise.resolve(STORY) : fetch('assets/story.json').then((r) => r.json()).then((j) => (STORY = j)); }
+const stMax = () => Object.keys(ST.done).reduce((a, k) => Math.max(a, +k), 0), stOpen = (n) => n <= Math.max(3, stMax() + 3), stCount = () => Object.keys(ST.done).length;
+function stBtn() { $('stBtnN').textContent = stCount() + ' / 150'; }
+function showStory() { loadStory().then(() => {
+  let h = '', ch = '', nx = 0; for (let n = 1; n <= 150; n++) if (!ST.done[n] && stOpen(n)) { nx = n; break; }
+  STORY.forEach((m) => { if (m.ch !== ch) { h += (ch ? '</div>' : '') + '<h4>' + m.ch + '</h4><div class="grid">'; ch = m.ch; } const o = ORDERS[m.base] || {}, st = ST.done[m.n] || 0, op = stOpen(m.n);
+    h += `<button class="sc${op ? '' : ' lock'}${st ? ' done' : ''}${m.n === nx ? ' next' : ''}" data-n="${m.n}"><i>№${m.n} · ${op ? o.icon : '🔒'}</i>${m.t}<em>${st ? '★'.repeat(st) + '☆'.repeat(3 - st) : op ? '' : ''}</em></button>`; });
+  $('stList').innerHTML = h + '</div>'; $('stProg').textContent = 'пройдено ' + stCount() + ' из 150 · открываются по порядку';
+  $('stList').querySelectorAll('.sc').forEach((b) => (b.onclick = () => { const n = +b.dataset.n; if (!stOpen(n)) { sfx('dry'); return; } startStory(n); }));
+  $('story').classList.add('on'); const e = $('stList').querySelector('.next'); if (e) e.scrollIntoView({ block: 'center' }); }).catch(() => showMsg('Истории не загрузились', 'проверь интернет', '#ff9a7a', 1500, true)); }
+function startStory(n) { loadStory().then(() => { const m = STORY[n - 1]; if (!m) return; ST.cur = n; ORDER = m.base; try { localStorage.setItem('bm_order', ORDER); } catch (e) {}
+  $('story').classList.remove('on'); $('map').classList.remove('on'); document.body.classList.remove('mapon'); document.body.classList.add('storyon'); newRun(false); }); }
+function storyBegin() { const m = SM(); if (!m) { document.body.classList.remove('storyon'); return; } document.body.classList.add('storyon'); ST.farm = null;
+  const c = $('stCard'); c.innerHTML = `<b>📖 История №${m.n} · ${m.t}</b><div>${m.intro}</div><div class="g2">🎯 ${m.goal}</div>`; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); clearTimeout(storyBegin.t); storyBegin.t = setTimeout(() => c.classList.remove('on'), 7500);
+  const k = m.d === 1 ? 1.25 : m.d === 3 ? 0.85 : 1; let tries = 0;
+  const apply = () => { if (SM() !== m) return; if (WK.active && WK.st === 'go') { WK.left *= k; return; } if (FS.active) { ST.farm = { left: 100, pts: 0, need: 6 + 3 * (m.d || 2), s0: FARM.swats }; hint('Набери <b>' + ST.farm.need + ' очков дел</b> за 100 с: посадить, полить — +1, жук тапком — +1, урожай — +3', 6000); return; }
+    if (!WK.active && !FS.active && !DF.active && !FISH.active && car.state === 'go') { if (ORDER === 'pies') car.pieLimit *= k; return; } if (DF.active || FISH.active) return; if (++tries < 40) setTimeout(apply, 250); };
+  setTimeout(apply, 300); }
+function stAct(n) { if (ST.farm) { ST.farm.pts += n; bump($('order')); } }
+function storyFarmStep(dt) { const F = ST.farm; if (!F) return; F.left -= dt; const pts = F.pts + (FARM.swats - F.s0); $('order').textContent = '📖 дела: ' + pts + ' / ' + F.need + ' · ' + fmt(Math.max(0, F.left));
+  if (pts >= F.need || F.left <= 0) { ST.farm = null; const win = pts >= F.need, stars = !win ? 1 : F.left > 40 ? 3 : 2, pay = 150 + pts * 30;
+    $('etitle').innerHTML = letters('…', 0.025); $('esub').textContent = '🌱 Огород'; $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < stars ? '★' : '☆'}</span>`).join('');
+    $('etab').innerHTML = `<tr><td>Дел сделано</td><td>${pts} из ${F.need}</td></tr><tr><td><b>Пенсия за историю</b></td><td><b>+${pay} ₽</b></td></tr>`; BANK += pay; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
+    $('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'; $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; if (win) confetti(); setTimeout(() => $('end').classList.add('on'), 900); } }
+// финал истории: свой заголовок, номер, звёзды сохраняются, открывается следующая
+new MutationObserver(() => { const on = $('end').classList.contains('on'); if (!on) { ST.endOn = false; return; } if (ST.endOn) return; ST.endOn = true; const m = SM(); if (!m) { document.body.classList.remove('storyon'); return; }
+  const st = ($('estars').textContent.match(/★/g) || []).length; $('etitle').innerHTML = letters(st >= 2 ? m.win : m.lose, 0.025); $('esub').textContent = '📖 История №' + m.n + ' · ' + m.t;
+  ST.done[m.n] = Math.max(ST.done[m.n] || 0, st || 1); try { localStorage.setItem('bm_story', JSON.stringify(ST.done)); } catch (e) {} stBtn(); $('stNext').style.display = m.n < 150 ? '' : 'none'; }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
+$('stNext').onclick = () => { const n = Math.min(150, (SM() ? SM().n : 0) + 1); $('end').classList.remove('on'); startStory(n); };
+$('stBtn').onclick = (e) => { e.stopPropagation(); sfx('open'); showStory(); };
+$('stClose').onclick = () => $('story').classList.remove('on');
+setInterval(() => { const m = SM(); if (!m || !m.radio || $('end').classList.contains('on') || document.body.classList.contains('mapon') || document.hidden) return; if (Math.random() < 0.55) radio(pick(m.radio)); }, 14000); // радио по теме истории
+stBtn();
 
 /* ---------- 🔫 ОБОРОНА ДАЧИ: медведи с полюса против дробовика с солью ---------- */
 const BEARS = {
@@ -2034,6 +2282,7 @@ const WALKS = {
   w_office: { scene: 'office', bounds: [-9.6, 9.6, -6.4, 6.8], cam: [12, 10, 9.4, 8.8, 0.92],
     coll: [[-5, -3], [-2, -3], [1, -3], [-5, 1.5], [-2, 1.5], [1, 1.5]].map(([x, z]) => ({ x, z, r: 1.15 })).concat([{ x: 7.5, z: -5.2, r: 1.2 }, { x: 8.8, z: 2.4, r: 0.9 }, { x: 7.4, z: 1.6, r: 0.7 }, { x: -8.6, z: -5.6, r: 0.9 }, { x: 6.4, z: 5.8, r: 1.1 }].concat(OF_COVER.slice(0, 4).map(([x, z]) => ({ x, z, r: 0.45 })))),
     start() { WK.p.set(-9, 0, 3); WK.h = Math.PI / 2; WK.left = 100; Object.assign(OF, { st: 'find', real: Math.floor(Math.random() * OF_SPOTS.length), checked: [], caught: 0, bi: 1, bx: BOSS_PATH[0][0], bz: BOSS_PATH[0][1], look: 0, lookT: 6, bh: 0 });
+      { const e = stThing('🔖')[0]; if (OF.stampE !== e) { const old = OF.stamp, sp = emojiSprite(e, 1.0); old.parent.add(sp); old.parent.remove(old); OF.stamp = sp; OF.stampE = e; } }
       OF.stamp.visible = false; OF.zone.visible = false; officeTv(['ГРУЗОВ: 0', 'ЖАЛОБ: 4 000 017']); if (OF.dimon) OF.dimon.userData.play('Defeat');
       hint('Гоша спрятал печать Димона. Обойди <b>кофемашину, принтер, фикус и коробки</b>. Не попадайся Эдуарду Кузьмичу (красный взгляд)!', 6500);
       WSAY(['<b>Димон</b> по рации: мам, печать пропала! Отчёт до 18:00! Кузьмич меня съест', '<b>Марс-ФМ:</b> в «ТрансМарсе» квартальный отчёт. Сотрудники просят не звонить, не писать и не дышать']); },
@@ -2052,14 +2301,14 @@ const WALKS = {
         if (OF.grace <= 0 && ((d < 5 && a < 0.5 && !hid) || d < 0.9)) { OF.grace = 2.5; OF.caught++; sfx('caught'); sfx('j_caught'); flash('#ff3a2a', 0.35); shake = 0.3; showMsg(BOSS_SAY[Math.floor(Math.random() * BOSS_SAY.length)], OF.caught >= 3 ? 'Охрана выводит бабулю' : 'Эдуард Кузьмич выставил бабулю за дверь (' + OF.caught + ' из 3)', '#ff8a6a', 1600, true); WK.p.set(-9, 0, 3); WK.vx = WK.vz = 0; OF.look = 0; OF.lookT = 4; if (OF.caught >= 3) walkEnd(false); } }
       // поиск печати
       if (OF.st === 'find') for (let i = 0; i < OF_SPOTS.length; i++) { const sp = OF_SPOTS[i]; if (OF.checked.includes(i) || Math.hypot(WK.p.x - sp.x, WK.p.z - sp.z) > 1.4) continue; OF.checked.push(i);
-        if (i === OF.real) { OF.st = 'carry'; sfx('found'); confettiSmall(); showMsg('Печать нашлась!', 'Гоша: «Мур». Он её не брал. Она сама', '#9fe8ff', 1800); OF.zone.visible = true; OF.zone.position.set(-0.7, 0.04, 3.1); if (OF.dimon) OF.dimon.userData.play('Idle'); }
+        if (i === OF.real) { OF.st = 'carry'; sfx('found'); confettiSmall(); showMsg(SM() && SM().thing ? 'Нашлось: ' + SM().thing[1] : 'Печать нашлась!', 'Гоша: «Мур». Он это не брал. Оно само', '#9fe8ff', 1800); OF.zone.visible = true; OF.zone.position.set(-0.7, 0.04, 3.1); if (OF.dimon) OF.dimon.userData.play('Idle'); }
         else { sfx('close'); farmFloat(sp.no, sp.x, sp.z, '#e0c2b0'); } }
       if (OF.st === 'carry') { OF.stamp.visible = true; OF.stamp.position.set(WK.p.x, 2.6 + Math.sin(ts * 8) * 0.05, WK.p.z); OF.zone.material.opacity = 0.45 + Math.sin(ts * 5) * 0.25;
         if (WK.st === 'go' && Math.hypot(WK.p.x + 0.7, WK.p.z - 3.1) < 1.4) { OF.st = 'done'; OF.stamp.visible = false; if (OF.dimon) OF.dimon.userData.play('Victory'); officeTv(['ОТЧЁТ СДАН', 'в 17:59'], '#7fffb0'); showMsg('Отчёт сдан!', 'Эдуард Кузьмич: «Дмитрий, премия — грамота. И маму забирайте»', '#9fe8a0', 2200); walkEnd(true); } }
       // стрелка — к непроверенным местам или к Димону
       { let tx, tz; if (OF.st === 'carry') { tx = -0.7; tz = 3.1; } else { const left = OF_SPOTS.filter((q, i) => !OF.checked.includes(i)).sort((p1, p2) => Math.hypot(p1.x - WK.p.x, p1.z - WK.p.z) - Math.hypot(p2.x - WK.p.x, p2.z - WK.p.z))[0]; if (left) { tx = left.x; tz = left.z; } }
         if (tx !== undefined) { const dx = tx - WK.p.x, dz = tz - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.visible = d > 2; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; } }
-      const mm = Math.floor(40 + (100 - Math.max(0, WK.left)) / 5); $('order').textContent = (OF.st === 'carry' ? '🔖 Неси печать Димону' : '🔍 Ищи печать: ' + OF.checked.length + '/4') + ' · попалась: ' + OF.caught + '/3 · 17:' + String(Math.min(59, mm)).padStart(2, '0'); $('order').classList.toggle('bad', OF.caught >= 2);
+      const mm = Math.floor(40 + (100 - Math.max(0, WK.left)) / 5); $('order').textContent = (OF.st === 'carry' ? stThing('🔖')[0] + ' Неси Димону' : '🔍 Ищи: ' + stThing('🔖', 'печать')[1] + ' ' + OF.checked.length + '/4') + ' · попалась: ' + OF.caught + '/3 · 17:' + String(Math.min(59, mm)).padStart(2, '0'); $('order').classList.toggle('bad', OF.caught >= 2);
       if (WK.sayT <= 0) { WK.sayT = rnd(8, 12); WSAY(['<b>Эдуард Кузьмич:</b> коллеги, напоминаю: планёрка через 15 минут. И через 30. И через 45', '<b>Димон</b> шепчет: мам, только Кузьмичу на глаза не попадайся. Он маму Серёги до сих пор вспоминает', '<b>Гоша</b> сидит на принтере. Принтер доволен: тепло', '<b>Марс-ФМ:</b> «ТрансМарс» — доставим даже на Марс. Срок доставки уточняйте у Эдуарда Кузьмича', '<b>Бухгалтерия:</b> бабушка, вы к кому? Ко всем? Тогда в порядке очереди']); } },
     end(win) { const pay = win ? Math.max(150, 450 - OF.caught * 80 + Math.round(WK.left) * 3) : 60;
       return { title: win ? (OF.caught === 0 ? 'Кузьмич даже не заметил! Отчёт сдан' : 'Отчёт сдан в 17:59! Димон спасён') : 'Бабулю вывела охрана. Отчёт сдадут вчера', stars: win ? (OF.caught === 0 ? 3 : 2) : 1, sub: '🏢 Пешком: офис «ТрансМарса» · печать для Димона',
@@ -2100,7 +2349,7 @@ const WALKS = {
     stop() { (CL.cuts || []).forEach((c) => c.obj && clinicScene.remove(c.obj)); CL.cuts = []; },
   },
   w_find: {
-    start() { const R = WK.root; WK.items.forEach((it) => R.remove(it.sp)); WK.items = FIND_ITEMS.map((it) => { const k = Math.floor(Math.random() * (it.pos ? it.pos.length : 1)), p = it.pos ? it.pos[k] : [0, 1.9, 0]; const sp = emojiSprite(it.e, 1.0); R.add(sp); return { e: it.e, name: it.name, x: p[0], y: p[1], z: p[2], line: it.line[k] || it.line[0], goat: it.goat, sp, got: false }; });
+    start() { const R = WK.root; WK.items.forEach((it) => R.remove(it.sp)); WK.items = FIND_ITEMS.map((it0, q) => { const SI = SM() && SM().base === 'w_find' && SM().items, it = SI && SI[q] ? Object.assign({}, it0, { e: SI[q][0], name: SI[q][1], line: [SI[q][2]] }) : it0; const k = Math.floor(Math.random() * (it.pos ? it.pos.length : 1)), p = it.pos ? it.pos[k] : [0, 1.9, 0]; const sp = emojiSprite(it.e, 1.0); R.add(sp); return { e: it.e, name: it.name, x: p[0], y: p[1], z: p[2], line: it.line[k] || it.line[0], goat: it.goat, sp, got: false }; });
       WK.found = 0; WK.left = 75; FS.goat.position.set(-5, 0, 1); WK.gt = [-5, 1]; WK.arrow.visible = true;
       hint('Поставь палец и веди в сторону — появится <b>джойстик</b>, бабуля пойдёт туда. Жёлтая стрелка покажет, где искать', 5000); WSAY(['<b>Дед:</b> Таня, ш-ш-шелюсть! Где моя шелюсть?!', '<b>Дед:</b> И гашету! И валидол! И ушанку! Шрочно!']); },
     frame(dt, ts) { const g = FS.goat; // Зорька бродит в ушанке
@@ -2167,7 +2416,7 @@ const WALKS = {
         rows: [['Коза', win ? 'в сарае' : 'у Вали'], ['Осталось времени', win ? fmt(WK.left) : '—'], ['Прыжков Зорьки', 'рекорд колонии']], pay }; },
   },
   w_steal: {
-    start() { WK.fenceOpen = true; WK.side = -1; WK.valyaG.visible = true; WK.vs = 'scope'; WK.vt = rnd(3, 4.5); WK.sweep = 0; WK.caught = 0; WK.carry = false; WK.left = 120; WK.can.visible = true; WK.can.position.set(4.3, 0.9, 15.3); WK.p.set(0, 0, 3.5); WK.h = 0;
+    start() { WK.fenceOpen = true; WK.side = -1; WK.valyaG.visible = true; WK.vs = 'scope'; WK.vt = rnd(3, 4.5); WK.sweep = 0; WK.caught = 0; WK.carry = false; WK.left = 120; { const e = stThing('🚿')[0]; if (WK.canE !== e && WK.can.parent) { const old = WK.can, sp = emojiSprite(e, 1.1); old.parent.add(sp); old.parent.remove(old); WK.can = sp; WK.canE = e; } } WK.can.visible = true; WK.can.position.set(4.3, 0.9, 15.3); WK.p.set(0, 0, 3.5); WK.h = 0;
       hint('Пока Валя смотрит в телескоп — иди. Появились 👀 — <b>прячься за бочку или куст</b>', 6000); WSAY(['<b>Дед:</b> Таня, Валя опять нашу лейку утащила! С 2071 года «поливает»!', '<b>Соседка Валя:</b> это моя лейка. Я на ней фломастером написала']); },
     frame(dt, ts) {
       WK.vt -= dt; const V = WK.valya;
@@ -2181,7 +2430,7 @@ const WALKS = {
       if (!WK.carry && Math.hypot(WK.p.x - 4.3, WK.p.z - 15.3) < 1.3) { WK.carry = true; sfx('pick'); showMsg('Лейка у бабули!', 'Теперь тихонько домой, за забор', '#9fe8ff', 1400); bump($('order')); }
       if (WK.carry) WK.can.position.set(WK.p.x, 2.5 + Math.sin(ts * 8) * 0.05, WK.p.z); else WK.can.position.y = 0.9 + Math.sin(ts * 3) * 0.1;
       if (WK.carry && WK.p.z < 6 && WK.st === 'go') { showMsg('Лейка дома!', 'Валя пока не заметила. Заметит — скажет, что так и было', '#9fe8a0', 1600); walkEnd(true); }
-      $('order').textContent = (WK.carry ? '🚿 Неси домой' : '🚿 Забери лейку') + ' · попалась: ' + WK.caught + '/3 · ' + fmt(Math.max(0, WK.left)); $('order').classList.toggle('bad', WK.caught >= 2);
+      $('order').textContent = (WK.carry ? stThing('🚿')[0] + ' Неси домой' : stThing('🚿', 'лейку')[0] + ' Забери: ' + stThing('🚿', 'лейку')[1]) + ' · попалась: ' + WK.caught + '/3 · ' + fmt(Math.max(0, WK.left)); $('order').classList.toggle('bad', WK.caught >= 2);
       if (WK.sayT <= 0) { WK.sayT = rnd(9, 13); WSAY(['<b>Дед</b> шепчет по рации: «Таня, приём, ты за бочкой? Я тебя не вижу. Это хорошо»', '<b>Гоша</b> громко мурчит у Вали под окном. Предатель', '<b>Марс-ФМ:</b> в «Заречной» соседи снова делят лейку. Счёт 47:46']); } },
     end(win) { const pay = win ? Math.max(150, 500 - WK.caught * 100 + Math.round(WK.left) * 3) : 60;
       return { title: win ? 'Лейка вернулась домой! Валя ещё не знает' : 'Валя победила. Лейка теперь «общая», то есть её', stars: win ? (WK.caught === 0 ? 3 : 2) : 1, sub: '🚿 Пешком: «Верни лейку» · улица Садовая',
@@ -2189,6 +2438,128 @@ const WALKS = {
   },
 };
 function g0() { if (FS.goat) { FS.goat.position.set(-6, 0, 0); FS.goat.scale.setScalar(1); FS.goat.rotation.set(0, 0, 0); } }
+/* ---------- 🚶 НОВЫЕ ПЕШИЕ ЗАДАНИЯ НА ДАЧЕ: у каждого свои правила ---------- */
+const WX = { tmp: [] };
+function wxClear() { WX.tmp.forEach((o) => o.parent && o.parent.remove(o)); WX.tmp.length = 0; if (farmScene && WX.fog0) { farmScene.fog.density = WX.fog0; WX.fog0 = 0; } }
+function wxSpr(e, x, y, z, s = 1.2, glow) { s *= 1.4; const sp = glow ? emojiSprite(e, s, glow) : emojiSprite(e, s); sp.position.set(x, y, z); WK.root.add(sp); WX.tmp.push(sp); return sp; }
+function wxRing(x, z, r, col) { const g = new THREE.RingGeometry(r - 0.22, r, 28); g.rotateX(-Math.PI / 2); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7, depthWrite: false })); m.position.set(x, 0.05, z); WK.root.add(m); WX.tmp.push(m); return m; }
+function wxArrow(x, z, ts) { const A = WK.arrow, dx = x - WK.p.x, dz = z - WK.p.z, d = Math.hypot(dx, dz) || 1; A.visible = d > 2; A.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); A.rotation.y = Math.atan2(dx, dz); A.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; }
+const wxNear = (x, z, r) => Math.hypot(WK.p.x - x, WK.p.z - z) < r, wd = () => (SM() && SM().d) || 2, wxPos = () => [rnd(-9.5, 9.5), rnd(-10, 5.2)];
+const wxHud = (t) => { $('order').textContent = t + ' · ' + fmt(Math.max(0, WK.left)); };
+const wxEnd = (ok, n, need, what, titles, pay) => ({ title: ok ? titles[0] : titles[1], stars: !ok ? 1 : n >= need * 1.4 || WK.left > 25 ? 3 : 2, sub: '🚶 Пешком: ' + ORDERS[WK.id].name, rows: [[what, n + ' из ' + need]], pay });
+const WX_DEF = {
+  // 🧺 лови то, что падает с неба; камни — мимо
+  w_catch: { name: 'Лови!', icon: '🧺', desc: 'С неба падает добро. Встань под тень и поймай. Камни — мимо!',
+    start() { WK.left = 60; WK.fall = []; WK.fT = 1; WK.n = 0; WK.miss = 0; WK.need = 10 + wd() * 3; WK.stun = 0; WK.p.set(0, 0, 0); hint('Встань под <b>тень</b> — поймаешь. Под 🪨 не стой!', 5000); },
+    frame(dt, ts) { WK.fT -= dt; if (WK.st === 'go' && WK.fT <= 0) { WK.fT = rnd(0.7, 1.3) / (0.8 + wd() * 0.2); const a = rnd(0, 6.28), r = rnd(1.5, 6), x = clamp(WK.p.x + Math.sin(a) * r, -9.5, 9.5), z = clamp(WK.p.z + Math.cos(a) * r, -10, 5.5), bad = Math.random() < 0.22 + wd() * 0.04;
+        WK.fall.push({ x, z, t: 0, T: rnd(1.9, 2.5), bad, s: wxSpr(bad ? '🪨' : (SM() && SM().ic) || pick(['🍎', '🥔', '🍐', '🥚']), x, 14, z, 1.1), r: wxRing(x, z, 0.9, bad ? '#ff5a4a' : '#ffe08a') }); }
+      if (WK.stun > 0) { WK.stun -= dt; WK.vx *= 0.5; WK.vz *= 0.5; }
+      WK.fall = WK.fall.filter((f) => { f.t += dt; const k = f.t / f.T; f.s.position.y = 14 * (1 - k * k); f.r.scale.setScalar(0.4 + k * 0.8); if (k < 1) return true;
+        f.s.parent.remove(f.s); f.r.parent.remove(f.r); const hit = wxNear(f.x, f.z, 1.3);
+        if (f.bad) { if (hit) { WK.stun = 0.9; WK.n = Math.max(0, WK.n - 1); sfx('thud'); shake = 0.3; buzz(50); farmFloat('Бум! −1', f.x, f.z, '#ff8a6a'); } else burst(farmScene, f.x, 0.4, f.z, 'smoke', '#a07060', 1.6, 0.4); }
+        else if (hit) { WK.n++; sfx('coin'); farmFloat('Поймала! ' + WK.n, f.x, f.z, '#9aff8a'); if (WK.n >= WK.need) walkEnd(true); } else { WK.miss++; sfx('soft', { vol: 0.5 }); burst(farmScene, f.x, 0.3, f.z, 'smoke', '#ffcf6a', 1.2, 0.3); } return false; });
+      wxHud('🧺 ' + WK.n + ' / ' + WK.need + ' · мимо: ' + WK.miss); },
+    timeup() { return WK.n >= WK.need * 0.7; },
+    end(win) { return wxEnd(win, WK.n, WK.need, 'Поймано', ['Всё поймала! Корзина полна', 'Половина упала мимо. Гоша доволен'], 150 + WK.n * 30); } },
+  // 🔥 тушим: вода из колодца, огоньки растут
+  w_fire: { name: 'Тушим!', icon: '🔥', desc: 'Огоньки разгораются. Набери воды у колодца и туши, пока не разгорелось',
+    start() { WK.left = 70; WK.fires = []; WK.fT = 1.5; WK.w = 3; WK.n = 0; WK.dmg = 0; WK.well = [-8.6, -7]; wxSpr('🪣', -8.6, 1.6, -7, 1.4, 'rgba(120,200,255,.9)'); wxRing(-8.6, -7, 1.6, '#7fd0ff'); hint('Подойди к огоньку — потушишь. Вода кончилась — к <b>колодцу 🪣</b>', 5000); },
+    frame(dt, ts) { WK.fT -= dt; if (WK.st === 'go' && WK.fT <= 0 && WK.fires.length < 4 + wd()) { WK.fT = rnd(2.5, 4) / (0.7 + wd() * 0.25); const [x, z] = wxPos(); WK.fires.push({ x, z, g: 0, s: wxSpr((SM() && SM().ic) || '🔥', x, 0.7, z, 0.6) }); }
+      if (wxNear(WK.well[0], WK.well[1], 1.8) && WK.w < 3) { WK.w = 3; sfx('water'); farmFloat('Полное ведро! 💧💧💧', WK.p.x, WK.p.z, '#9fd8ff'); }
+      WK.fires = WK.fires.filter((f) => { f.g += dt / (14 - wd() * 2); f.s.scale.setScalar(0.6 + f.g * 1.4); f.s.position.y = 0.5 + f.g * 0.8;
+        if (wxNear(f.x, f.z, 1.4) && WK.w > 0) { WK.w--; WK.n++; sfx('water'); for (let q = 0; q < 5; q++) puffDrop(f.x, f.z); burst(farmScene, f.x, 0.8, f.z, 'smoke', '#dfe8f0', 2, 0.6); f.s.parent.remove(f.s); return false; }
+        if (f.g >= 1) { WK.dmg++; sfx('crash', { vol: 0.5 }); shake = 0.3; farmFloat('Не успела! Урон ' + WK.dmg + '/5', f.x, f.z, '#ff8a6a'); f.s.parent.remove(f.s); if (WK.dmg >= 5) walkEnd(false); return false; } return true; });
+      const near = WK.w ? WK.fires.slice().sort((a, b) => b.g - a.g)[0] : { x: WK.well[0], z: WK.well[1] }; if (near) wxArrow(near.x, near.z, ts); else WK.arrow.visible = false;
+      wxHud('💧'.repeat(WK.w) + '○'.repeat(3 - WK.w) + ' · потушено ' + WK.n + ' · урон ' + WK.dmg + '/5'); $('order').classList.toggle('bad', WK.dmg >= 3); },
+    timeup() { return WK.dmg < 5; },
+    end(win) { const r = wxEnd(win, WK.n, 8, 'Потушено', ['Всё потушено! Дача цела', 'Сгорело. Дед говорит — «к новому ремонту»'], 150 + WK.n * 40); r.stars = !win ? 1 : WK.dmg === 0 ? 3 : 2; r.rows.push(['Урон', WK.dmg]); return r; } },
+  // 🐔 накорми всех: каждый хочет своё
+  w_feed: { name: 'Накорми всех', icon: '🌽', desc: 'Каждый хочет своё. Бери у ящиков и неси тому, кто просит',
+    start() { WK.left = 80; WK.n = 0; WK.miss = 0; WK.need = 7 + wd() * 2; WK.hand = null; WK.hs = null;
+      WK.food = [['🌽', -9.2, 3.6], ['🥕', 1.5, -9.5], ['🍞', 9.2, -2], ['🐟', -3, 5.4]].map(([e, x, z]) => { wxSpr(e, x, 1.4, z, 1.3); wxRing(x, z, 1.2, '#ffe08a'); return { e, x, z }; });
+      WK.pets = [['🐔', -6, -4], ['🐷', 6, -6.5], ['🐄', 7.5, 3.5], ['🐱', -1, 1]].map(([e, x, z]) => ({ e, x, z, s: wxSpr(e, x, 1, z, 1.6), b: wxSpr('💭', x, 2.6, z, 1.0), w: null, p: 0, cd: rnd(0, 3) }));
+      hint('Над головой у зверя — чего хочет. Возьми у ящика и <b>принеси</b>', 5000); },
+    frame(dt, ts) { for (const f of WK.food) if (wxNear(f.x, f.z, 1.3) && (!WK.hand || WK.hand !== f.e)) { WK.hand = f.e; sfx('pick'); if (WK.hs) WK.hs.parent.remove(WK.hs); WK.hs = wxSpr(f.e, 0, 0, 0, 0.9); }
+      if (WK.hs) WK.hs.position.set(WK.p.x, 2.4, WK.p.z);
+      for (const a of WK.pets) { if (!a.w) { a.cd -= dt; if (a.cd <= 0 && WK.st === 'go') { a.w = pick(WK.food).e; a.p = 16 - wd() * 2; if (a.b.parent) a.b.parent.remove(a.b); a.b = wxSpr(a.w, a.x, 2.7, a.z, 1.0, 'rgba(255,255,255,.9)'); } continue; }
+        a.p -= dt; a.b.position.y = 2.7 + Math.sin(ts * 5) * 0.1; a.b.material.opacity = a.p < 5 ? 0.4 + Math.abs(Math.sin(ts * 8)) * 0.6 : 1;
+        if (wxNear(a.x, a.z, 1.6) && WK.hand) { if (WK.hand === a.w) { WK.n++; sfx('harvest'); farmFloat(a.e + ' ням! ' + WK.n + '/' + WK.need, a.x, a.z, '#9aff8a'); confettiSmall(); a.w = null; a.cd = rnd(1, 3); a.b.visible = false; WK.hand = null; WK.hs.parent.remove(WK.hs); WK.hs = null; if (WK.n >= WK.need) walkEnd(true); }
+          else if (!a.no) { a.no = 1; sfx('dry'); farmFloat(a.e + ' «Не то!»', a.x, a.z, '#ff9a7a'); setTimeout(() => (a.no = 0), 1200); } }
+        if (a.p <= 0) { WK.miss++; sfx('j_fail', { vol: 0.4 }); farmFloat(a.e + ' обиделся', a.x, a.z, '#ff8a6a'); a.w = null; a.cd = rnd(2, 4); a.b.visible = false; } }
+      const t = WK.pets.filter((a) => a.w).sort((p1, p2) => p1.p - p2.p)[0]; if (t) { const f = WK.food.find((q) => q.e === t.w); WK.hand === t.w ? wxArrow(t.x, t.z, ts) : wxArrow(f.x, f.z, ts); } else WK.arrow.visible = false;
+      wxHud('🍽 накормлено ' + WK.n + ' / ' + WK.need + ' · обиделись ' + WK.miss); },
+    timeup() { return WK.n >= WK.need * 0.7; },
+    end(win) { return wxEnd(win, WK.n, WK.need, 'Накормлено', ['Все сыты и довольны!', 'Голодные смотрят с укором'], 150 + WK.n * 35); } },
+  // 🐱 найди Гошу: горячо — холодно
+  w_hide: { name: 'Где Гоша?', icon: '🐱', desc: 'Кот спрятался. Горячо — холодно. Нашла — перепрячется',
+    start() { WK.left = 75; WK.n = 0; WK.need = 2 + wd(); WK.spots = [[-9, -9, '📦'], [8.5, -9, '🛢️'], [-9.5, 4.5, '🌿'], [9.5, 4.5, '🧺'], [-3, -6, '🪵'], [3.5, -3, '🪣'], [-5.5, 1, '🛞'], [5, 1.5, '🌿'], [0, -10, '📦'], [-1, 4.8, '🧺']].map(([x, z, e]) => ({ x, z, s: wxSpr(e, x, 0.8, z, 1.3) }));
+      WK.cat.visible = false; WK.hid = Math.floor(Math.random() * WK.spots.length); WK.cs = null; hint('Гоша спрятался! Смотри наверх: <b>горячо — холодно</b>', 5000); },
+    frame(dt, ts) { const h = WK.spots[WK.hid], d = Math.hypot(WK.p.x - h.x, WK.p.z - h.z);
+      if (WK.cs) { WK.cs.t += dt; WK.cs.s.position.y = 1 + Math.abs(Math.sin(WK.cs.t * 10)) * 0.6; if (WK.cs.t > 1.2) { WK.cs.s.parent.remove(WK.cs.s); WK.cs = null; } }
+      else if (d < 1.5 && WK.st === 'go') { WK.n++; sfx('found'); confettiSmall(); farmFloat('Мяу! Нашла ' + WK.n + '/' + WK.need, h.x, h.z, '#9aff8a'); WK.cs = { t: 0, s: wxSpr('🐱', h.x, 1, h.z, 1.4) }; if (WK.n >= WK.need) { walkEnd(true); return; } let k; do { k = Math.floor(Math.random() * WK.spots.length); } while (k === WK.hid || Math.hypot(WK.spots[k].x - WK.p.x, WK.spots[k].z - WK.p.z) < 6); WK.hid = k; }
+      const t = d < 3 ? '🔥 ГОРЯЧО!' : d < 6 ? '♨ тепло' : d < 10 ? '🌤 прохладно' : '❄ холодно'; wxHud('🐱 ' + WK.n + '/' + WK.need + ' · ' + t); $('order').classList.toggle('bad', d < 3); },
+    stop() { WK.cat.visible = true; },
+    end(win) { WK.cat.visible = true; return wxEnd(win, WK.n, WK.need, 'Гошу нашла', ['Попался, хвостатый!', 'Гоша победил. Пришёл сам, к ужину'], 150 + WK.n * 80); } },
+  // 🗑 уборка: собери мусор, носи по три в бак; Валя подкидывает новый
+  w_trash: { name: 'Генеральная уборка', icon: '🗑️', desc: 'Носи мусор в бак по три штуки. Валя подкидывает новый',
+    start() { WK.left = 80; WK.n = 0; WK.need = 14 + wd() * 3; WK.carry = []; WK.tr = []; WK.vT = 5; wxSpr('🗑️', -9.4, 1.2, 5, 1.6); wxRing(-9.4, 5, 1.5, '#9aff8a'); for (let k = 0; k < 12; k++) WX_DEF.w_trash.add();
+      hint('Подбирай мусор (до 3 в руках) и неси в <b>бак 🗑️</b>', 5000); },
+    add(x, z) { if (x === undefined) [x, z] = wxPos(); WK.tr.push({ x, z, s: wxSpr(pick(['🥫', '📰', '🧦', '🍌', '🧃', '🦴']), x, 0.5, z, 0.8) }); },
+    frame(dt, ts) { WK.vT -= dt; if (WK.st === 'go' && WK.vT <= 0) { WK.vT = rnd(4, 7) / (0.7 + wd() * 0.2); const x = rnd(-8, 8); WX_DEF.w_trash.add(x, 5.2); farmFloat('Валя: «Это не моё!»', x, 5, '#ff9ad5'); }
+      WK.tr = WK.tr.filter((q) => { if (WK.carry.length < 3 && wxNear(q.x, q.z, 1.1)) { WK.carry.push(q.s); sfx('pick', { rnd: 0.2 }); return false; } return true; });
+      WK.carry.forEach((s, k) => s.position.set(WK.p.x, 2.2 + k * 0.6, WK.p.z));
+      if (WK.carry.length && wxNear(-9.4, 5, 1.6)) { WK.n += WK.carry.length; sfx('coins'); farmFloat('В бак! ' + WK.n + '/' + WK.need, -9.4, 5, '#9aff8a'); WK.carry.forEach((s) => s.parent && s.parent.remove(s)); WK.carry = []; if (WK.n >= WK.need) walkEnd(true); }
+      if (WK.carry.length === 3) wxArrow(-9.4, 5, ts); else WK.arrow.visible = false;
+      wxHud('🗑 ' + WK.n + ' / ' + WK.need + ' · в руках ' + WK.carry.length + '/3'); },
+    timeup() { return WK.n >= WK.need * 0.7; },
+    end(win) { return wxEnd(win, WK.n, WK.need, 'Мусора в баке', ['Чисто! Дача сияет', 'Мусор победил. Валя хихикает'], 150 + WK.n * 20); } },
+  // 😴 дед-лунатик: доведи до кровати, не дай упасть в яму
+  w_ded: { name: 'Дед-лунатик', icon: '😴', desc: 'Дед бродит во сне к ямам. Подойди — он повернёт к кровати',
+    start() { WK.left = 90; WK.n = 0; WK.need = 2 + wd(); WK.fall = 0; WK.bed = [-6.5, 4.6]; wxSpr('🛏️', -6.5, 1, 4.6, 1.8); wxRing(-6.5, 4.6, 1.5, '#9aff8a');
+      WK.holes = [[7.5, -8], [8.5, 3.5], [-8.5, -8.5]].map(([x, z]) => { wxSpr('🕳️', x, 0.3, z, 1.6); wxRing(x, z, 1.4, '#ff5a4a'); return [x, z]; }); WX_DEF.w_ded.wake(); hint('Дед идёт к яме. Подойди к нему — и он <b>пойдёт к кровати</b>', 5000); },
+    wake() { const [x, z] = [rnd(-2, 4), rnd(-7, -2)]; if (!WK.dd) WK.dd = wxSpr('👴', x, 1.1, z, 1.7); WK.dd.position.set(x, 1.1, z); WK.dd.visible = true; WK.dg = pick(WK.holes); WK.led = 0; },
+    frame(dt, ts) { const D = WK.dd; if (!D || !D.visible || WK.st !== 'go') return; const dp = D.position; if (wxNear(dp.x, dp.z, 1.6) && !WK.led) { WK.led = 1; WK.dg = WK.bed; sfx('pick'); farmFloat('Дед: «Таня? Я… за кефиром»', dp.x, dp.z, '#ffe08a'); }
+      if (WK.led && !wxNear(dp.x, dp.z, 5)) { WK.led = 0; WK.dg = pick(WK.holes); farmFloat('Дед свернул!', dp.x, dp.z, '#ff9a7a'); }
+      const dx = WK.dg[0] - dp.x, dz = WK.dg[1] - dp.z, d = Math.hypot(dx, dz), v = WK.led ? 2.4 : 1.0 + wd() * 0.25; if (d > 0.3) { dp.x += dx / d * v * dt; dp.z += dz / d * v * dt; } dp.y = 1.1 + Math.abs(Math.sin(ts * 5)) * 0.15;
+      if (Math.random() < dt * 0.6) farmFloat('Z-z-z', dp.x, dp.z, '#bcd8ff');
+      if (d < 0.6) { if (WK.dg === WK.bed) { WK.n++; sfx('j_found'); farmFloat('Уложила! ' + WK.n + '/' + WK.need, dp.x, dp.z, '#9aff8a'); if (WK.n >= WK.need) { walkEnd(true); return; } D.visible = false; setTimeout(() => WK.active && WX_DEF.w_ded.wake(), 1500); }
+        else { WK.fall++; sfx('thud'); shake = 0.3; farmFloat('Бульк! Дед в яме (' + WK.fall + '/3)', dp.x, dp.z, '#ff8a6a'); if (WK.fall >= 3) { walkEnd(false); return; } D.visible = false; setTimeout(() => WK.active && WX_DEF.w_ded.wake(), 1500); } }
+      wxArrow(dp.x, dp.z, ts); wxHud('😴 уложила ' + WK.n + '/' + WK.need + ' · в яме ' + WK.fall + '/3'); },
+    stop() { if (WK.dd) WK.dd = null; },
+    end(win) { WK.dd = null; const r = wxEnd(win, WK.n, WK.need, 'Уложила деда', ['Дед спит как младенец. Храпит как марсоход', 'Дед ночевал в яме. Говорит, там тише'], 150 + WK.n * 90); r.rows.push(['Падений в яму', WK.fall]); return r; } },
+  // 🍲 готовим по рецепту: продукты строго по порядку
+  w_cook: { name: 'По рецепту', icon: '🍲', desc: 'Собери продукты строго по порядку рецепта и неси в кастрюлю',
+    start() { WK.left = 90; WK.n = 0; WK.need = 2 + Math.floor(wd() / 2); WK.err = 0; WK.st2 = [['🥔', -8.5, -7], ['🥕', 8.5, -8], ['🧅', -9, 2], ['🥬', 9, 2.5], ['🧂', 0, -10], ['🍄', 4, 5]].map(([e, x, z]) => { wxSpr(e, x, 1.3, z, 1.4); wxRing(x, z, 1.1, '#ffe08a'); return { e, x, z }; });
+      WK.pot = [-1, -3]; wxSpr('🍲', -1, 1.2, -3, 1.7); wxRing(-1, -3, 1.4, '#9aff8a'); WX_DEF.w_cook.recipe(); hint('Рецепт — наверху. Бери продукты <b>по порядку</b>, потом — в кастрюлю 🍲', 5500); },
+    recipe() { const L = 3 + wd(); WK.rec = []; for (let k = 0; k < L; k++) WK.rec.push(pick(WK.st2)); WK.ri = 0; },
+    frame(dt, ts) { if (WK.ri < WK.rec.length) { const want = WK.rec[WK.ri]; for (const s of WK.st2) if (wxNear(s.x, s.z, 1.1) && WK.last !== s) { WK.last = s; if (s === want) { WK.ri++; sfx('pick'); farmFloat(s.e + ' ✓', s.x, s.z, '#9aff8a'); } else { WK.err++; WK.left -= 5; sfx('dry'); farmFloat('Не то! −5 с', s.x, s.z, '#ff8a6a'); } }
+        for (const s of WK.st2) if (!wxNear(s.x, s.z, 1.6) && WK.last === s) WK.last = null; wxArrow(want.x, want.z, ts); }
+      else { wxArrow(WK.pot[0], WK.pot[1], ts); if (wxNear(WK.pot[0], WK.pot[1], 1.4)) { WK.n++; sfx('j_found'); confettiSmall(); farmFloat('Готово блюдо №' + WK.n + '!', WK.pot[0], WK.pot[1], '#9aff8a'); if (WK.n >= WK.need) { walkEnd(true); return; } WX_DEF.w_cook.recipe(); } }
+      wxHud('🍲 ' + WK.n + '/' + WK.need + ' · ' + WK.rec.map((r, k) => (k < WK.ri ? '✓' : r.e)).join('')); },
+    end(win) { const r = wxEnd(win, WK.n, WK.need, 'Блюд готово', ['Вкуснотища! Внуки облизывают кастрюлю', 'Получилось «что-то». Гоша ест'], 150 + WK.n * 120); r.rows.push(['Ошибок в рецепте', WK.err]); r.stars = !win ? 1 : WK.err === 0 ? 3 : 2; return r; } },
+  // 🌫 пыльная буря: дойди до маячков, ветер сносит
+  w_storm: { name: 'В пыльную бурю', icon: '🌫', desc: 'Не видно ни зги. Дойди до маячков, ветер сносит',
+    start() { WK.left = 80; WK.n = 0; WK.need = 4 + wd(); if (!WX.fog0) WX.fog0 = farmScene.fog.density; farmScene.fog.density = 0.055; WK.bc = null; WX_DEF.w_storm.next(); hint('Пыль! Иди на <b>мигающий маячок</b>. Ветер толкает в сторону', 5000); },
+    next() { let x, z; do { [x, z] = wxPos(); } while (Math.hypot(x - WK.p.x, z - WK.p.z) < 8); if (WK.bc) { WK.bc.s.parent.remove(WK.bc.s); WK.bc.r.parent.remove(WK.bc.r); } WK.bc = { x, z, s: wxSpr('🔦', x, 1.6, z, 1.5, 'rgba(255,240,150,1)'), r: wxRing(x, z, 1.3, '#ffe08a') }; },
+    frame(dt, ts) { const w = Math.sin(ts * 0.6) * (1.2 + wd() * 0.6); WK.p.x = clamp(WK.p.x + w * dt, -10.5, 10.5); WK.p.z = clamp(WK.p.z + Math.cos(ts * 0.4) * 0.6 * dt, -11, 6);
+      WK.bc.s.material.opacity = 0.5 + Math.abs(Math.sin(ts * 5)) * 0.5; if (wxNear(WK.bc.x, WK.bc.z, 1.4)) { WK.n++; sfx('found'); farmFloat('Маячок ' + WK.n + '/' + WK.need, WK.bc.x, WK.bc.z, '#9aff8a'); if (WK.n >= WK.need) { walkEnd(true); return; } WX_DEF.w_storm.next(); }
+      wxArrow(WK.bc.x, WK.bc.z, ts); wxHud('🌫 маячков ' + WK.n + '/' + WK.need + ' · ветер ' + (w > 0 ? '→' : '←')); },
+    stop() { if (WX.fog0) { farmScene.fog.density = WX.fog0; WX.fog0 = 0; } },
+    end(win) { if (WX.fog0) { farmScene.fog.density = WX.fog0; WX.fog0 = 0; } return wxEnd(win, WK.n, WK.need, 'Маячков', ['Дошла сквозь бурю! Пыль в тапках — сувенир', 'Буря закружила. Нашли у Вали в огороде'], 150 + WK.n * 70); } },
+  // 🐝 мёд и рой: собирай банки, рой гонится
+  w_bees: { name: 'Мёд и рой', icon: '🍯', desc: 'Собирай мёд. Рой гонится за тобой — не дай ужалить',
+    start() { WK.left = 75; WK.n = 0; WK.need = 6 + wd() * 2; WK.life = 3; WK.inv = 0; WK.sw = { x: 8, z: -8, s: wxSpr('🐝', 8, 1.5, -8, 1.8) }; WK.sw2 = wxSpr('🐝', 8, 1.8, -8, 1.1); WK.hj = null; WX_DEF.w_bees.jar(); hint('Хватай <b>мёд 🍯</b>. Рой 🐝 гонится — уводи его кругами', 5000); },
+    jar() { let x, z; do { [x, z] = wxPos(); } while (Math.hypot(x - WK.sw.x, z - WK.sw.z) < 4); if (WK.hj) WK.hj.s.parent.remove(WK.hj.s); WK.hj = { x, z, s: wxSpr((SM() && SM().ic) || '🍯', x, 1, z, 1.3) }; },
+    frame(dt, ts) { const S = WK.sw, dx = WK.p.x - S.x, dz = WK.p.z - S.z, d = Math.hypot(dx, dz) || 1, v = 2.0 + wd() * 0.3 + Math.min(0.8, WK.t / 50); if (WK.st === 'go' && WK.inv <= 0) { S.x += dx / d * v * dt; S.z += dz / d * v * dt; }
+      S.s.position.set(S.x + Math.sin(ts * 9) * 0.3, 1.5 + Math.sin(ts * 13) * 0.2, S.z); WK.sw2.position.set(S.x + Math.cos(ts * 11) * 0.6, 1.9, S.z + Math.sin(ts * 7) * 0.5); WK.inv -= dt;
+      if (d < 1.2 && WK.inv <= 0 && WK.st === 'go') { WK.life--; WK.inv = 2; sfx('slap'); shake = 0.3; buzz(60); flash('#ffcf3a', 0.25); farmFloat('Ай! Ужалили (' + WK.life + ')', WK.p.x, WK.p.z, '#ff8a6a'); S.x -= dx / d * 4; S.z -= dz / d * 4; if (WK.life <= 0) { walkEnd(false); return; } }
+      if (wxNear(WK.hj.x, WK.hj.z, 1.2)) { WK.n++; sfx('jar'); farmFloat('Мёд! ' + WK.n + '/' + WK.need, WK.hj.x, WK.hj.z, '#ffcf6a'); if (WK.n >= WK.need) { walkEnd(true); return; } WX_DEF.w_bees.jar(); }
+      wxArrow(WK.hj.x, WK.hj.z, ts); wxHud('🍯 ' + WK.n + '/' + WK.need + ' · ' + '❤'.repeat(Math.max(0, WK.life))); },
+    timeup() { return WK.n >= WK.need * 0.7; },
+    end(win) { const r = wxEnd(win, WK.n, WK.need, 'Мёда', ['Мёд наш! Пчёлы уважают', 'Пчёлы победили. Дед мажет бабулю мазью'], 150 + WK.n * 45); r.stars = !win ? 1 : WK.life === 3 ? 3 : 2; return r; } },
+};
+Object.entries(WX_DEF).forEach(([k, d]) => { WALKS[k] = Object.assign({ cam: [13.5, 10.5, 10.5, 9.5, 0.6] }, d); ORDERS[k] = { name: d.name, icon: d.icon, desc: d.desc, who: 'Дача', km: false, hidden: true }; });
+
 function startWalk(id) {
   loadDacha();
   hideMap();
@@ -2203,9 +2574,9 @@ function startWalk(id) {
   WK.active = true; WK.id = id; WK.st = 'go'; WK.t = 0; WK.sayT = 6; WK.side = 1; WK.fenceOpen = false; WK.vx = WK.vz = 0; WK.h = Math.PI; WK.ph = 0; WK.p = new THREE.Vector3(1.5, 0, 4.5);
   WK.root.visible = true; WK.valyaG.visible = false; WK.can.visible = false; WK.arrow.visible = false; WK.tapok.visible = false; WK.sprouts.visible = false; WK.bugMesh.count = 0; WK.items.forEach((it) => (it.sp.visible = false)); g0();
   document.body.classList.add('walk'); $('end').classList.remove('on'); $('order').classList.remove('bad');
-  WALKS[id].start(); introCard(ORDERS[id]); WK.cat.position.set(WK.p.x - 1, 0, WK.p.z + 1);
+  wxClear(); WALKS[id].start(); introCard(ORDERS[id]); WK.cat.position.set(WK.p.x - 1, 0, WK.p.z + 1);
 }
-function stopWalk() { if (!WK.active) return; WK.active = false; skyG.visible = true; if (WALKS[WK.id] && WALKS[WK.id].stop) WALKS[WK.id].stop(); document.body.classList.remove('walk'); if (WK.root) WK.root.visible = false; g0(); if (WK.door) { WK.root.remove(WK.door); WK.root.remove(WK.ring); WK.door = null; } scene.add(skyG); }
+function stopWalk() { if (!WK.active) return; WK.active = false; wxClear(); skyG.visible = true; if (WALKS[WK.id] && WALKS[WK.id].stop) WALKS[WK.id].stop(); document.body.classList.remove('walk'); if (WK.root) WK.root.visible = false; g0(); if (WK.door) { WK.root.remove(WK.door); WK.root.remove(WK.ring); WK.door = null; } scene.add(skyG); }
 function walkEnd(win) {
   if (WK.st !== 'go') return; WK.st = 'end'; const r = WALKS[WK.id].end(win);
   $('etitle').innerHTML = letters(r.title, 0.025); $('esub').textContent = r.sub;
@@ -2217,7 +2588,7 @@ function walkEnd(win) {
   if (win) confetti(); setTimeout(() => $('end').classList.add('on'), 1300);
 }
 function walkFrame(dt, now) {
-  const ts = now / 1000, W = WK; W.t += dt; W.sayT -= dt; if (W.st === 'go') { W.left -= dt; if (W.left <= 0) walkEnd(W.id === 'w_bugs' ? W.eaten < 4 : false); }
+  const ts = now / 1000, W = WK; W.t += dt; W.sayT -= dt; if (W.st === 'go') { W.left -= dt; if (W.left <= 0) walkEnd(WALKS[W.id].timeup ? WALKS[W.id].timeup() : W.id === 'w_bugs' ? W.eaten < 4 : false); }
   const port = innerWidth < innerHeight; farmCam.aspect = innerWidth / innerHeight; farmCam.fov = port ? 60 : 50; farmCam.updateProjectionMatrix();
   // управление: палец относительно бабули на экране (или стрелки/WASD)
   let ix = 0, iz = 0;
@@ -2517,7 +2888,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { mgEnd, MG, MGS, get DXS() { return DXS; }, finish, ST, get STORY() { return STORY; }, startStory, showStory, DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, get TRACK() { return TRACK; }, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
