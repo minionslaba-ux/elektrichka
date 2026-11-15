@@ -108,7 +108,7 @@ body.post #vig{display:none}
 #radio span .cur{display:inline-block;width:7px;height:13px;background:var(--cyan);margin-left:2px;vertical-align:-2px;animation:flash .6s steps(2) infinite}
 /* ---------- рыбалка ---------- */
 #fishHud{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;display:none;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
-body.fish #fishHud{display:flex}body.fish #zl,body.fish #zr,body.fish #turbo,body.fish #prog,body.fish #tr{display:none}
+body.fish #fishHud{display:flex}body.fish #zl,body.fish #zr,body.fish #turbo,body.fish #prog,body.fish #tr{display:none}body.farm #fishHud{display:none}
 #fishHud .tens{position:relative;width:min(320px,76vw);height:18px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden;opacity:0;transition:opacity .2s}
 #fishHud.reel .tens{opacity:1}
 #fishHud .tens .ok{position:absolute;top:0;bottom:0;left:25%;width:55%;background:rgba(120,230,150,.28);border-left:2px solid #7be39a;border-right:2px solid #7be39a}
@@ -121,6 +121,17 @@ body.fish #fishHud{display:flex}body.fish #zl,body.fish #zr,body.fish #turbo,bod
 #fishHud .big.dn{transform:scale(.92);box-shadow:0 0 0 3px var(--cyan),0 0 30px rgba(127,232,255,.5)}
 #fishCard{position:fixed;left:16px;right:16px;margin:0 auto;max-width:340px;top:22%;z-index:8;display:none;text-align:center;border-radius:16px;padding:14px 22px;pointer-events:none}
 #fishCard.on{display:block;animation:pop .45s cubic-bezier(.2,1.5,.4,1) both}#fishCard b{display:block;font-size:24px;margin:4px 0}#fishCard .e{font-size:46px}#fishCard small{color:var(--dim);font-size:14px}#fishCard .new{color:var(--hot);font-weight:900;letter-spacing:.1em;font-size:12px}
+/* ---------- ферма ---------- */
+body.farm #zl,body.farm #zr,body.farm #turbo,body.farm #prog,body.farm #tr,body.farm #tl{display:none}
+#farmHud{display:none}body.farm #farmHud{display:block}
+#inv{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:6;border-radius:12px;padding:6px 14px;font-weight:800;font-size:16px;white-space:nowrap;pointer-events:none}
+#farmBack{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:7;border:0;border-radius:14px;padding:14px 22px;background:var(--hot);color:#2a1406;font:900 16px system-ui,sans-serif;cursor:pointer}
+#seeds{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));margin:0 auto;max-width:440px;z-index:8;display:none;border-radius:16px;padding:12px}
+body.farm.seedson #inv{display:none}#seeds.on{display:block;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
+#seeds .t{font-size:12px;letter-spacing:.12em;color:var(--dim);margin:0 2px 8px}
+#seeds .row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#seeds button{border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);border-radius:12px;padding:8px 2px;font:700 12px system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+#seeds button i{font-size:26px;font-style:normal}#seeds button small{color:var(--dim);font-weight:500;font-size:11px}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -145,6 +156,8 @@ body.fish #fishHud{display:flex}body.fish #zl,body.fish #zr,body.fish #turbo,bod
 <div id="combo"></div>
 <div id="fishHud"><div class="lbl" id="fishLbl"></div><div class="tens"><div class="ok"></div><div class="bad"></div><div class="nd" id="fishNd"></div></div><div class="dist"><i id="fishDist"></i></div><div class="big g" id="fishBtn">🎣</div></div>
 <div id="fishCard" class="g"></div>
+<div id="farmHud"><div id="inv" class="g"></div><button id="farmBack">📋 К заказам</button>
+  <div id="seeds" class="g"><div class="t">ЧТО САЖАЕМ?</div><div class="row" id="seedRow"></div></div></div>
 <div id="msg"></div>
 <div id="hint"></div>
 <div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
@@ -851,6 +864,7 @@ const ORDERS = {
   jam: { name: 'Варенье Лёхе', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внук Лёха ждёт' },
   pies: { name: 'Пирожки Максу', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Макс ждёт' },
   seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
+  farm: { name: 'Дача: огород', icon: '🌱', desc: 'Посади, полей, гоняй жуков тапком. Урожай даёт бонус к заказам', who: 'Грядки ждут' },
   fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва' },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
@@ -996,6 +1010,8 @@ function startMsg(first) {
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 function newRun(first) {
+  if (ORDER === 'farm') { startFarm(); return; }
+  stopFarm();
   if (ORDER === 'fish') { startFishing(); return; }
   stopFishing();
   genTrack(); buildSky(); buildWorld(); placeItems(); resetCar(); car.state = 'go';
@@ -1023,12 +1039,14 @@ function finish() {
     ORDER = 'potato'; try { localStorage.setItem('bm_order', 'potato'); } catch (e) {} renderOrders();
     setTimeout(() => { $('end').classList.add('on'); }, 900); return;
   }
-  const pension = potPay + driftPay + timeBonus + ordPay;
+  const fu = farmUse(), farmPay = fu ? fu.pay : 0;
+  const pension = potPay + driftPay + timeBonus + ordPay + farmPay;
   const stars = good >= 0.8 && t < par * 1.15 ? 3 : good >= 0.5 ? 2 : 1;
   $('etitle').innerHTML = letters(title, 0.025);
   $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < stars ? '★' : '☆'}</span>`).join('');
   $('esub').textContent = o.icon + ' ' + o.name + ' · ' + fmt(t) + ' · ' + Math.round(TOTAL) + ' м';
   $('etab').innerHTML = (ORDER === 'potato' ? `<tr><td>${ordRow}</td><td>${ordPay + potPay} ₽</td></tr>` : `<tr><td>${ordRow}</td><td>${ordPay} ₽</td></tr><tr><td>Картошка по пути: ${car.pot} шт.</td><td>${potPay} ₽</td></tr>`) + `<tr><td>Заносы</td><td>${driftPay} ₽</td></tr><tr><td>За скорость</td><td>${timeBonus} ₽</td></tr><tr><td><b>Пенсия за заезд</b></td><td><b>+${pension} ₽</b></td></tr>`;
+  if (fu) $('etab').insertAdjacentHTML('afterbegin', `<tr><td>С дачи: ${fu.e} ${fu.n} шт. — «${fu.name}»</td><td>${fu.pay} ₽</td></tr>`);
   const before = BANK; BANK += pension; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
   const frac = Math.min(1, BANK / TICKET); let joke = '';
   for (const [f, j] of BANK_JOKES) if (before / TICKET < f && BANK / TICKET >= f) joke = j;
@@ -1038,7 +1056,7 @@ function finish() {
   setTimeout(() => { $('end').classList.add('on'); document.querySelectorAll('#etab td:last-child').forEach((td, i) => { const v = parseInt(td.textContent.replace(/[^0-9]/g, ''), 10) || 0, b = td.querySelector('b'); setTimeout(() => countUp(b || td, v, 700, ' ₽'), 300 + i * 160); if (b) { b.textContent = '0 ₽'; } else td.textContent = '0 ₽'; }); }, 900);
 }
 function renderOrders() {
-  $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}${o.story ? ' story' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.story ? 'Сюжет · играешь за Димона. ' : ''}${o.desc}</small></button>`).join('');
+  $('orders').innerHTML = Object.entries(ORDERS).map(([k, o]) => `<button class="ord${k === ORDER ? ' on' : ''}${o.story ? ' story' : ''}" data-o="${k}"><b>${o.icon} ${o.name}</b><small>${o.story ? 'Сюжет · играешь за Димона. ' : ''}${o.desc}${ORDER_CROP[k] && FARM.inv[ORDER_CROP[k]] ? ' · с дачи: ' + CROPS[ORDER_CROP[k]].e + ' ' + Math.min(10, FARM.inv[ORDER_CROP[k]]) : ''}</small></button>`).join('');
   document.querySelectorAll('.ord').forEach((b) => (b.onclick = () => { ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (e) {} renderOrders(); }));
 }
 $('again').onclick = () => newRun(false);
@@ -1047,7 +1065,7 @@ const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStar
 /* ---------- управление: левая/правая половина экрана ---------- */
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -1086,6 +1104,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const tsec = now / 1000;
   if (FISH.active) { fishFrame(dt, now); return; }
+  if (FS.active) { farmFrame(dt, now); return; }
   // руль
   const L = input.tl || input.kl, R = input.tr || input.kr;
   const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : 0) : 0;
@@ -1211,6 +1230,150 @@ function frame(now) {
   if (!firstFrame) { firstFrame = performance.now(); window.EL_FIRST = Math.round(firstFrame - T0); afterFirst(); }
 }
 
+/* ---------- 🌱 ФЕРМА — дача бабы Тани ---------- */
+const CROPS = {
+  potato: { name: 'Картошка «Марсианка»', e: '🥔', t: 120, y: 3, col: '#3a8a3a', fruit: '#c8905a' },
+  straw: { name: 'Клубника «Красная планета»', e: '🍓', t: 240, y: 4, col: '#2f7a3a', fruit: '#e8303a' },
+  cabbage: { name: 'Капуста «Кочан-Х»', e: '🥬', t: 180, y: 2, col: '#6ac85a', fruit: '#9adc7a' },
+  dill: { name: 'Укроп', e: '🌿', t: 60, y: 3, col: '#5ab84a', fruit: '#7ad85a' },
+};
+const ORDER_CROP = { potato: 'potato', jam: 'straw', pies: 'cabbage', seed: 'dill' };
+let FARM = { beds: [], inv: { potato: 0, straw: 0, cabbage: 0, dill: 0 }, swats: 0 };
+try { const sv = JSON.parse(localStorage.getItem('bm_farm') || 'null'); if (sv && sv.beds) FARM = Object.assign(FARM, sv); } catch (e) {}
+for (let i = 0; i < 9; i++) FARM.beds[i] = FARM.beds[i] || { c: null, g: 0, w: false, last: 0 };
+const saveFarm = () => { try { localStorage.setItem('bm_farm', JSON.stringify({ beds: FARM.beds, inv: FARM.inv, swats: FARM.swats })); } catch (e) {} };
+function growBeds(nowMs) { // рост идёт и без игрока: поливные растут быстрее
+  for (const b of FARM.beds) { if (!b.c) continue; const dt = Math.max(0, (nowMs - (b.last || nowMs)) / 1000); b.g = Math.min(CROPS[b.c].t, b.g + dt * (b.w ? 1 : 0.35)); b.last = nowMs; }
+}
+const bedPos = (i) => [((i % 3) - 1) * 3.1, 0, (Math.floor(i / 3) - 1) * 3.1];
+let farmScene = null, farmCam = null, FS = { active: false };
+function buildFarmScene() {
+  farmScene = new THREE.Scene(); const fc = new THREE.Color('#7a4a46'); farmScene.fog = new THREE.FogExp2(fc, 0.012); farmScene.background = fc;
+  farmCam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.3, 600);
+  farmScene.add(new THREE.HemisphereLight('#e0b8b8', '#4a2a20', 1.1)); const sl = new THREE.DirectionalLight('#b8d4f0', 0.6); sl.position.set(0.5, 0.8, 0.6); farmScene.add(sl);
+  const lamps = [{ x: -7, y: 2, z: -6, R: 12, I: 1.1, r: 1, g: 0.7, b: 0.4 }, { x: 7.5, y: 2.5, z: -5, R: 10, I: 0.9, r: 1, g: 0.3, b: 0.8 }];
+  const B = new Builder(lamps), E = new Builder(null), gl = new GlowList();
+  const gg = new THREE.PlaneGeometry(220, 220, 44, 44); gg.rotateX(-Math.PI / 2); { const p = gg.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z); p.setY(i, r > 22 ? (Math.sin(x * 0.05) + Math.sin(z * 0.07)) * Math.min(8, (r - 22) * 0.2) : 0); } }
+  B.add(gg, null, (cx, cy, cz) => TC.set(Math.hypot(cx, cz) < 7 ? '#8a4a32' : '#c8683e').multiplyScalar(0.9 + Math.sin(cx * 0.4 + cz * 0.3) * 0.06), { flat: false });
+  // дом-купол с окнами, забор, лавочка, бочка, курятник, теплица с фитолампами
+  B.add(DOME, mat(-8, -0.1, -9, 6, 4.8, 6), '#e0d4cc'); B.add(CYL, mat(-8, 0.4, -9, 12.4, 0.8, 12.4), '#6a5258');
+  for (let k = 0; k < 5; k++) { const a = Math.PI * 0.25 + k * 0.28, wx = -8 + Math.cos(a) * 5.7, wz = -9 + Math.sin(a) * 5.7; E.add(BOX, mat(wx, 1.6, wz, 1, 0.8, 0.1, -a + Math.PI / 2), '#ffd28a', { emit: true }); gl.add(wx, 1.6, wz, '#ffb060', 0.5); }
+  for (let x = -12; x <= 12; x += 1.2) { B.add(BOX, mat(x, 0.6, 7.5, 0.14, 1.2, 0.08), '#8a6a4a'); } B.add(BOX, mat(0, 0.9, 7.5, 24, 0.1, 0.06), '#8a6a4a'); B.add(BOX, mat(0, 0.4, 7.5, 24, 0.1, 0.06), '#8a6a4a');
+  B.add(BOX, mat(6.5, 0.45, 4.8, 2.2, 0.12, 0.6), '#7a5232'); B.add(BOX, mat(6.5, 0.8, 5.05, 2.2, 0.5, 0.08), '#7a5232');
+  B.add(CYL2, mat(-6.5, 0.6, 3.5, 1.1, 1.2, 1.1), '#3a6a8a', SMOOTH);
+  B.add(BOX, mat(7.5, 1, -1.5, 2.6, 2, 2), '#a8603a'); B.add(new THREE.ConeGeometry(2, 1.2, 4), mat(7.5, 2.6, -1.5, 1, 1, 1, Math.PI / 4), '#5a3a2a');
+  E.add(BOX, mat(7.5, 1.6, -5.5, 4, 3, 3), (cx, cy, cz, nx, ny) => TC.set(ny > 0.5 ? '#c84ab0' : '#ff6ad8').multiplyScalar(0.7), { emit: true }); gl.add(7.5, 3.2, -5.5, '#ff4fd0', 0.8);
+  // грядки 3×3
+  for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); B.add(BOX, mat(x, 0.15, z, 2.6, 0.3, 2.6), '#6a3a28'); for (const sd of [-1, 1]) { B.add(BOX, mat(x + sd * 1.36, 0.22, z, 0.12, 0.44, 2.8), '#8a6a4a'); B.add(BOX, mat(x, 0.22, z + sd * 1.36, 2.8, 0.44, 0.12), '#8a6a4a'); } }
+  farmScene.add(new THREE.Mesh(B.build(), bakedMat)); farmScene.add(new THREE.Mesh(E.build(), bakedMat)); gl.make(farmScene);
+  // почва грядок (мокрая/сухая) и растения — отдельно, обновляются
+  FS.soil = []; FS.plants = []; FS.sparks = [];
+  for (let i = 0; i < 9; i++) {
+    const [x, , z] = bedPos(i);
+    const sm = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.04, 2.5), new THREE.MeshLambertMaterial({ color: '#8a5038' })); sm.position.set(x, 0.32, z); farmScene.add(sm); FS.soil.push(sm);
+    const pg = new THREE.Group(); pg.position.set(x, 0.32, z); farmScene.add(pg); FS.plants.push(pg);
+    const sp = new GlowList(); sp.add(x, 1.6, z, '#ffe08a', 1); const spG = new THREE.Group(); sp.make(spG, 0.8); farmScene.add(spG); FS.sparks.push(spG);
+  }
+  // куры со светящимися яйцами и коза Зорька в шлеме
+  FS.hens = [];
+  for (let k = 0; k < 3; k++) { const h = new THREE.Group(); const HB = new Builder(null, true); HB.add(BALL2, mat(0, 0.35, 0, 0.3, 0.28, 0.38), '#f4f0e8', SMOOTH); HB.add(BALL2, mat(0, 0.62, 0.25, 0.16, 0.16, 0.16), '#f4f0e8', SMOOTH); HB.add(BOX, mat(0, 0.8, 0.25, 0.04, 0.1, 0.14), '#e8302a'); HB.add(new THREE.ConeGeometry(0.05, 0.12, 4), mat(0, 0.6, 0.43, 1, 1, 1, 0, Math.PI / 2), '#ffb030');
+    h.add(new THREE.Mesh(HB.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); h.position.set(6 + k * 1.1, 0, 1 + k * 0.7); farmScene.add(h); FS.hens.push(h);
+    const eg = new GlowList(); eg.add(6.3 + k * 1.1, 0.15, 1.6 + k * 0.7, '#9affea', 0.8); eg.make(farmScene, 0.5); }
+  const goat = new THREE.Group(); const GB = new Builder(null, true); GB.add(BOX, mat(0, 0.8, 0, 0.6, 0.55, 1.1), '#e8e0d4'); for (const [a, b] of [[-0.2, -0.4], [0.2, -0.4], [-0.2, 0.4], [0.2, 0.4]]) GB.add(BOX, mat(a, 0.3, b, 0.12, 0.6, 0.12), '#c8c0b4');
+  GB.add(BOX, mat(0, 1.2, 0.6, 0.35, 0.4, 0.45), '#e8e0d4'); for (const sd of [-1, 1]) GB.add(new THREE.ConeGeometry(0.05, 0.3, 4), mat(sd * 0.12, 1.5, 0.55, 1, 1, 1, 0, -0.4), '#8a7a6a');
+  goat.add(new THREE.Mesh(GB.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), new THREE.MeshBasicMaterial({ color: '#bfe8ff', transparent: true, opacity: 0.25, depthWrite: false })); helm.position.set(0, 1.25, 0.6); goat.add(helm);
+  goat.position.set(-6, 0, 0); farmScene.add(goat); FS.goat = goat;
+  // жуки на грядках и тапок
+  FS.bugs = []; FS.bugMesh = new THREE.InstancedMesh(beetleGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 8); FS.bugMesh.frustumCulled = false; FS.bugMesh.count = 0; farmScene.add(FS.bugMesh);
+  FS.ray = new THREE.Raycaster(); FS.bedHit = [];
+  for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); const hm = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 2.8), new THREE.MeshBasicMaterial({ visible: false })); hm.position.set(x, 0.6, z); hm.userData.i = i; farmScene.add(hm); FS.bedHit.push(hm); }
+}
+function plantMesh(i) {
+  const b = FARM.beds[i], g = FS.plants[i]; while (g.children.length) { const c = g.children[0]; g.remove(c); c.geometry.dispose(); }
+  if (!b.c) return; const cr = CROPS[b.c], k = b.g / cr.t, P = new Builder(null, true), ripe = k >= 1;
+  const n = b.c === 'cabbage' ? 4 : 6;
+  for (let q = 0; q < n; q++) {
+    const x = ((q % 3) - 1) * 0.7 + (b.c === 'cabbage' ? 0.35 : 0), z = (Math.floor(q / 3) - 0.5) * 0.9, s2 = 0.25 + 0.75 * Math.min(1, k);
+    if (b.c === 'cabbage') P.add(BALL2, mat(x, 0.25 * s2, z, 0.35 * s2, 0.3 * s2, 0.35 * s2), ripe ? cr.fruit : cr.col, SMOOTH);
+    else if (b.c === 'dill') for (let w = 0; w < 3; w++) P.add(new THREE.ConeGeometry(0.08, 0.9 * s2, 4), mat(x + w * 0.1 - 0.1, 0.45 * s2, z, 1, 1, 1, 0, 0, (w - 1) * 0.3), cr.col);
+    else { P.add(ICO, mat(x, 0.3 * s2, z, 0.32 * s2, 0.32 * s2, 0.32 * s2, q), cr.col, { jit: 0.2 }); if (k > 0.6) P.add(BALL2, mat(x + 0.15, 0.2 * s2, z + 0.12, 0.09, 0.09, 0.09), b.c === 'straw' ? (ripe ? cr.fruit : '#e8e0a0') : cr.fruit, SMOOTH); }
+  }
+  g.add(new THREE.Mesh(P.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+}
+function invText() { return Object.entries(CROPS).map(([k, c]) => c.e + ' ' + (FARM.inv[k] || 0)).join('  ·  '); }
+function startFarm() {
+  stopFishing(); if (!farmScene) buildFarmScene();
+  FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
+  farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
+  babka.position.set(-3.5, 0.15, 5.6); babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
+  growBeds(Date.now()); for (let i = 0; i < 9; i++) plantMesh(i); FS.bugs = []; FS.bugT = 5; FS.sel = -1; FS.lastPlant = 0;
+  $('inv').textContent = invText();
+  introCard(ORDERS.farm); radio('<b>Марс-ФМ:</b> дачники «Заречной», сезон открыт! Жуки уже точат жвала, а медведи — ложки');
+  const empty = FARM.beds.every((b) => !b.c); hint(empty ? 'Нажми на грядку — посади картошку' : 'Спелое — нажми и собери. Сухая грядка — полей. Жук — бей тапком!', 4500);
+}
+function stopFarm() { if (!FS.active) return; FS.active = false; document.body.classList.remove('farm'); $('seeds').classList.remove('on'); document.body.classList.remove('seedson'); scene.add(babka); scene.add(skyG); FX.flame.visible = FX.flame2.visible = true; FX.pool.visible = true; saveFarm(); }
+function openSeeds(i) {
+  FS.sel = i; $('seedRow').innerHTML = Object.entries(CROPS).map(([k, c]) => `<button data-c="${k}"><i>${c.e}</i>${c.name.split(' ')[0]}<small>${Math.round(c.t / 60)} мин · ×${c.y}</small></button>`).join('');
+  $('seeds').classList.add('on'); document.body.classList.add('seedson');
+  $('seedRow').querySelectorAll('button').forEach((bt) => (bt.onclick = (e) => { e.stopPropagation(); const b = FARM.beds[FS.sel]; b.c = bt.dataset.c; b.g = 0; b.w = false; b.last = Date.now(); plantMesh(FS.sel); saveFarm(); $('seeds').classList.remove('on'); document.body.classList.remove('seedson');
+    const [x, , z] = bedPos(FS.sel); farmFloat('Посажено! Теперь полей 💧', x, z); }));
+}
+function farmFloat(t, x, z, col) { const v = new THREE.Vector3(x, 1.4, z).project(farmCam); const e = document.createElement('div'); e.className = 'f'; e.textContent = t; if (col) e.style.color = col; e.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; e.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; $('fl').appendChild(e); setTimeout(() => e.remove(), 950); }
+function farmTap(cx, cy) {
+  if (!FS.active) return; if ($('seeds').classList.contains('on')) { $('seeds').classList.remove('on'); document.body.classList.remove('seedson'); return; }
+  const m = new THREE.Vector2(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); FS.ray.setFromCamera(m, farmCam);
+  // сначала жуки — тапком
+  for (const bg of FS.bugs) { const p = new THREE.Vector3(bg.x, 0.6, bg.z).project(farmCam), sx = (p.x + 1) / 2 * innerWidth, sy = (1 - p.y) / 2 * innerHeight; if (Math.hypot(sx - cx, sy - cy) < 46) { bg.dead = 0.01; FARM.swats++; farmFloat(['Брысь!', 'Тапком его!', 'Жук: «Профсоюз!»', 'Шлёп!'][Math.floor(Math.random() * 4)], bg.x, bg.z, '#ffcf6a'); flash('#ffcf3a', 0.25); shake = 0.25; return; } }
+  const hit = FS.ray.intersectObjects(FS.bedHit)[0]; if (!hit) return; const i = hit.object.userData.i, b = FARM.beds[i], [x, , z] = bedPos(i);
+  if (!b.c) { openSeeds(i); return; }
+  const cr = CROPS[b.c];
+  if (b.g >= cr.t) { FARM.inv[b.c] = (FARM.inv[b.c] || 0) + cr.y; farmFloat('+' + cr.y + ' ' + cr.e, x, z); bump($('inv')); b.c = null; b.g = 0; b.w = false; plantMesh(i); saveFarm(); $('inv').textContent = invText(); confettiSmall(); return; }
+  if (!b.w) { b.w = true; saveFarm(); farmFloat('Полито 💧 растёт втрое быстрее', x, z, '#9fd8ff'); for (let q = 0; q < 6; q++) puffDrop(x, z); return; }
+  const left = Math.ceil((cr.t - b.g) / (b.w ? 1 : 0.35)); farmFloat('ещё ' + fmt(left), x, z, '#e0c2b0');
+}
+const drops = [];
+function puffDrop(x, z) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.06, 5, 4), new THREE.MeshBasicMaterial({ color: '#7fd8ff' })); m.position.set(x + rnd(-0.8, 0.8), 2.2, z + rnd(-0.8, 0.8)); m.userData.v = rnd(3, 5); farmScene.add(m); drops.push(m); }
+function farmFrame(dt, now) {
+  const tsec = now / 1000, nowMs = Date.now(); growBeds(nowMs);
+  const port = innerWidth < innerHeight; farmCam.aspect = innerWidth / innerHeight; farmCam.fov = port ? 62 : 48; farmCam.updateProjectionMatrix();
+  farmCam.position.set(Math.sin(tsec * 0.1) * 0.6, port ? 17 : 12.5, port ? 15 : 12); farmCam.lookAt(0, 0, port ? 0.8 : 0.3);
+  if (shake > 0) { farmCam.position.x += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.5); }
+  // грядки: влажность, рост, искры у спелых
+  if (!FS.rt || tsec - FS.rt > 1) { FS.rt = tsec; for (let i = 0; i < 9; i++) plantMesh(i); }
+  for (let i = 0; i < 9; i++) { const b = FARM.beds[i]; FS.soil[i].material.color.set(b.c ? (b.w ? '#4a2a1e' : '#a8704e') : '#8a5038'); const ripe = b.c && b.g >= CROPS[b.c].t; FS.sparks[i].visible = !!ripe; if (ripe) FS.sparks[i].position.y = Math.sin(tsec * 3 + i) * 0.15; }
+  // жуки приползают к растущим грядкам и едят
+  FS.bugT -= dt; const growing = FARM.beds.map((b, i) => (b.c && b.g < CROPS[b.c].t ? i : -1)).filter((i) => i >= 0);
+  if (FS.bugT <= 0 && growing.length && FS.bugs.length < 4) { FS.bugT = rnd(5, 9); const i = growing[Math.floor(Math.random() * growing.length)], a = rnd(0, 6.28), [bx, , bz] = bedPos(i); FS.bugs.push({ i, x: bx + Math.cos(a) * 14, z: bz + Math.sin(a) * 14, eat: 0, dead: 0 }); radio(['<b>Марс-ФМ:</b> к огородам «Заречной» ползут жуки. Профсоюзные', '<b>Дед:</b> Таня, жук! Неси тапок!', '<b>Соседка Валя:</b> у тебя жук на грядке! А у меня нет. Потому что у меня порядок'][Math.floor(Math.random() * 3)]); }
+  let n = 0;
+  FS.bugs = FS.bugs.filter((bg) => {
+    if (bg.dead) { bg.dead += dt; bg.z -= dt * 25; bg.x += dt * 10; bg.y = (bg.y || 0.3) + dt * 12; if (bg.dead > 0.8) return false; }
+    else { const [tx, , tz] = bedPos(bg.i), dx = tx - bg.x, dz = tz - bg.z, d = Math.hypot(dx, dz); if (d > 0.4) { bg.x += dx / d * dt * 2.2; bg.z += dz / d * dt * 2.2; } else { bg.eat += dt; if (bg.eat > 5) { const b = FARM.beds[bg.i]; if (b.c) { b.g = Math.max(0, b.g - CROPS[b.c].t * 0.25); saveFarm(); farmFloat('Жук: «Ботва — общенародное достояние!»', tx, tz, '#ff8a6a'); } bg.eat = 0; } } }
+    FS.bugMesh.setMatrixAt(n++, mat(bg.x, bg.dead ? bg.y : 0.35, bg.z, 0.55, 0.55, 0.55, Math.atan2(bedPos(bg.i)[0] - bg.x, bedPos(bg.i)[2] - bg.z) + (bg.dead ? tsec * 20 : 0))); return true;
+  });
+  FS.bugMesh.count = n; FS.bugMesh.instanceMatrix.needsUpdate = true;
+  // куры клюют, коза жуёт
+  FS.hens.forEach((h, k) => { h.rotation.x = Math.max(0, Math.sin(tsec * 4 + k * 2)) * 0.5; h.rotation.y = Math.sin(tsec * 0.5 + k) * 1.2; });
+  FS.goat.rotation.y = Math.sin(tsec * 0.3) * 0.6; FS.goat.children[0].position.y = Math.abs(Math.sin(tsec * 2)) * 0.03;
+  FX.tail.rotation.z = Math.sin(tsec * 3) * 0.6;
+  for (let i = drops.length - 1; i >= 0; i--) { const m = drops[i]; m.position.y -= m.userData.v * dt; if (m.position.y < 0.35) { farmScene.remove(m); m.geometry.dispose(); drops.splice(i, 1); } }
+  // интерфейс: спелые — подсказка
+  const ripeN = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length; $('order').textContent = ripeN ? '✨ спелых грядок: ' + ripeN : '🌱 огород · жуков отогнано: ' + FARM.swats; $('order').classList.remove('bad');
+  if (!FS.st || tsec - FS.st > 5) { FS.st = tsec; saveFarm(); }
+  skyG.position.copy(farmCam.position); renderer.render(farmScene, farmCam); adapt(dt);
+}
+function farmUse() { // урожай с дачи едет в заказ: бонус к пенсии
+  const k = ORDER_CROP[car.mode || ORDER]; if (!k) return null; const n = Math.min(FARM.inv[k] || 0, 10); if (!n) return null;
+  FARM.inv[k] -= n; saveFarm(); return { n, e: CROPS[k].e, name: CROPS[k].name, pay: n * 40 };
+}
+function showHub() {
+  stopFarm(); stopFishing();
+  $('etitle').innerHTML = letters('Куда едем, Таня?', 0.03); $('esub').textContent = 'С дачи: ' + invText(); $('estars').innerHTML = ''; $('etab').innerHTML = '';
+  $('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'; $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽';
+  renderOrders(); $('end').classList.add('on');
+}
+$('farmBack').onclick = (e) => { e.stopPropagation(); showHub(); };
+
 /* ---------- 🎣 РЫБАЛКА в ледяном кратере Королёва ---------- */
 const FISHES = [
   { id: 'karas', name: 'Карась-трёхглаз', e: '🐟', w: [0.4, 1.4], p: 30, str: 0.8, col: '#d8b04a', eyes: 3, joke: 'смотрит с укором всеми тремя глазами' },
@@ -1278,7 +1441,7 @@ function fishMesh(f) {
   g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true, emissive: f.glow ? f.col : '#000', emissiveIntensity: f.glow ? 0.6 : 0 })));
 }
 function startFishing() {
-  if (!fishScene) buildFishScene();
+  stopFarm(); if (!fishScene) buildFishScene();
   FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
   // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
   fishScene.add(babka); fishScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
@@ -1379,7 +1542,7 @@ function endFishing() {
 
 /* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
 let firstEver = true; try { firstEver = !localStorage.getItem('bm_seen'); localStorage.setItem('bm_seen', '1'); } catch (e) {}
-if (firstEver || ORDER === 'fish') ORDER = 'potato'; // первый заход — всегда езда
+if (firstEver || ORDER === 'fish' || ORDER === 'farm') ORDER = 'potato'; // первый заход — всегда езда
 genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
@@ -1389,7 +1552,7 @@ function afterFirst() {
   setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
