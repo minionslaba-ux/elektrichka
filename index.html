@@ -205,6 +205,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
 .qq{font-size:22px;font-weight:800;text-align:center;line-height:1.3}.qbar{height:8px;border-radius:4px;background:rgba(255,255,255,.1)}.qbar i{display:block;height:100%;border-radius:4px;background:#ffb04a}
 .qa{display:grid;gap:10px}.qa button{border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--ink);border-radius:14px;padding:16px;font:700 17px system-ui,sans-serif;touch-action:manipulation}.qa button.ok{background:#3a9a5a}.qa button.no{background:#b03a3a}
 .belt{position:relative;flex:1;border-radius:20px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 30px,rgba(255,255,255,.1) 30px 60px);overflow:hidden}.belt button{position:absolute;border:0;background:none;font-size:46px;transform:translate(-50%,-50%);cursor:pointer;touch-action:manipulation;transition:transform .2s,opacity .2s}.belt button.pop{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+#sxHud{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9;border-radius:12px;padding:4px 12px;font-weight:800;font-size:14px;color:#ffe08a;display:none;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}#sxHud.on{display:block}body.sxon #radio{top:calc(104px + env(safe-area-inset-top))}body.mgon #sxHud{top:calc(40px + env(safe-area-inset-top))}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -248,6 +249,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
 <div id="story"><div class="sh"><b>📖 150 историй</b><small id="stProg"></small><button id="stClose" aria-label="Закрыть">✕</button></div><div id="stList"></div></div>
 <div id="stCard" class="g"></div>
 <div id="mg"></div>
+<div id="sxHud" class="g"></div>
 <div id="err"></div>
 <script>
 /* Площадка: web / pikabu / vk / ok / tg / max / gamepush / rt. В прототипе — web. */
@@ -1311,7 +1313,7 @@ const MGS = {
     tap(k) { if (!MG.active || MG.show) return; MGS.g_simon.lit(k, 200); if (k === MG.seq[MG.pi]) { MG.pi++; if (MG.pi >= MG.seq.length) { sfx('coin'); if (MG.lv >= MG.need) { mgEnd('Робот Валерий: «Справка выдана!»', MG.life === 2 ? 3 : 2, [['Раундов', MG.lv]], 300 + MG.lv * 60); return; } $('mgSay').textContent = pick(['Верно! Дальше длиннее', 'Робот: «Удивительно. Следующий»', 'Дед: «Таня, ты гений!»']); setTimeout(() => MG.active && MGS.g_simon.next(), 900); } }
       else { MG.life--; sfx('caught'); $('mgSay').textContent = 'Ошибка! Робот: «Начнём сначала этот раунд»'; if (MG.life <= 0) { mgEnd('Робот: «Приходите в 2087 году»', 1, [['Раундов', MG.lv - 1]], 100 + MG.lv * 30); return; } MG.seq.pop(); setTimeout(() => MG.active && MGS.g_simon.next(), 1000); } } },
   g_dance: { name: 'Танцы', icon: '💃', desc: 'Жми, когда нотка в круге. Чем точнее — тем лучше',
-    start() { MG.notes = []; MG.hit = 0; MG.miss = 0; MG.tot = 26 + mgD() * 4; MG.sp = 0.42 + mgD() * 0.05; const bt = 60 / (100 + mgD() * 12); for (let k = 0; k < MG.tot; k++) MG.notes.push({ t: 2 + k * bt * (k % 4 === 3 ? 2 : 1) + (k > 12 ? -(k - 12) * bt * 0.2 : 0), st: 0 });
+    start() { MG.notes = []; MG.hit = 0; MG.miss = 0; MG.tot = 26 + mgD() * 4; MG.sp = (0.42 + mgD() * 0.05) * (MG.sxk || 1); const bt = 60 / (100 + mgD() * 12); for (let k = 0; k < MG.tot; k++) MG.notes.push({ t: 2 + k * bt * (k % 4 === 3 ? 2 : 1) + (k > 12 ? -(k - 12) * bt * 0.2 : 0), st: 0 });
       $('mgB').innerHTML = '<div class="mgsay" id="mgSay">Свадьба у Лёхи! Дед: «Таня, покажи им, как в 72-м!»</div><div class="lane" id="lane"><i class="hitz"></i></div><button class="big" id="mgTap">💃 ТОПНУТЬ</button>';
       $('mgTap').onpointerdown = (e) => { e.stopPropagation(); MGS.g_dance.tap(); }; MG.els = MG.notes.map(() => { const d = document.createElement('b'); d.textContent = pick(['🎵', '🎶', '💃', '🥁']); $('lane').appendChild(d); return d; }); },
     frame() { for (let k = 0; k < MG.notes.length; k++) { const n = MG.notes[k], y = 1 - (n.t - MG.t) * MG.sp; const el = MG.els[k]; if (n.st) { el.style.display = 'none'; continue; } el.style.display = y < -0.1 || y > 1.15 ? 'none' : ''; el.style.top = (y * 100) + '%';
@@ -1331,7 +1333,7 @@ const MGS = {
   g_belt: { name: 'Лента', icon: '📦', desc: 'По ленте едет всякое. Хватай хорошее, плохое пропускай',
     start() { MG.it = []; MG.ok = 0; MG.bad = 0; MG.lost = 0; MG.need = 14 + mgD() * 3; MG.sT = 0.5; MG.left = 45; MG.good = (SM() && SM().ic) || '🥔';
       $('mgB').innerHTML = `<div class="mgsay" id="mgSay">Хватай ${MG.good} — тапни по нему. 🪨 🧦 💣 не трогай!</div><div class="belt" id="belt"></div>`; },
-    frame(dt) { MG.left -= dt; MG.sT -= dt; const sp = 0.22 + mgD() * 0.04 + MG.t * 0.002;
+    frame(dt) { MG.left -= dt; MG.sT -= dt; const sp = (0.22 + mgD() * 0.04 + MG.t * 0.002) * (MG.sxk || 1);
       if (MG.sT <= 0) { MG.sT = rnd(0.45, 0.85); const good = Math.random() < 0.62, el = document.createElement('button'); el.textContent = good ? MG.good : pick(['🪨', '🧦', '💣', '🦴']); el.style.top = rnd(8, 78) + '%'; $('belt').appendChild(el); const it = { x: 1.05, good, el }; MG.it.push(it);
         el.onpointerdown = (e) => { e.stopPropagation(); if (it.gone) return; it.gone = 1; el.classList.add('pop'); if (it.good) { MG.ok++; tone(MG.ok); } else { MG.bad++; sfx('caught'); $('mgSay').textContent = pick(['Фу! Это не то', 'Дед: «Таня, это мой носок!»', 'Бум!']); } setTimeout(() => el.remove(), 300); }; }
       MG.it = MG.it.filter((it) => { if (it.gone) return false; it.x -= sp * dt; it.el.style.left = (it.x * 100) + '%'; if (it.x < -0.1) { if (it.good) MG.lost++; it.el.remove(); return false; } return true; });
@@ -1340,8 +1342,55 @@ const MGS = {
 };
 Object.entries(MGS).forEach(([k, d]) => (ORDERS[k] = { name: d.name, icon: d.icon, desc: d.desc, who: 'Мини-игра', km: false, hidden: true }));
 
+/* ---------- ✨ ОСОБЫЕ ПРАВИЛА ИСТОРИЙ: у каждой из 150 историй свой сценарий (assets/stx1..3.js) ---------- */
+window.STX = window.STX || {}; const SX = { on: false, objs: [], timers: [], hud: '', res: null, s: null, k: 0 };
+const SXG = new THREE.Group(); scene.add(SXG);
+function stxLoad(n) { const f = 'assets/stx' + (n <= 50 ? 1 : n <= 100 ? 2 : 3) + '.js'; if (stxLoad[f]) return stxLoad[f]; return (stxLoad[f] = new Promise((res) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 1); s.onload = res; s.onerror = res; document.head.appendChild(s); })); }
+function stxMode() { return MG.active ? 'mg' : WK.active ? 'walk' : FS.active ? 'farm' : DF.active ? 'def' : FISH.active ? 'fish' : 'drive'; }
+function stxClear() { SX.objs.forEach((o) => o.sp && o.sp.parent && o.sp.parent.remove(o.sp)); SX.objs = []; SX.timers = []; SX.on = false; SX.hud = ''; SX.res = null; SX.s = null; car.sxm = 1; car.sxs = 1; WK.sxm = 1; WK.sxs = 1; MG.sxk = 1; $('sxHud').classList.remove('on'); document.body.classList.remove('sxon'); }
+function stxPlayer() { const m = stxMode(); return m === 'drive' ? { x: car.x, z: car.z, y: car.y || 0 } : m === 'walk' ? { x: WK.p.x, z: WK.p.z, y: 0 } : null; }
+function stxParent() { const m = stxMode(); return m === 'drive' ? scene : m === 'walk' ? WK.root : m === 'farm' || m === 'def' ? farmScene : null; }
+function stxDone(win, text) { if (SX.res) return; SX.res = { win: !!win, text: text || '' }; const m = stxMode();
+  if (m === 'drive') { if (car.state === 'go') finish(); } else if (m === 'walk') walkEnd(!!win); else if (m === 'mg') mgEnd(text || (win ? 'Получилось!' : 'Не вышло'), win ? 2 : 1, [], win ? 300 : 100);
+  else if (m === 'farm' && ST.farm) { ST.farm.left = 0; if (win) ST.farm.pts = ST.farm.need; } else { showMsg(text || '', '', win ? '#9aff8a' : '#ff8a6a', 1500, !win); } }
+// то, что видит сценарий истории
+const SXAPI = {
+  get mode() { return stxMode(); }, get t() { return SX.t; }, get d() { return (SM() && SM().d) || 2; }, get s() { return SX.s; }, get m() { return SM(); },
+  get dx() { return DXS; }, get car() { return car; }, get wk() { return WK; }, get mg() { return MG; }, get df() { return DF; }, get fish() { return FISH; }, get farm() { return FARM; },
+  player: () => stxPlayer(), rnd: (a, b) => rnd(a, b), pick: (a) => pick(a), clamp: (v, a, b) => clamp(v, a, b),
+  say(t) { radio(t); }, msg(t, sub, col) { showMsg(t, sub || '', col || '#ffcf8a', 1400); }, bad(t, sub) { showMsg(t, sub || '', '#ff8a6a', 1300, true); },
+  float(t, col) { const p = stxPlayer(); if (!p) return; if (stxMode() === 'drive') floatText(t, p.x, 2.4, p.z, col); else farmFloat(t, p.x, p.z, col); },
+  sfx(n, o) { sfx(n, o); }, shake(k) { shake = Math.max(shake, k || 0.3); }, flash(c, k) { flash(c || '#ffffff', k || 0.3); }, buzz(ms) { buzz(ms || 30); },
+  hud(t) { SX.hud = t; const e = $('sxHud'); e.textContent = t; e.classList.toggle('on', !!t); document.body.classList.toggle('sxon', !!t); },
+  win(t) { stxDone(true, t); }, fail(t) { stxDone(false, t); },
+  after(sec, fn) { SX.timers.push({ at: SX.t + sec, fn }); }, every(sec, fn) { SX.timers.push({ at: SX.t + sec, ev: sec, fn }); },
+  speed(k) { car.sxm = k; WK.sxm = k; MG.sxk = k; }, steer(k) { car.sxs = k; WK.sxs = k; },
+  push(x, z) { const m = stxMode(); if (m === 'drive') { car.vx += x * SX.dt; car.vz += z * SX.dt; } else if (m === 'walk') { WK.p.x = clamp(WK.p.x + x * SX.dt, -10.5, 10.5); WK.p.z = clamp(WK.p.z + z * SX.dt, -11, 6.5); } },
+  boost(sec) { car.boost = Math.max(car.boost, sec || 1); }, spin(sec) { car.spin = Math.max(car.spin, sec || 0.6); },
+  addPot(n) { car.pot = Math.max(0, car.pot + n); }, cargo(n) { car.cargo = Math.max(0, (car.cargo || 0) + n); orderHud(); }, time(sec) { if (WK.active) WK.left += sec; else if (ST.farm) ST.farm.left += sec; },
+  // координаты: на трассе — «в N метрах впереди, со сдвигом от центра»; на даче — x/z (от −10 до 10, от −10 до 5)
+  ahead(m, lat) { const i = clamp(car.idx + Math.round(m / STEP), 0, TRACK.length - 1); return at(i, lat || 0); }, track(i, lat) { return at(clamp(Math.round(i), 0, TRACK.length - 1), lat || 0); },
+  get idx() { return car.idx; }, get len() { return TRACK.length; }, get lat() { return car.lat || 0; }, spot() { return wxPos(); },
+  // предмет: эмодзи, позиция, размер; hit — что будет при касании (один раз), move — как движется
+  obj(e, o = {}) { const P = stxParent(); const ob = Object.assign({ e, x: 0, y: null, z: 0, size: 1.4, r: 1.6, multi: false, dead: false }, o); if (ob.y === null) ob.y = stxMode() === 'drive' ? 1.3 : 1.0;
+    if (P) { ob.sp = emojiSprite(e, ob.size * (stxMode() === 'walk' ? 1.3 : 1)); ob.sp.position.set(ob.x, ob.y, ob.z); P.add(ob.sp); } ob.kill = () => { ob.dead = true; if (ob.sp && ob.sp.parent) ob.sp.parent.remove(ob.sp); }; ob.set = (e2) => { if (!ob.sp) return; const P2 = ob.sp.parent, sp = emojiSprite(e2, ob.size * (stxMode() === 'walk' ? 1.3 : 1)); sp.position.copy(ob.sp.position); P2.remove(ob.sp); P2.add(sp); ob.sp = sp; ob.e = e2; };
+    ob.dist = () => { const p = stxPlayer(); return p ? Math.hypot(p.x - ob.x, p.z - ob.z) : 1e9; }; SX.objs.push(ob); return ob; },
+  objs() { return SX.objs.filter((o) => !o.dead); },
+  fog(dens) { if (stxMode() === 'walk' || stxMode() === 'farm') { if (!WX.fog0) WX.fog0 = farmScene.fog.density; farmScene.fog.density = dens; } },
+  night(on) { if (stxMode() === 'drive') dxNight(!!on); },
+};
+function stxStart() { const m = SM(); if (!m) return; stxClear(); stxLoad(m.n).then(() => { const sc = window.STX[m.n]; if (!sc || SM() !== m) return; SX.on = true; SX.t = 0; SX.s = {}; SX.k++;
+  if (sc.hint) setTimeout(() => SM() === m && hint('✨ ' + sc.hint, 5500), 2500); try { sc.init && sc.init(SXAPI); } catch (e) { console.warn('stx init', m.n, e); } }); }
+function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return; const m = SM(), sc = m && window.STX[m.n]; if (!sc) return; SX.dt = dt; SX.t += dt;
+  for (const tm of SX.timers.slice()) if (SX.t >= tm.at) { if (tm.ev) tm.at += tm.ev; else SX.timers.splice(SX.timers.indexOf(tm), 1); try { tm.fn(SXAPI); } catch (e) { console.warn('stx timer', m.n, e); } }
+  const p = stxPlayer();
+  for (const o of SX.objs) { if (o.dead) continue; try { if (o.move) o.move(o, dt, SXAPI); } catch (e) { o.move = null; console.warn('stx move', m.n, e); }
+    if (o.sp) o.sp.position.set(o.x, o.y, o.z);
+    if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
+  try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
+
 function newRun(first) {
-  hideMap(); setTimeout(storyBegin, 60);
+  hideMap(); stxClear(); setTimeout(storyBegin, 60);
   if (!ORDER.startsWith('d_')) { DXS = null; while (DXG.children.length) DXG.remove(DXG.children[0]); dxNight(false); car.lim = 1; }
   if (ORDER.startsWith('g_')) { startMG(ORDER); return; }
   stopMG();
@@ -1451,7 +1500,7 @@ let last = performance.now(), firstFrame = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  stepBursts(dt); stepMonsters(dt);
+  stepBursts(dt); stepMonsters(dt); stxFrame(dt);
   const tsec = now / 1000;
   if (!FISH.active && !FS.active && !DF.active && !WK.active) stepShips(dt);
   { const drive = !FISH.active && !FS.active && !DF.active && !WK.active && car.state === 'go', v = Math.hypot(car.vx, car.vz); sndEngine(isDim() ? 'tank' : 'engine', drive ? 0.22 + Math.min(0.25, v / 120) + (car.boost > 0 ? 0.15 : 0) : 0, 0.75 + v / 45 + (car.boost > 0 ? 0.2 : 0)); }
@@ -1462,7 +1511,7 @@ function frame(now) {
   if (MG.active) { mgFrame(dt); return; }
   // руль
   const L = input.kl, R = input.kr, ax = Math.abs(JOY.x), jx = ax < 0.1 ? 0 : -Math.sign(JOY.x) * Math.pow(Math.min(1, (ax - 0.1) / 0.85), 1.35); // мягкий центр, полный руль у края
-  const want = (car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0) * (ORDER === 'd_ded' ? -1 : 1);
+  const want = (car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0) * (ORDER === 'd_ded' ? -1 : 1) * (car.sxs || 1);
   car.steer += (want - car.steer) * Math.min(1, dt * (Math.abs(want) > Math.abs(car.steer) && Math.sign(want) === Math.sign(car.steer || want) ? 6 : 12)); // руль доворачивается плавно, отпускается быстро
   const steer = Math.abs(car.steer) < 0.03 ? 0 : car.steer, brake = car.state === 'go' && !car.stuck && (input.kb || (JOY.id != null && JOY.y > 0.55));
   $('brk').classList.toggle('on', !!brake);
@@ -1475,7 +1524,7 @@ function frame(now) {
     else if (car.state === 'go' && car.lat !== undefined) { // руль отпущен — кресло само понемногу выравнивается по дороге, из песка тянет обратно
       const tp0 = TRACK[car.idx], n0 = nrm(tp0), c = car.off ? clamp(car.lat * 0.09, -0.7, 0.7) : 0, ta = Math.atan2(Math.sin(tp0.a) - n0[0] * c, Math.cos(tp0.a) - n0[1] * c);
       car.h += Math.atan2(Math.sin(ta - car.h), Math.cos(ta - car.h)) * Math.min(1, dt * (car.off ? 1.6 : 0.9)); }
-    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1) * (brake ? 0.5 : 1) * (car.lim || 1);
+    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1) * (brake ? 0.5 : 1) * (car.lim || 1) * (car.sxm || 1);
     spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : brake ? 2.6 : 1.6) * dt;
     const hx = Math.sin(car.h), hz = Math.cos(car.h);
     let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
@@ -1834,7 +1883,7 @@ function drawMapSvg() {
   $('mapSvg').innerHTML = h;
 }
 function showMap() {
-  stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); $('end').classList.remove('on');
+  stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); stxClear(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
   $('mapSub').textContent = '· копилка на билет: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; $('mapBank').style.width = frac * 100 + '%';
   const ripe = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length, d1 = (() => { try { return !!localStorage.getItem('bm_d1'); } catch (e) { return false; } })();
@@ -1870,7 +1919,7 @@ function showStory() { loadStory().then(() => {
   $('story').classList.add('on'); const e = $('stList').querySelector('.next'); if (e) e.scrollIntoView({ block: 'center' }); }).catch(() => showMsg('Истории не загрузились', 'проверь интернет', '#ff9a7a', 1500, true)); }
 function startStory(n) { loadStory().then(() => { const m = STORY[n - 1]; if (!m) return; ST.cur = n; ORDER = m.base; try { localStorage.setItem('bm_order', ORDER); } catch (e) {}
   $('story').classList.remove('on'); $('map').classList.remove('on'); document.body.classList.remove('mapon'); document.body.classList.add('storyon'); newRun(false); }); }
-function storyBegin() { const m = SM(); if (!m) { document.body.classList.remove('storyon'); return; } document.body.classList.add('storyon'); ST.farm = null;
+function storyBegin() { const m = SM(); if (!m) { document.body.classList.remove('storyon'); return; } setTimeout(() => SM() === m && stxStart(), 700); document.body.classList.add('storyon'); ST.farm = null;
   const c = $('stCard'); c.innerHTML = `<b>📖 История №${m.n} · ${m.t}</b><div>${m.intro}</div><div class="g2">🎯 ${m.goal}</div>`; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); clearTimeout(storyBegin.t); storyBegin.t = setTimeout(() => c.classList.remove('on'), 7500);
   const k = m.d === 1 ? 1.25 : m.d === 3 ? 0.85 : 1; let tries = 0;
   const apply = () => { if (SM() !== m) return; if (WK.active && WK.st === 'go') { WK.left *= k; return; } if (FS.active) { ST.farm = { left: 100, pts: 0, need: 6 + 3 * (m.d || 2), s0: FARM.swats }; hint('Набери <b>' + ST.farm.need + ' очков дел</b> за 100 с: посадить, полить — +1, жук тапком — +1, урожай — +3', 6000); return; }
@@ -1884,7 +1933,11 @@ function storyFarmStep(dt) { const F = ST.farm; if (!F) return; F.left -= dt; co
     $('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'; $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; if (win) confetti(); setTimeout(() => $('end').classList.add('on'), 900); } }
 // финал истории: свой заголовок, номер, звёзды сохраняются, открывается следующая
 new MutationObserver(() => { const on = $('end').classList.contains('on'); if (!on) { ST.endOn = false; return; } if (ST.endOn) return; ST.endOn = true; const m = SM(); if (!m) { document.body.classList.remove('storyon'); return; }
-  const st = ($('estars').textContent.match(/★/g) || []).length; $('etitle').innerHTML = letters(st >= 2 ? m.win : m.lose, 0.025); $('esub').textContent = '📖 История №' + m.n + ' · ' + m.t;
+  let st = ($('estars').textContent.match(/★/g) || []).length; const R = SX.res, sc = window.STX[m.n];
+  if (R) { if (!R.win) st = 1; else st = Math.max(st, 2); $('estars').innerHTML = [0, 1, 2].map((i) => `<span>${i < st ? '★' : '☆'}</span>`).join(''); }
+  if (sc && sc.result) { try { const r = sc.result(SXAPI); if (r) $('etab').insertAdjacentHTML('afterbegin', `<tr><td>✨ ${r[0]}</td><td>${r[1]}</td></tr>`); } catch (e) {} }
+  if (R && R.text) $('etab').insertAdjacentHTML('afterbegin', `<tr><td colspan="2">✨ ${R.text}</td></tr>`); SX.on = false; $('sxHud').classList.remove('on');
+  $('etitle').innerHTML = letters(st >= 2 ? m.win : m.lose, 0.025); $('esub').textContent = '📖 История №' + m.n + ' · ' + m.t;
   ST.done[m.n] = Math.max(ST.done[m.n] || 0, st || 1); try { localStorage.setItem('bm_story', JSON.stringify(ST.done)); } catch (e) {} stBtn(); $('stNext').style.display = m.n < 150 ? '' : 'none'; }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 $('stNext').onclick = () => { const n = Math.min(150, (SM() ? SM().n : 0) + 1); $('end').classList.remove('on'); startStory(n); };
 $('stBtn').onclick = (e) => { e.stopPropagation(); sfx('open'); showStory(); };
@@ -2595,7 +2648,7 @@ function walkFrame(dt, now) {
   { const jl = Math.hypot(JOY.x, JOY.y); if (JOY.id != null && jl > 0.15) { const k = Math.min(1, (jl - 0.15) / 0.6); ix = JOY.x / jl * k * W.side; iz = JOY.y / jl * k * W.side; } }
   { const kx = (W.k.has('R') ? 1 : 0) - (W.k.has('L') ? 1 : 0), kz = (W.k.has('D') ? 1 : 0) - (W.k.has('U') ? 1 : 0); if (kx || kz) { const d = Math.hypot(kx, kz); ix = kx / d * W.side; iz = kz / d * W.side; } }
   if (W.st !== 'go') ix = iz = 0;
-  const SPD = 4.3; W.vx += (ix * SPD - W.vx) * Math.min(1, dt * 10); W.vz += (iz * SPD - W.vz) * Math.min(1, dt * 10);
+  const SPD = 4.3 * (W.sxm || 1); ix *= W.sxs || 1; iz *= W.sxs || 1; W.vx += (ix * SPD - W.vx) * Math.min(1, dt * 10); W.vz += (iz * SPD - W.vz) * Math.min(1, dt * 10);
   [W.p.x, W.p.z] = walkCollide(W.p.x + W.vx * dt, W.p.z + W.vz * dt, 0.35, W.coll || (W.fenceOpen ? WALK_BASE.concat(WALK_VALYA) : WALK_BASE));
   const sp = Math.hypot(W.vx, W.vz); if (sp > 0.3) W.h = lerpA(W.h, Math.atan2(W.vx, W.vz), dt * 12); { const ph0 = Math.floor(W.ph / Math.PI); W.ph += sp * dt * 2.8; if (sp > 1 && Math.floor(W.ph / Math.PI) !== ph0) sfx('step' + (1 + Math.floor(Math.random() * 3)), { vol: 0.55, rnd: 0.2 }); }
   const T = W.tan, u = T.userData, hop = W.fenceOpen ? Math.max(0, 1 - Math.abs(W.p.z - 7.5) / 0.7) * 0.6 : 0, sw = Math.sin(W.ph) * Math.min(1, sp / 3) * 0.7;
@@ -2888,7 +2941,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { mgEnd, MG, MGS, get DXS() { return DXS; }, finish, ST, get STORY() { return STORY; }, startStory, showStory, DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, get TRACK() { return TRACK; }, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { SX, SXAPI, stxMode, mgEnd, MG, MGS, get DXS() { return DXS; }, finish, ST, get STORY() { return STORY; }, startStory, showStory, DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, get TRACK() { return TRACK; }, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
