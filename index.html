@@ -30,6 +30,7 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 #turbo .bar{height:8px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden}#turbo .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),#fff)}
 #turbo small{display:block;margin-top:5px;font-size:11px;letter-spacing:.14em;color:var(--dim)}
 #spd{display:block;font-size:30px;font-weight:300;font-variant-numeric:tabular-nums;text-shadow:0 2px 10px #000;margin-bottom:4px}
+#spd::after{content:" км/ч";font:700 12px system-ui,sans-serif;letter-spacing:0;opacity:.65;text-shadow:none}
 #combo{position:fixed;left:0;right:0;top:24%;text-align:center;z-index:6;pointer-events:none;font-weight:900;font-size:clamp(22px,6vw,40px);color:var(--cyan);text-shadow:0 0 20px rgba(127,232,255,.6),0 3px 12px #000;opacity:0;transition:opacity .2s}
 #combo.on{opacity:1}#combo small{display:block;font-size:15px;font-weight:600;color:var(--ink)}
 #msg{position:fixed;left:0;right:0;top:38%;text-align:center;font-size:clamp(28px,7vw,50px);font-weight:900;pointer-events:none;z-index:6;opacity:0;transform:scale(.92);transition:opacity .2s,transform .2s;text-shadow:0 0 24px currentColor,0 3px 14px #000}
@@ -37,6 +38,7 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 #hint{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(440px,calc(100vw - 32px));text-align:center;z-index:6;opacity:0;transition:opacity .4s;pointer-events:none}
 #hint.on{opacity:1}#hint span{display:inline-block;border-radius:12px;padding:9px 14px;font-size:15px;line-height:1.35}
 .zone{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));width:74px;height:74px;border-radius:50%;z-index:5;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.75;transition:transform .08s,box-shadow .15s}
+#brk{position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:6;font:900 14px system-ui,sans-serif;letter-spacing:.1em;color:#ff7a5a;font-size:18px;opacity:0;transition:opacity .15s;pointer-events:none;text-shadow:0 0 10px rgba(255,90,60,.7)}#brk.on{opacity:1}body.walk #brk,body.farm #brk,body.def #brk,body.fish #brk{display:none}
 #zl{left:16px}#zr{right:16px}.zone.dn{transform:scale(.92);box-shadow:0 0 0 2px var(--cyan),0 0 24px rgba(127,232,255,.5);opacity:1}
 #end{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,6,12,.55);z-index:10;padding:16px}
 #end.on{display:flex}#end .card{width:min(400px,100%);border-radius:18px;padding:22px;text-align:center}
@@ -192,7 +194,7 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
   <div id="radio"></div>
   <div id="tr" class="g"><b id="pot">0</b><small>картошка</small></div>
   <div id="turbo"><b id="spd">0</b><div class="bar"><i id="turboi"></i></div><small>ТУРБО</small></div>
-  <div class="zone g" id="zl">⟲</div><div class="zone g" id="zr">⟳</div>
+  <div id="brk">ТОРМОЗ</div><div class="zone g" id="zl">⟲</div><div class="zone g" id="zr">⟳</div>
 </div>
 <div id="storm"></div>
 <div id="speedfx"></div>
@@ -465,7 +467,7 @@ function stepTrucks(dt, now) {
     t.m.position.set(x, 0.1 + Math.abs(Math.sin(now * 0.01 + t.lat)) * 0.04, z); t.m.rotation.y = a.a + Math.PI;
     t.m.visible = car.state !== 'boot';
     if (car.state === 'go' && now - t.hit > 2500 && (x - car.x) ** 2 + (z - car.z) ** 2 < 10) {
-      sfx('crash'); t.hit = now; car.spin = 0.9; car.vx *= 0.4; car.vz *= 0.4; car.drift = 0; car.combo = 0; shake = 0.7;
+      sfx('crash'); buzz(80); t.hit = now; car.spin = 0.9; car.vx *= 0.4; car.vz *= 0.4; car.drift = 0; car.combo = 0; shake = 0.7;
       showMsg('Грузовик ТрансМарса!', damage('') || dedSay(['Дед: «Куда прёшь, ТрансМарс!»', 'Дед: «Права на рынке за картошку купил?!»', 'Дед: «Таня, это грузовик! Размером с Валю!»']), '#ff8a5a', 1500, true);
     }
   }
@@ -1043,7 +1045,7 @@ function stepMeteors(dt, now, inZone) {
 }
 
 /* ---------- заезд ---------- */
-const VMAX = 23, VBOOST = 35, TURN = 2.5;
+const VMAX = 23, VBOOST = 35, TURN = 1.85;
 const car = { x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0, cargo: 0, pieLimit: 0, seedT: 0, cold: false, radioT: 0, wind: 0 };
 const input = { l: false, r: false };
 const letters = (t, step = 0.035) => { let i = 0; return t.split(' ').map((w) => '<span style="display:inline-block;white-space:nowrap">' + [...w].map((ch) => `<span class="ch" style="animation-delay:${(i++ * step).toFixed(3)}s">${ch}</span>`).join('') + '</span>').join(' '); };
@@ -1077,7 +1079,7 @@ const DED = ['Дед: «Таня, тормози!»', 'Дед: «Я на „Ур
 const DED_HIT = ['Дед: «Я же говорил!»', 'Дед: «Таня, ну куда ты!»', 'Дед: «Валидол где?!»', 'Дед: «Это всё твои жуки!»', 'Дед: «Я в люльке за 40 лет такого не видал!»', 'Дед: «Пиши завещание, Таня!»'];
 const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
-  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
+  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, steer: 0, lat: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
   car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
   car.mode = ORDER; car.stuck = null; car.dunes = 0; car.bugs = 0; car.gibdd = 0; drone.position.set(car.x, 8, car.z - 10);
   planZones(); orderHud(); trailPts.length = 0; if (truckG) resetTrucks();
@@ -1086,7 +1088,7 @@ function startMsg(first) {
   const o = ORDERS[ORDER];
   if (first) showMsg('Бабуля, газу!', o.desc, '#ffcf8a', 1900); else introCard(o);
   if (isDim()) { hint('Танк не заносит, зато прёт напролом. Застрял в дюне — <b>тапай быстрее</b>!', 4500); radio(RADIO_ORD.dimon[0]); return; }
-  hint(first ? 'Поставь палец и веди <b>влево-вправо</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
+  hint(first ? 'Поставь палец и веди <b>влево-вправо</b>. Сильно в сторону — <b>занос</b>, долгий занос = <b>турбо</b>. Палец вниз — <b>тормоз</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 const hideMap = () => { $('map').classList.remove('on'); document.body.classList.remove('mapon'); };
 let LOCALS = [];
@@ -1169,7 +1171,7 @@ const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStar
 /* ---------- управление: плавающий джойстик, как в «Ночном тарифе» ---------- */
 const JOY = { id: null, x: 0, y: 0, cx: 0, cy: 0 }, JR = 52;
 function joyPlace() { const j = $('joy'), k = $('knob'); if (JOY.id == null) { j.style.left = ''; j.style.top = ''; j.classList.remove('on'); k.style.transform = ''; } else { j.style.left = (JOY.cx - 60) + 'px'; j.style.top = (JOY.cy - 60) + 'px'; j.classList.add('on'); k.style.transform = `translate(${JOY.x * 40}px,${JOY.y * 40}px)`; } }
-function joyStart(e) { if (JOY.id != null) return; JOY.id = e.pointerId; JOY.cx = e.clientX; JOY.cy = e.clientY; JOY.x = JOY.y = 0; joyPlace(); }
+function joyStart(e) { if (JOY.id != null) return; if (!WK.active && car.state === 'go' && car.t > 1.2) $('hint').classList.remove('on'); /* подсказка не мешает рулить */ JOY.id = e.pointerId; JOY.cx = e.clientX; JOY.cy = e.clientY; JOY.x = JOY.y = 0; joyPlace(); }
 function joyMove(e) { if (e.pointerId !== JOY.id) return; let dx = (e.clientX - JOY.cx) / JR, dy = (e.clientY - JOY.cy) / JR; const l = Math.hypot(dx, dy); if (l > 1) { JOY.cx += (dx - dx / l) * JR; JOY.cy += (dy - dy / l) * JR; dx /= l; dy /= l; } JOY.x = dx; JOY.y = dy; joyPlace(); } // палец ушёл за круг — круг едет следом
 function joyEnd(e) { if (e && e.pointerId !== JOY.id) return; JOY.id = null; JOY.x = JOY.y = 0; joyPlace(); }
 const touches = new Map();
@@ -1178,10 +1180,11 @@ addEventListener('pointerdown', (e) => { if (e.target.closest('#haggle')) return
 addEventListener('pointermove', (e) => { joyMove(e); if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; joyEnd(e); touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
-const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
-addEventListener('keydown', (e) => { if (DF.active && (e.code === 'KeyR' || e.code === 'ArrowDown')) defReload();  if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
-addEventListener('keyup', (e) => { if (FISH.active && e.code === 'Space') FISH.hold = false;  if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
-addEventListener('blur', () => { joyEnd({ pointerId: JOY.id }); touches.clear(); input.kl = input.kr = input.tl = input.tr = false; });
+const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 }, KB = { ArrowDown: 1, KeyS: 1 };
+const buzz = (ms) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }; // отдача в руку (Android)
+addEventListener('keydown', (e) => { if (DF.active && (e.code === 'KeyR' || e.code === 'ArrowDown')) defReload();  if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; if (KB[e.code]) input.kb = true; });
+addEventListener('keyup', (e) => { if (FISH.active && e.code === 'Space') FISH.hold = false;  if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; if (KB[e.code]) input.kb = false; });
+addEventListener('blur', () => { joyEnd({ pointerId: JOY.id }); touches.clear(); input.kl = input.kr = input.kb = input.tl = input.tr = false; });
 
 /* ---------- облегчение по fps ---------- */
 const perf = { frames: 0, acc: 0, level: 0 };
@@ -1202,7 +1205,7 @@ function camTarget(dt) {
   const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 10.5 : 10) + spd * 0.1 + (isDim() ? 2.5 : 0), up = (port ? 6.6 : 5.0) + spd * 0.03 + (isDim() ? 1 : 0);
   camH += Math.atan2(Math.sin(car.h - camH), Math.cos(car.h - camH)) * Math.min(1, dt * 3);
   camPos.set(car.x - Math.sin(camH) * back, up, car.z - Math.cos(camH) * back);
-  look.set(car.x + Math.sin(camH) * 7, 1.2, car.z + Math.cos(camH) * 7);
+  const la = camH + (car.steer || 0) * 0.22; look.set(car.x + Math.sin(la) * 7, 1.2, car.z + Math.cos(la) * 7); // заглядывает в поворот
 }
 function snapCam() { camH = car.h; camTarget(1); camera.position.copy(camPos); lookS.copy(look); }
 
@@ -1220,31 +1223,38 @@ function frame(now) {
   if (DF.active) { defFrame(dt, now); return; }
   if (WK.active) { walkFrame(dt, now); return; }
   // руль
-  const L = input.kl, R = input.kr, ax = Math.abs(JOY.x), jx = ax < 0.12 ? 0 : -Math.sign(JOY.x) * Math.min(1, (ax - 0.12) / 0.7);
-  const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0;
+  const L = input.kl, R = input.kr, ax = Math.abs(JOY.x), jx = ax < 0.1 ? 0 : -Math.sign(JOY.x) * Math.pow(Math.min(1, (ax - 0.1) / 0.85), 1.35); // мягкий центр, полный руль у края
+  const want = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : jx) : 0;
+  car.steer += (want - car.steer) * Math.min(1, dt * (Math.abs(want) > Math.abs(car.steer) && Math.sign(want) === Math.sign(car.steer || want) ? 6 : 12)); // руль доворачивается плавно, отпускается быстро
+  const steer = Math.abs(car.steer) < 0.03 ? 0 : car.steer, brake = car.state === 'go' && !car.stuck && (input.kb || (JOY.id != null && JOY.y > 0.55));
+  $('brk').classList.toggle('on', !!brake);
   $('zl').classList.toggle('dn', !!L); $('zr').classList.toggle('dn', !!R);
   if (car.state === 'go' || car.state === 'end') {
     if (car.state === 'go') car.t += dt;
     let spd = Math.hypot(car.vx, car.vz);
     if (car.spin > 0) { car.spin -= dt; car.h += dt * 9; }
-    else if (steer) car.h += steer * (isDim() ? 1.9 : TURN) * dt * (0.55 + 0.45 * Math.min(1, spd / 18));
-    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1);
-    spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : 1.6) * dt;
+    else if (steer) car.h += steer * (isDim() ? 1.9 : TURN) * dt * (0.55 + 0.45 * Math.min(1, spd / 18)) * (brake ? 1.3 : 1);
+    else if (car.state === 'go' && car.lat !== undefined) { // руль отпущен — кресло само понемногу выравнивается по дороге, из песка тянет обратно
+      const tp0 = TRACK[car.idx], n0 = nrm(tp0), c = car.off ? clamp(car.lat * 0.09, -0.7, 0.7) : 0, ta = Math.atan2(Math.sin(tp0.a) - n0[0] * c, Math.cos(tp0.a) - n0[1] * c);
+      car.h += Math.atan2(Math.sin(ta - car.h), Math.cos(ta - car.h)) * Math.min(1, dt * (car.off ? 1.6 : 0.9)); }
+    const target = car.state === 'end' || car.stuck ? 0 : isDim() ? (car.boost > 0 ? 32 : 25) * (car.off ? 0.9 : 1) * (car.spin > 0 ? 0.5 : 1) : (car.boost > 0 ? VBOOST : VMAX) * (car.off ? 0.7 : 1) * (car.spin > 0 ? 0.4 : 1) * (brake ? 0.5 : 1);
+    spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : brake ? 2.6 : 1.6) * dt;
     const hx = Math.sin(car.h), hz = Math.cos(car.h);
     let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
-    const grip = isDim() ? 11 : steer ? 2.6 : 8, f = 1 - Math.exp(-grip * dt);
+    const grip = isDim() ? 11 : 8 - (brake && steer ? 6 : 5.4 * clamp((Math.abs(steer) - 0.4) / 0.45, 0, 1) * Math.min(1, spd / 14)), f = 1 - Math.exp(-grip * dt);
     vxn += (hx - vxn) * f; vzn += (hz - vzn) * f; const ln = Math.hypot(vxn, vzn) || 1; vxn /= ln; vzn /= ln;
     car.vx = vxn * spd; car.vz = vzn * spd; car.x += car.vx * dt; car.z += car.vz * dt;
     const slip = Math.acos(clamp(vxn * hx + vzn * hz, -1, 1));
     // где мы на трассе
     let best = 1e9, bi = car.idx;
     for (let i = Math.max(0, car.idx - 30); i < Math.min(TRACK.length, car.idx + 80); i++) { const p = TRACK[i], d = (p.x - car.x) ** 2 + (p.z - car.z) ** 2; if (d < best) { best = d; bi = i; } }
-    car.idx = bi; const tp = TRACK[bi], n = nrm(tp), lat = (car.x - tp.x) * n[0] + (car.z - tp.z) * n[1];
+    car.idx = bi; const tp = TRACK[bi], n = nrm(tp), lat = (car.x - tp.x) * n[0] + (car.z - tp.z) * n[1]; car.lat = lat;
     car.off = Math.abs(lat) > ROAD_W / 2 + 0.4 ? 1 : 0;
     if (Math.abs(lat) > ROAD_W / 2 + 9) { // упёрлась в камни
       const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
-      car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * 0.5; // развернуло вдоль дороги
-      if (now - car.bump > 900) { car.vx *= 0.55; car.vz *= 0.55; car.drift = 0; car.combo = 0; }
+      car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * Math.min(1, dt * 7); // плавно разворачивает вдоль дороги
+      { const vl = car.vx * n[0] + car.vz * n[1]; if (vl * lat > 0) { car.vx -= vl * n[0] * 1.4; car.vz -= vl * n[1] * 1.4; } } // отскок от камней, а не прилипание
+      if (now - car.bump > 900) { car.vx *= 0.7; car.vz *= 0.7; car.drift = 0; car.combo = 0; $('combo').classList.remove('on'); buzz(40); shake = Math.max(shake, 0.35); sfx('thud', { vol: 0.6, rnd: 0.2 }); }
       if (now - car.bump > 1500) showMsg(ouch(), damage('') || hitSay(), '#ff9a7a', 1300, true);
       car.bump = now;
     }
@@ -1259,13 +1269,14 @@ function frame(now) {
       if (zn && !zn.told) { zn.told = true; if (zn.kind === 'meteor') { warnBanner('МЕТЕОРИТНЫЙ ДОЖДЬ'); flash('#ff6a3a', 0.35); radio('<b>Марс-ФМ:</b> внимание, метеоритный дождь! Зонтики не помогут'); } else { warnBanner('ПЫЛЕВАЯ БУРЯ'); flash('#d08050', 0.4); radio('<b>Марс-ФМ:</b> пылевая буря! Закройте форточки в куполах'); } }
       car.wind = zn && zn.kind === 'storm' ? Math.sin(car.t * 0.7) * 7 : 0;
       if (car.wind) { car.vx += n[0] * car.wind * dt; car.vz += n[1] * car.wind * dt; }
-      if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; showMsg('Ой, в песок!', 'песок в тапках до пенсии', '#ffb07a', 900); }
+      if (car.off && car.drift > 0) { car.drift = 0; car.combo = 0; $('combo').classList.remove('on'); showMsg('Ой, в песок!', 'песок в тапках до пенсии', '#ffb07a', 900); }
       if (!steer && car.drift > 0) {
         if (car.drift > 0.55) {
           const mult = 1 + Math.min(2, car.drift * 0.6), pts = Math.round(car.combo * mult);
-          sfx('combo'); sfx('turbo', { vol: 0.7 }); car.score += pts; car.boost = Math.min(3, 0.6 + car.drift * 0.8); flash('#5fe0ff', 0.35);
+          sfx('combo'); sfx('turbo', { vol: 0.7 }); buzz(25); car.score += pts; car.boost = Math.min(3, 0.6 + car.drift * 0.8); flash('#5fe0ff', 0.35);
           $('combo').innerHTML = '+' + pts + '<small>' + (Math.random() < 0.5 ? dedSay(DED) : YAY[Math.floor(Math.random() * YAY.length)] + ' · турбо!') + '</small>'; $('combo').classList.add('on'); clearTimeout(frame.ct); frame.ct = setTimeout(() => $('combo').classList.remove('on'), 1100);
         }
+        else $('combo').classList.remove('on'); // короткий занос — надпись не висит
         car.drift = 0; car.combo = 0;
       }
       if (car.drift > 0.3) { $('combo').innerHTML = 'ЗАНОС ×' + (1 + Math.min(2, car.drift * 0.6)).toFixed(1) + '<small>' + Math.round(car.combo) + '</small>'; $('combo').classList.add('on'); }
@@ -1278,7 +1289,7 @@ function frame(now) {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (isDim() && car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 7) { b.hit = now; car.bugs++; car.vx *= 0.85; car.vz *= 0.85; flash('#ffcf3a', 0.3); showMsg('Хрусть!', 'Жук: «Профсоюз „ТрансМарсу“ этого не простит!»', '#ffcf6a', 1200); return; }
       if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
-        sfx('soft'); b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
+        sfx('soft'); buzz(60); b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
         const dm = damage(''); showMsg(ouch(), dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : hitSay()), '#ff8a6a', 1300, true);
       }
     });
