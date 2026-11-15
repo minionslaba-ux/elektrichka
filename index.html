@@ -182,6 +182,7 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
 #haggle .hw{font-weight:800;font-size:15px;color:var(--dim)}#haggle .hp{font-size:28px;font-weight:900;margin:4px 0 10px}#haggle .hp small{display:block;font-size:14px;color:var(--dim);font-weight:600;margin-top:2px}#haggle .btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}#haggle .hs{min-height:20px;margin:8px 0;font-size:14px;color:#ffd27a}
 #haggle .hb{position:relative;height:22px;border-radius:11px;background:linear-gradient(90deg,#ff5a4a,#ffb04a 50%,#ff5a4a)}#hgOk{position:absolute;top:0;bottom:0;border-radius:11px;background:#4ad86a;box-shadow:0 0 12px #4ad86a}#hgNd{position:absolute;top:-5px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 8px #000}
 #haggle button{border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:var(--hot);color:#2a1406}#haggle button.alt{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--line)}
+#wdGo{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%);z-index:3;border:0;border-radius:18px;padding:12px 22px;font:900 19px system-ui,sans-serif;color:#2a1406;background:linear-gradient(90deg,#ffd24a,#ff7a3a);box-shadow:0 6px 24px rgba(255,120,60,.5),0 0 0 2px rgba(255,255,255,.3) inset;cursor:pointer;animation:pop .5s both}#wdGo small{display:block;font-size:11px;font-weight:700;opacity:.8}
 #stBtn{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2;border:1px solid var(--line);border-radius:16px;padding:10px 14px;color:var(--ink);font:800 15px system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px}#stBtn small{color:var(--hot);font-weight:900}
 #stNext{display:none;width:100%;margin:10px 0 8px;border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:linear-gradient(90deg,#ffb04a,#ff7a5a);color:#2a1406;cursor:pointer}body.storyon #stNext{display:block}
 #story{position:fixed;inset:0;z-index:20;display:none;background:linear-gradient(180deg,#3a1a2a,#1a0c16);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px calc(20px + env(safe-area-inset-bottom))}#story.on{display:block}
@@ -240,7 +241,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
   <button id="stNext">📖 Следующая история ▶</button><div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
 <div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
   <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
-  <div id="pins"></div><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
+  <div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <button id="snd" aria-label="Звук"></button>
@@ -1006,6 +1007,7 @@ const ORDERS = {
   w_office: { name: 'Офис «ТрансМарса»', icon: '🏢', desc: 'Пешком, тихо: Гоша утащил печать Димона. Найди и принеси, не попадаясь Эдуарду Кузьмичу', who: 'Димон и квартальный отчёт', km: false },
   w_market: { name: 'Рынок «Красная пыль»', icon: '🛒', desc: 'Пешком: продай урожай роботам подороже. Торгуйся — жми, когда стрелка в зелёном', who: 'Роботы-покупатели', km: false },
   fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва', km: false },
+  world: { name: 'Экспедиция: открытый Марс', icon: '🚀', desc: 'Марсоход, твари, пираты, ресурсы', who: 'Марс', km: false, hidden: true },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
@@ -1390,9 +1392,13 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 23); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : loadJS('assets/world.js').then(() => loadJS('assets/world2.js')).then(() => { WD_PART2(); return loadJS('assets/world3.js'); }).then(() => WD_PART3());
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
   if (!ORDER.startsWith('d_')) { DXS = null; while (DXG.children.length) DXG.remove(DXG.children[0]); dxNight(false); car.lim = 1; }
+  if (ORDER === 'world') { stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); loadWorld().then(() => WD.start()); return; }
+  if (window.WD) WD.stop();
   if (ORDER.startsWith('g_')) { startMG(ORDER); return; }
   stopMG();
   if (ORDER.startsWith('w_')) { startWalk(ORDER); return; }
@@ -1462,7 +1468,7 @@ function joyMove(e) { if (e.pointerId !== JOY.id) return; let dx = (e.clientX - 
 function joyEnd(e) { if (e && e.pointerId !== JOY.id) return; JOY.id = null; JOY.x = JOY.y = 0; joyPlace(); }
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#haggle') || MG.active) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (window.WD && WD.active) { WD.pointer(e); return; } if (e.target.closest('#haggle') || MG.active) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { joyMove(e); if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; joyEnd(e); touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -1502,6 +1508,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   stepBursts(dt); stepMonsters(dt); stxFrame(dt);
+  if (window.WD && WD.active) { WD.frame(dt, now); adapt(dt); return; }
   const tsec = now / 1000;
   if (!FISH.active && !FS.active && !DF.active && !WK.active) stepShips(dt);
   { const drive = !FISH.active && !FS.active && !DF.active && !WK.active && car.state === 'go', v = Math.hypot(car.vx, car.vz); sndEngine(isDim() ? 'tank' : 'engine', drive ? 0.22 + Math.min(0.25, v / 120) + (car.boost > 0 ? 0.15 : 0) : 0, 0.75 + v / 45 + (car.boost > 0 ? 0.2 : 0)); }
@@ -1884,7 +1891,7 @@ function drawMapSvg() {
   $('mapSvg').innerHTML = h;
 }
 function showMap() {
-  stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); stxClear(); $('end').classList.remove('on');
+  stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); stxClear(); if (window.WD) WD.stop(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
   $('mapSub').textContent = '· копилка на билет: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; $('mapBank').style.width = frac * 100 + '%';
   const ripe = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length, d1 = (() => { try { return !!localStorage.getItem('bm_d1'); } catch (e) { return false; } })();
@@ -1941,6 +1948,7 @@ new MutationObserver(() => { const on = $('end').classList.contains('on'); if (!
   $('etitle').innerHTML = letters(st >= 2 ? m.win : m.lose, 0.025); $('esub').textContent = '📖 История №' + m.n + ' · ' + m.t;
   ST.done[m.n] = Math.max(ST.done[m.n] || 0, st || 1); try { localStorage.setItem('bm_story', JSON.stringify(ST.done)); } catch (e) {} stBtn(); $('stNext').style.display = m.n < 150 ? '' : 'none'; }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 $('stNext').onclick = () => { const n = Math.min(150, (SM() ? SM().n : 0) + 1); $('end').classList.remove('on'); startStory(n); };
+$('wdGo').onclick = (e) => { e.stopPropagation(); sfx('open'); ST.cur = 0; document.body.classList.remove('storyon'); ORDER = 'world'; hideMap(); newRun(false); };
 $('stBtn').onclick = (e) => { e.stopPropagation(); sfx('open'); showStory(); };
 $('stClose').onclick = () => $('story').classList.remove('on');
 setInterval(() => { const m = SM(); if (!m || !m.radio || $('end').classList.contains('on') || document.body.classList.contains('mapon') || document.hidden) return; if (Math.random() < 0.55) radio(pick(m.radio)); }, 14000); // радио по теме истории
@@ -2943,7 +2951,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { WALK_COVER, OF_COVER, OF_SPOTS, get DYN2() { return DYN; }, SX, SXAPI, stxMode, mgEnd, MG, MGS, get DXS() { return DXS; }, finish, ST, get STORY() { return STORY; }, startStory, showStory, DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, get TRACK() { return TRACK; }, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { loadWorld, WALK_COVER, OF_COVER, OF_SPOTS, get DYN2() { return DYN; }, SX, SXAPI, stxMode, mgEnd, MG, MGS, get DXS() { return DXS; }, finish, ST, get STORY() { return STORY; }, startStory, showStory, DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, get TRACK() { return TRACK; }, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
