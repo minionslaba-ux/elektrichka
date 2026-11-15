@@ -427,7 +427,7 @@ function loadModels() { // после первого кадра: KayKit + Kenney
 let KD = null, QC = null, QF = null;
 function loadDacha() { if (KD || loadDacha.busy) return; loadDacha.busy = true; Promise.all([getPack('kn_dacha'), getPack('qt_crops').catch(() => null)]).then(([d, c]) => { KD = d; QC = c; if (farmScene) dressFarm(); setTimeout(loadFish, 1500); }).catch(() => { loadDacha.busy = false; }); }
 function loadFish() { if (QF || loadFish.busy) return; loadFish.busy = true; getPack('qt_fish').then((f) => { QF = f; }).catch(() => { loadFish.busy = false; }); }
-let MODEL_Q = [];
+let MODEL_Q = [], OBST = [];
 function placeModels() { // модели вписываются в мир участками: свет запекается, невидимые участки не рисуются
   MODEL_Q = []; if (!MODELS) return;
   const bands = {};
@@ -435,6 +435,9 @@ function placeModels() { // модели вписываются в мир уча
   MODEL_Q = Object.values(bands);
   MODEL_Q.sort((a, b) => ((a[0][1] - car.x) ** 2 + (a[0][3] - car.z) ** 2) - ((b[0][1] - car.x) ** 2 + (b[0][3] - car.z) ** 2));
   MODEL_Q.total = MODEL_Q.length;
+  // столкновения: постройки у дороги — твёрдые (раньше кресло проезжало сквозь ангары и лавки)
+  OBST = []; for (const pl of PLACES) { const g = MODELS[pl[0]]; if (!g) continue; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox; let r = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) * pl[4] * 0.42;
+    const dr = distToRoad(pl[1], pl[3]); if (dr > ROAD_W / 2 + 9 + r) continue; r = Math.min(r, dr - ROAD_W / 2 - 0.6); if (r < 0.7) continue; /* невидимая стена не залезает на дорогу */ let bi = 0, bd = 1e18; for (let i = 0; i < TRACK.length; i += 2) { const d = (TRACK[i].x - pl[1]) ** 2 + (TRACK[i].z - pl[3]) ** 2; if (d < bd) { bd = d; bi = i; } } OBST.push({ x: pl[1], z: pl[3], r, i: bi }); }
 }
 function buildModelBand() {
   const list = MODEL_Q.shift(); if (!list) return;
@@ -1193,8 +1196,8 @@ function adapt(dt) {
   const fps = perf.frames / perf.acc; perf.frames = 0; perf.acc = 0; window.EL_FPS = fps;
   if (fps < 45 && postOn && !/[?&]fx=1/.test(location.search)) { postOn = false; document.body.classList.remove('post'); perf.level++; }
   else if (tier === 1 && !composer && !perf.tried && fps > 57 && car.state === 'go') { perf.tried = 1; loadPost(); } // хороший телефон — пробуем эффекты
-  else if (fps < 40 && dpr > 0.75) { dpr = Math.max(0.75, dpr - 0.25); renderer.setPixelRatio(dpr); perf.level++; }
-  else if (fps > 57 && dpr < dprMax) { dpr = Math.min(dprMax, dpr + 0.25); renderer.setPixelRatio(dpr); }
+  else if (fps < 40 && dpr > 0.75) { dpr = Math.max(0.75, dpr - 0.25); renderer.setPixelRatio(dpr); if (composer) composer.setPixelRatio(dpr); perf.level++; }
+  else if (fps > 57 && dpr < dprMax) { dpr = Math.min(dprMax, dpr + 0.25); renderer.setPixelRatio(dpr); if (composer) composer.setPixelRatio(dpr); }
 }
 
 /* ---------- камера ---------- */
@@ -1203,7 +1206,8 @@ addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); fi
 const camPos = new THREE.Vector3(), look = new THREE.Vector3(), lookS = new THREE.Vector3(); let camH = 0;
 function camTarget(dt) {
   const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 10.5 : 10) + spd * 0.1 + (isDim() ? 2.5 : 0), up = (port ? 6.6 : 5.0) + spd * 0.03 + (isDim() ? 1 : 0);
-  camH += Math.atan2(Math.sin(car.h - camH), Math.cos(car.h - camH)) * Math.min(1, dt * 3);
+  const vh = spd > 3 ? Math.atan2(car.vx, car.vz) : car.h, th = car.spin > 0 ? vh : vh + Math.atan2(Math.sin(car.h - vh), Math.cos(car.h - vh)) * 0.5; // камера смотрит по ходу движения: при закрутке и заносе не мотается
+  camH += Math.atan2(Math.sin(th - camH), Math.cos(th - camH)) * Math.min(1, dt * (car.spin > 0 ? 2 : 3));
   camPos.set(car.x - Math.sin(camH) * back, up, car.z - Math.cos(camH) * back);
   const la = camH + (car.steer || 0) * 0.22; look.set(car.x + Math.sin(la) * 7, 1.2, car.z + Math.cos(la) * 7); // заглядывает в поворот
 }
@@ -1258,6 +1262,10 @@ function frame(now) {
       if (now - car.bump > 1500) showMsg(ouch(), damage('') || hitSay(), '#ff9a7a', 1300, true);
       car.bump = now;
     }
+    for (const o of OBST) { if (Math.abs(o.i - bi) > 20) continue; const dx = car.x - o.x, dz = car.z - o.z, d = Math.hypot(dx, dz), R = o.r + 0.9; if (d >= R || d < 1e-3) continue;
+      const nx = dx / d, nz = dz / d; car.x = o.x + nx * R; car.z = o.z + nz * R; const vn = car.vx * nx + car.vz * nz; if (vn < 0) { car.vx -= vn * nx * 1.5; car.vz -= vn * nz * 1.5; }
+      if (now - car.bump > 700) { car.vx *= 0.75; car.vz *= 0.75; car.drift = 0; car.combo = 0; $('combo').classList.remove('on'); buzz(40); shake = Math.max(shake, 0.4); sfx('thud', { vol: 0.7, rnd: 0.2 }); burst(scene, car.x - nx * 0.9, 1, car.z - nz * 0.9, 'smoke', '#c08060', 2.2, 0.5); if (now - car.bump > 1500) showMsg(ouch(), hitSay(), '#ff9a7a', 1100, true); }
+      car.bump = now; }
     // занос и турбо
     if (car.state === 'go') {
       if (!isDim() && steer && slip > 0.18 && !car.off) { car.drift += dt; car.combo += slip * spd * dt * 4; }
@@ -1318,7 +1326,9 @@ function frame(now) {
     $('turbo').querySelector('.bar').classList.toggle('hot', car.boost > 0 || car.drift > 0.55);
     $('progi').style.width = (100 * TRACK[bi].s / TOTAL) + '%'; $('turboi').style.width = clamp(car.boost > 0 ? car.boost / 3 * 100 : car.drift / 3 * 100, 0, 100) + '%';
     // бабуля
-    babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.06, car.z); babka.rotation.y = car.h;
+    babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.06, car.z); babka.rotation.order = 'YXZ'; babka.rotation.y = car.h;
+    { const bk = -steer * 0.16 * Math.min(1, spd / 15) * (car.drift > 0 ? 1.5 : 1), pt = car.boost > 0 ? -0.06 : brake ? 0.07 : 0; babka.rotation.z += (bk - babka.rotation.z) * Math.min(1, dt * 6); babka.rotation.x += (pt - babka.rotation.x) * Math.min(1, dt * 5); } // крен в повороте, клевок при торможении
+    if (car.drift > 0.3 && spd > 8 && Math.random() < 0.5) { const dl = car.drift, col = dl > 1.6 ? '#ff6ad5' : dl > 0.9 ? '#ffb04a' : '#7fe8ff'; burst(scene, car.x - Math.sin(car.h) * 1.1 + rnd(-0.4, 0.4), 0.3, car.z - Math.cos(car.h) * 1.1 + rnd(-0.4, 0.4), 'spark', col, 0.9 + Math.min(1, dl * 0.4), 0.25); } // искры заноса: голубые → оранжевые → розовые
     FX.body.rotation.z = -steer * 0.18 * Math.min(1, slip * 3 + 0.3); FX.body.rotation.x = car.boost > 0 ? -0.08 : 0;
     { const d = FX.ded, tz = steer * 0.32 * Math.min(1, slip * 3 + 0.2) + (car.spin > 0 ? Math.sin(tsec * 30) * 0.3 : 0), tx = car.boost > 0 ? -0.35 : 0;
       d.rotation.z += (tz - d.rotation.z) * Math.min(1, dt * 8); d.rotation.x += (tx - d.rotation.x) * Math.min(1, dt * 6); d.position.y = 1.05 + Math.abs(Math.sin(tsec * 7)) * 0.03;
@@ -1349,9 +1359,9 @@ function frame(now) {
   if (!isDim()) stepTrail(car.boost > 0); motes.position.set(Math.round(car.x / 60) * 60, 0, Math.round(car.z / 60) * 60); stepMotes(dt);
   if (FX.clouds) FX.clouds.rotation.y += dt * 0.004;
   const sfxEl = $('speedfx'); sfxEl.style.opacity = car.boost > 0 && car.state === 'go' ? 1 : 0; if (car.boost > 0) sfxEl.style.transform = 'rotate(' + (Math.random() * 6) + 'deg)';
+  adapt(dt); // до отрисовки: смена чёткости очищает холст, и кадр не должен мигать пустым
   if (postOn && composer) { gradePass.uniforms.uTime.value = tsec % 100; gradePass.uniforms.uBoost.value += ((car.boost > 0 ? 1 : 0) - gradePass.uniforms.uBoost.value) * Math.min(1, dt * 5); composer.render(); }
   else renderer.render(scene, camera);
-  adapt(dt);
   if (!firstFrame) { firstFrame = performance.now(); window.EL_FIRST = Math.round(firstFrame - T0); afterFirst(); }
 }
 
@@ -1482,7 +1492,7 @@ function startFarm() {
   stopFishing(); stopDefense(); if (!farmScene) buildFarmScene();
   FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
-  babka.position.set(-3.5, 0.15, 5.6); babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
+  babka.position.set(-3.5, 0.15, 5.6); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
   growBeds(Date.now()); for (let i = 0; i < 9; i++) plantMesh(i); FS.bugs = []; FS.bugT = 5; FS.sel = -1; FS.lastPlant = 0;
   $('inv').textContent = invText();
   introCard(ORDERS.farm); radio('<b>Марс-ФМ:</b> дачники «Заречной», сезон открыт! Жуки уже точат жвала, а медведи — ложки');
@@ -1647,7 +1657,7 @@ function startDefense() {
   }
   DF.g.visible = true; FS.plants.forEach((p) => (p.visible = false)); FS.sparks.forEach((p) => (p.visible = false));
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false; trail.visible = false;
-  babka.position.set(1.2, 0.15, -8.5); babka.rotation.y = 0; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  babka.position.set(1.2, 0.15, -8.5); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = 0; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
   FX.body.add(DF.gun); DF.gun.position.set(0.25, 1.55, 0.35); DF.gun.rotation.set(0, 0, 0);
   (DF.bears || []).forEach((b) => DF.g.remove(b.g));
   monPreload('yeti').catch(() => {}); Object.assign(DF, { yeti: false, t: 0, left: 60, jars: 12, shells: 2, bears: [], spawnT: 1.2, wave: 0, hits: 0, boss: false, recoil: 0, flashT: 0, st: 'go', sayT: 3 });
@@ -2272,7 +2282,7 @@ function startFishing() {
   FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
   // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
   fishScene.add(babka); fishScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
-  babka.position.set(-2.4, 0.15, 0.4); babka.rotation.y = Math.PI / 2; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  babka.position.set(-2.4, 0.15, 0.4); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = Math.PI / 2; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
   Object.assign(FISH, { st: 'drill', drl: 0, t: 0, left: 75, wait: 0, bite: 0, tension: 0.4, prog: 0, fish: null, low: 0, catch: [], hold: false, sayT: 6, catT: 0, som: false, somUsed: false });
   FISH.drill.visible = true; FISH.drill.position.set(0, 0, 0); FISH.fishM.visible = false;
   fishCam.position.set(2.2, 2.8, 6.8); fishCam.lookAt(-0.8, 0.9, 0);
@@ -2466,7 +2476,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
