@@ -438,6 +438,7 @@ function placeModels() { // модели вписываются в мир уча
   // столкновения: постройки у дороги — твёрдые (раньше кресло проезжало сквозь ангары и лавки)
   OBST = []; for (const pl of PLACES) { const g = MODELS[pl[0]]; if (!g) continue; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox; let r = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) * pl[4] * 0.42;
     const dr = distToRoad(pl[1], pl[3]); if (dr > ROAD_W / 2 + 9 + r) continue; r = Math.min(r, dr - ROAD_W / 2 - 0.6); if (r < 0.7) continue; /* невидимая стена не залезает на дорогу */ let bi = 0, bd = 1e18; for (let i = 0; i < TRACK.length; i += 2) { const d = (TRACK[i].x - pl[1]) ** 2 + (TRACK[i].z - pl[3]) ** 2; if (d < bd) { bd = d; bi = i; } } OBST.push({ x: pl[1], z: pl[3], r, i: bi }); }
+  initDyn();
 }
 function buildModelBand() {
   const list = MODEL_Q.shift(); if (!list) return;
@@ -550,7 +551,7 @@ function buildWorld() {
   }
   // постройки колонии одной сеткой (их немного)
   const B = new Builder(LAMPS), E = new Builder(null);
-  const CB = new Builder(LAMPS), CE = new Builder(null), cglows = new GlowList(); PLACES = [];
+  const CB = new Builder(LAMPS), CE = new Builder(null), cglows = new GlowList(); PLACES = []; DYN0.length = 0;
   const place = (m, x, y, z, s, ry = 0) => PLACES.push([m, x, y, z, s, ry]);
   const MODS = ['basemodule_A', 'basemodule_B', 'basemodule_C', 'basemodule_D', 'basemodule_garage', 'cargodepot_A'];
   for (const [x, z, R] of domes) {
@@ -629,7 +630,7 @@ function buildWorld() {
   for (let k = 0; k < 12; k++) roadside(16, 45, (x, z) => { const big = k % 2, sc = rnd(10, 16); place(big ? 'k_craterLarge' : 'k_crater', x, groundH(x, z) - 0.35, z, sc, rnd(0, 6.28)); if (k % 3 === 0) place('k_meteor_detailed', x, groundH(x, z) - 0.6, z, sc * 0.22, rnd(0, 6.28)); });
   for (let k = 0; k < 10; k++) roadside(10, 35, (x, z) => place(k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', x, groundH(x, z) - 0.2, z, rnd(5, 8), rnd(0, 6.28)));
   for (let k = 0; k < 9; k++) roadside(2.5, 5, (x, z, n, sd) => place(k % 3 === 2 ? 'k_alien' : k % 2 ? 'k_astronautA' : 'k_astronautB', x, groundH(x, z) - 0.05, z, 2.6, faceRoad(n, sd) + Math.PI + rnd(-0.5, 0.5)));
-  for (let k = 0; k < 7; k++) roadside(0.9, 1.1, (x, z, n, sd, p, i) => { for (let q = 0; q < 3; q++) { const pp = TRACK[Math.min(TRACK.length - 1, i + q * 3)], nn = nrm(pp), cx = pp.x + nn[0] * (ROAD_W / 2 + 0.9) * sd, cz = pp.z + nn[1] * (ROAD_W / 2 + 0.9) * sd; place('a_cone', cx, groundH(cx, cz), cz, 1.7, rnd(0, 6.28)); } });
+  for (let k = 0; k < 7; k++) roadside(0.9, 1.1, (x, z, n, sd, p, i) => { for (let q = 0; q < 3; q++) { const pp = TRACK[Math.min(TRACK.length - 1, i + q * 3)], nn = nrm(pp), cx = pp.x + nn[0] * (ROAD_W / 2 + 0.9) * sd, cz = pp.z + nn[1] * (ROAD_W / 2 + 0.9) * sd; DYN0.push([cx, groundH(cx, cz), cz, rnd(0, 6.28)]); } });
   { const rx = gx + fn[0] * 30 + Math.sin(fa) * 14, rz = gz + fn[1] * 30 + Math.cos(fa) * 14, ry = groundH(rx, rz); place('k_rocket_baseA', rx, ry, rz, 5, 0); place('k_rocket_fuelA', rx, ry + 8, rz, 5, 0); place('k_rocket_fuelA', rx, ry + 10.5, rz, 5, 0); place('k_rocket_topA', rx, ry + 13, rz, 5, 0); place('k_platform_large', rx, ry - 0.05, rz, 6, 0); place('s_Spaceship3', rx - Math.sin(fa) * 22, groundH(rx - Math.sin(fa) * 22, rz - Math.cos(fa) * 22) + 0.4, rz - Math.cos(fa) * 22, 1.2, fa + 2); }
   for (const sd of [-1, 1]) { const px = fin.x + fn[0] * (ROAD_W / 2 + 1) * sd, pz = fin.z + fn[1] * (ROAD_W / 2 + 1) * sd; B.add(CYL, mat(px, 3, pz, 0.35, 6, 0.35), '#3a3036'); }
   E.add(BOX, mat(fin.x, 6.2, fin.z, ROAD_W + 2.6, 1.3, 0.25, fa + Math.PI / 2 - Math.PI / 2), (cx, cy, cz, nx, ny, nz) => TC.set('#ffcf6a'), { emit: true });
@@ -828,11 +829,35 @@ const beetleGeo = (function () {
 const beetles = new THREE.InstancedMesh(beetleGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 20); beetles.frustumCulled = false; scene.add(beetles);
 const padGeo = (function () { const b = new Builder(null); for (const z of [-1.2, 0, 1.2]) for (const s of [-1, 1]) b.add(BOX, mat(s * 0.55, 0, z + 0.25, 1.3, 0.04, 0.35, s * 0.6), '#7fe8ff', { emit: true }); return b.build(); })();
 const pads = new THREE.InstancedMesh(padGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 16); pads.frustumCulled = false; scene.add(pads);
-let ITEMS = { pots: [], beetles: [], pads: [] };
+let ITEMS = { pots: [], beetles: [], pads: [], ramps: [] };
+/* трамплины: клин в жёлто-чёрную полоску */
+const rampGeo = (function () { const g = new THREE.BoxGeometry(1, 1, 1, 6, 1, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i) + 0.5, z = P.getZ(i) + 0.5; P.setY(i, y * z); } const b = new Builder(null);
+  b.add(g, mat(0, 0, 0, 4.2, 1.5, 5.5), (cx, cy, cz, nx, ny) => TC.set(ny > 0.3 ? (Math.floor((Math.abs(cx) * 1.2 - cz * 0.9 + 20) / 0.9) % 2 ? '#ffc23a' : '#2a1a14') : Math.abs(nx) > 0.5 ? '#ff7a2a' : '#8a3a1a'), { emit: true }); // ёлочка «вперёд», оранжевые бока
+  b.add(BOX, mat(0, 1.5, 2.72, 4.3, 0.12, 0.12), '#7fe8ff', { emit: true }); // светящаяся кромка
+  return b.build(); })();
+const ramps = new THREE.InstancedMesh(rampGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 8); ramps.frustumCulled = false; scene.add(ramps);
+/* конусы у дороги: сбиваются и разлетаются по физике (скорость, тяжесть, кувырок, отскок от земли) */
+const DYN0 = [], DYN = []; let dynMesh = null; const DQ = new THREE.Quaternion(), DE = new THREE.Euler(), DM = new THREE.Matrix4(), DS = new THREE.Vector3(1.7, 1.7, 1.7), DP = new THREE.Vector3();
+function initDyn() { if (!MODELS || !MODELS.a_cone || !DYN0.length) return; if (!dynMesh) { const b = new Builder(null); b.add(MODELS.a_cone, null, null, { vcol: true, vk: 1.08 }); dynMesh = new THREE.InstancedMesh(b.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), DYN0.length); dynMesh.frustumCulled = false; scene.add(dynMesh); }
+  DYN.length = 0; for (const [x, y, z, r] of DYN0) DYN.push({ x, y, z, y0: y, vx: 0, vy: 0, vz: 0, rx: 0, ry: r, rz: 0, wx: 0, wy: 0, wz: 0, live: false }); dynMesh.count = DYN.length; DYN.forEach((d, k) => dynSet(d, k)); dynMesh.instanceMatrix.needsUpdate = true; }
+function dynSet(d, k) { DE.set(d.rx, d.ry, d.rz); DQ.setFromEuler(DE); DP.set(d.x, d.y, d.z); DM.compose(DP, DQ, DS); dynMesh.setMatrixAt(k, DM); }
+function stepDyn(dt) { if (!dynMesh) return; let ch = false;
+  DYN.forEach((d, k) => {
+    if (!d.live && car.state === 'go' && car.y < 1.5 && Math.abs(d.x - car.x) < 2 && Math.abs(d.z - car.z) < 2 && (d.x - car.x) ** 2 + (d.z - car.z) ** 2 < 2.6) { // удар креслом
+      const spd = Math.hypot(car.vx, car.vz), nx = (d.x - car.x) || 0.01, nz = (d.z - car.z) || 0.01, nl = Math.hypot(nx, nz);
+      d.live = true; d.vx = car.vx * 1.15 + nx / nl * 4; d.vz = car.vz * 1.15 + nz / nl * 4; d.vy = 4 + spd * 0.22; d.wx = rnd(-12, 12); d.wy = rnd(-6, 6); d.wz = rnd(-12, 12);
+      car.vx *= 0.97; car.vz *= 0.97; car.score += 10; sfx('thud', { vol: 0.5, rate: 1.4, rnd: 0.3 }); buzz(15); floatText('+10', d.x, 1.6, d.z, '#ffb04a'); burst(scene, d.x, 0.5, d.z, 'smoke', '#c08060', 1.6, 0.4); }
+    if (!d.live) return; ch = true;
+    d.vy -= 22 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.rx += d.wx * dt; d.ry += d.wy * dt; d.rz += d.wz * dt;
+    const gy = groundH(d.x, d.z);
+    if (d.y < gy) { d.y = gy; if (d.vy < -2) { d.vy *= -0.35; d.vx *= 0.7; d.vz *= 0.7; d.wx *= 0.6; d.wz *= 0.6; } else { d.vy = 0; d.vx *= 0.9; d.vz *= 0.9; d.wx *= 0.8; d.wy *= 0.8; d.wz *= 0.8; d.rx += (Math.round(d.rx / (Math.PI / 2)) * Math.PI / 2 - d.rx) * 0.2; d.rz += (Math.round(d.rz / (Math.PI / 2)) * Math.PI / 2 - d.rz) * 0.2; // ложится на бок
+        if (Math.hypot(d.vx, d.vz) < 0.3) d.live = false; } } // уснул
+    dynSet(d, k); });
+  if (ch) dynMesh.instanceMatrix.needsUpdate = true; }
 const at = (i, lat) => { const p = TRACK[clamp(i, 0, TRACK.length - 1)], n = nrm(p); return [p.x + n[0] * lat, p.z + n[1] * lat, p.a]; };
 function updDunes() { let n = 0; (ITEMS.dunes || []).forEach((d) => { if (d.on) duneMesh.setMatrixAt(n++, mat(d.x, -0.3, d.z, 5.5, 1.6, 3.8, d.a)); }); duneMesh.count = n; duneMesh.instanceMatrix.needsUpdate = true; }
 function placeItems() {
-  ITEMS = { pots: [], beetles: [], pads: [] };
+  ITEMS = { pots: [], beetles: [], pads: [], ramps: [] };
   for (let i = 30; i < TRACK.length - 30; i += Math.round(rnd(5, 9))) {
     if (ITEMS.pots.length >= 120) break;
     const lat = Math.sin(i * 0.07) * 3.3 + rnd(-0.6, 0.6);
@@ -842,6 +867,8 @@ function placeItems() {
   for (let k = 0; k < 14; k++) { const i = Math.round(60 + (TRACK.length - 120) * (k + rnd(0.1, 0.9)) / 14); ITEMS.beetles.push({ i, ph: rnd(0, 6), sp: rnd(0.5, 0.9), x: 0, z: 0, hit: 0 }); }
   for (let k = 0; k < 10; k++) { const i = Math.round(80 + (TRACK.length - 160) * (k + 0.5) / 10); const [x, z, a] = at(i, rnd(-2.5, 2.5)); ITEMS.pads.push({ x, z, a }); }
   ITEMS.pads.forEach((p, k) => pads.setMatrixAt(k, mat(p.x, 0.09, p.z, 1, 1, 1, p.a))); pads.count = ITEMS.pads.length; pads.instanceMatrix.needsUpdate = true;
+  if (ORDER !== 'dimon') for (let k = 0; k < 6; k++) { const i = Math.round(130 + (TRACK.length - 220) * (k + 0.3) / 6), lat = rnd(-2.6, 2.6), [x, z, a] = at(i, lat); ITEMS.ramps.push({ i, lat, x, z, a }); }
+  ITEMS.ramps.forEach((r, k) => ramps.setMatrixAt(k, mat(r.x, 0, r.z, 1, 1, 1, r.a))); ramps.count = ITEMS.ramps.length; ramps.instanceMatrix.needsUpdate = true; initDyn();
   ITEMS.dunes = [];
   if (ORDER === 'dimon') for (let k = 0; k < 7; k++) { const i = Math.round(90 + (TRACK.length - 160) * (k + rnd(0.2, 0.8)) / 7), [x, z, a] = at(i, rnd(-2, 2)); ITEMS.dunes.push({ x, z, a, on: true }); }
   updDunes();
@@ -1049,7 +1076,7 @@ function stepMeteors(dt, now, inZone) {
 
 /* ---------- заезд ---------- */
 const VMAX = 23, VBOOST = 35, TURN = 1.85;
-const car = { x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0, cargo: 0, pieLimit: 0, seedT: 0, cold: false, radioT: 0, wind: 0 };
+const car = { y: 0, vy: 0, air: 0, sus: { y: 0, vy: 0, r: 0, vr: 0, p: 0, vp: 0 }, ph: 0, pspd: 0, x: 0, z: 0, h: 0, vx: 0, vz: 0, steer: 0, idx: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, state: 'boot', off: 0, bump: 0, spin: 0, cargo: 0, pieLimit: 0, seedT: 0, cold: false, radioT: 0, wind: 0 };
 const input = { l: false, r: false };
 const letters = (t, step = 0.035) => { let i = 0; return t.split(' ').map((w) => '<span style="display:inline-block;white-space:nowrap">' + [...w].map((ch) => `<span class="ch" style="animation-delay:${(i++ * step).toFixed(3)}s">${ch}</span>`).join('') + '</span>').join(' '); };
 function showMsg(t, sub, col, ms = 1500, bad) {
@@ -1082,7 +1109,7 @@ const DED = ['Дед: «Таня, тормози!»', 'Дед: «Я на „Ур
 const DED_HIT = ['Дед: «Я же говорил!»', 'Дед: «Таня, ну куда ты!»', 'Дед: «Валидол где?!»', 'Дед: «Это всё твои жуки!»', 'Дед: «Я в люльке за 40 лет такого не видал!»', 'Дед: «Пиши завещание, Таня!»'];
 const dedSay = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function resetCar() {
-  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, steer: 0, lat: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
+  const p = TRACK[3]; Object.assign(car, { x: p.x, z: p.z, h: p.a, vx: 0, vz: 0, idx: 3, steer: 0, lat: 0, y: 0, vy: 0, air: 0, sus: { y: 0, vy: 0, r: 0, vr: 0, p: 0, vp: 0 }, ph: p.a, pspd: 0, boost: 0, drift: 0, combo: 0, pot: 0, score: 0, t: 0, off: 0, bump: 0, spin: 0, seedT: 0, cold: false, radioT: 9, wind: 0 });
   car.cargo = ORDER === 'jam' ? 6 : ORDER === 'seed' ? 8 : 0; car.pieLimit = Math.round(TOTAL / 18);
   car.mode = ORDER; car.stuck = null; car.dunes = 0; car.bugs = 0; car.gibdd = 0; drone.position.set(car.x, 8, car.z - 10);
   planZones(); orderHud(); trailPts.length = 0; if (truckG) resetTrucks();
@@ -1208,8 +1235,8 @@ function camTarget(dt) {
   const port = camera.aspect < 1, spd = Math.hypot(car.vx, car.vz), back = (port ? 10.5 : 10) + spd * 0.1 + (isDim() ? 2.5 : 0), up = (port ? 6.6 : 5.0) + spd * 0.03 + (isDim() ? 1 : 0);
   const vh = spd > 3 ? Math.atan2(car.vx, car.vz) : car.h, th = car.spin > 0 ? vh : vh + Math.atan2(Math.sin(car.h - vh), Math.cos(car.h - vh)) * 0.5; // камера смотрит по ходу движения: при закрутке и заносе не мотается
   camH += Math.atan2(Math.sin(th - camH), Math.cos(th - camH)) * Math.min(1, dt * (car.spin > 0 ? 2 : 3));
-  camPos.set(car.x - Math.sin(camH) * back, up, car.z - Math.cos(camH) * back);
-  const la = camH + (car.steer || 0) * 0.22; look.set(car.x + Math.sin(la) * 7, 1.2, car.z + Math.cos(la) * 7); // заглядывает в поворот
+  camPos.set(car.x - Math.sin(camH) * back, up + (car.y || 0) * 0.5, car.z - Math.cos(camH) * back);
+  const la = camH + (car.steer || 0) * 0.22; look.set(car.x + Math.sin(la) * 7, 1.2 + (car.y || 0) * 0.7, car.z + Math.cos(la) * 7); // заглядывает в поворот
 }
 function snapCam() { camH = car.h; camTarget(1); camera.position.copy(camPos); lookS.copy(look); }
 
@@ -1237,7 +1264,7 @@ function frame(now) {
     if (car.state === 'go') car.t += dt;
     let spd = Math.hypot(car.vx, car.vz);
     if (car.spin > 0) { car.spin -= dt; car.h += dt * 9; }
-    else if (steer) car.h += steer * (isDim() ? 1.9 : TURN) * dt * (0.55 + 0.45 * Math.min(1, spd / 18)) * (brake ? 1.3 : 1);
+    else if (steer) car.h += steer * (isDim() ? 1.9 : TURN) * dt * (0.55 + 0.45 * Math.min(1, spd / 18)) * (brake ? 1.3 : 1) * (car.y > 0.05 ? 0.35 : 1);
     else if (car.state === 'go' && car.lat !== undefined) { // руль отпущен — кресло само понемногу выравнивается по дороге, из песка тянет обратно
       const tp0 = TRACK[car.idx], n0 = nrm(tp0), c = car.off ? clamp(car.lat * 0.09, -0.7, 0.7) : 0, ta = Math.atan2(Math.sin(tp0.a) - n0[0] * c, Math.cos(tp0.a) - n0[1] * c);
       car.h += Math.atan2(Math.sin(ta - car.h), Math.cos(ta - car.h)) * Math.min(1, dt * (car.off ? 1.6 : 0.9)); }
@@ -1245,7 +1272,7 @@ function frame(now) {
     spd += (target - spd) * (spd < target ? (isDim() ? 0.5 : 0.9) : car.stuck ? 8 : brake ? 2.6 : 1.6) * dt;
     const hx = Math.sin(car.h), hz = Math.cos(car.h);
     let vxn = spd > 0.01 ? car.vx / spd : hx, vzn = spd > 0.01 ? car.vz / spd : hz;
-    const grip = isDim() ? 11 : 8 - (brake && steer ? 6 : 5.4 * clamp((Math.abs(steer) - 0.4) / 0.45, 0, 1) * Math.min(1, spd / 14)), f = 1 - Math.exp(-grip * dt);
+    const grip = isDim() ? 11 : 8 - (brake && steer ? 6 : 5.4 * clamp((Math.abs(steer) - 0.4) / 0.45, 0, 1) * Math.min(1, spd / 14)), f = car.y > 0.05 ? 0 : 1 - Math.exp(-grip * dt); // в воздухе летит по инерции
     vxn += (hx - vxn) * f; vzn += (hz - vzn) * f; const ln = Math.hypot(vxn, vzn) || 1; vxn /= ln; vzn /= ln;
     car.vx = vxn * spd; car.vz = vzn * spd; car.x += car.vx * dt; car.z += car.vz * dt;
     const slip = Math.acos(clamp(vxn * hx + vzn * hz, -1, 1));
@@ -1253,7 +1280,17 @@ function frame(now) {
     let best = 1e9, bi = car.idx;
     for (let i = Math.max(0, car.idx - 30); i < Math.min(TRACK.length, car.idx + 80); i++) { const p = TRACK[i], d = (p.x - car.x) ** 2 + (p.z - car.z) ** 2; if (d < best) { best = d; bi = i; } }
     car.idx = bi; const tp = TRACK[bi], n = nrm(tp), lat = (car.x - tp.x) * n[0] + (car.z - tp.z) * n[1]; car.lat = lat;
-    car.off = Math.abs(lat) > ROAD_W / 2 + 0.4 ? 1 : 0;
+    car.off = Math.abs(lat) > ROAD_W / 2 + 0.4 && car.y < 0.3 ? 1 : 0;
+    let onR = false; if (car.state === 'go') for (const r of ITEMS.ramps) { if (Math.abs(r.i - bi) > 5) continue; // трамплин: въезд по наклону, взлёт с кромки
+      const dx = car.x - r.x, dz = car.z - r.z, sa = Math.sin(r.a), ca = Math.cos(r.a), al = dx * sa + dz * ca, ac = dx * ca - dz * sa, sh = (al + 2.75) / 5.5 * 1.5;
+      if (Math.abs(ac) < 2.2 && al > -2.75 && al < 2.75 && car.y <= sh + 0.25 && car.vy < spd * 0.27 + 2.7) { car.y = sh; car.vy = spd * 0.27 + 2.6; onR = true; } }
+    if (car.onR && !onR && car.y > 0.5) { car.air = 0; sfx('jump'); buzz(20); burst(scene, car.x, 1.2, car.z, 'spark', '#7fe8ff', 3, 0.35); } car.onR = onR;
+    if (!onR && (car.y > 0 || car.vy > 0)) { car.vy -= 22 * dt; car.y += car.vy * dt; car.air += dt;
+      if (car.y <= 0) { const imp = -car.vy; car.y = 0; car.vy = 0; car.sus.vy -= imp * 0.32; car.sus.vp += imp * 0.08; shake = Math.max(shake, Math.min(0.6, imp * 0.04)); buzz(Math.min(60, imp * 4)); sfx('thud', { vol: Math.min(1, imp / 12) }); for (let q = 0; q < 6; q++) puff(car.x + rnd(-1.2, 1.2), car.z + rnd(-1.2, 1.2), 2);
+        if (car.air > 0.45 && car.state === 'go') { const clean = slip < 0.35 && !car.spin, pts = Math.round(car.air * 120);
+          if (clean) { car.score += pts; car.boost = Math.max(car.boost, 1.1); sfx('turbo', { vol: 0.6 }); flash('#ffc23a', 0.25); floatText('Чистое приземление! +' + pts, car.x, 2.4, car.z, '#ffc23a'); }
+          else { car.vx *= 0.8; car.vz *= 0.8; floatText('Ой, криво…', car.x, 2.4, car.z, '#ff9a7a'); } }
+        car.air = 0; } }
     if (Math.abs(lat) > ROAD_W / 2 + 9) { // упёрлась в камни
       const lim = Math.sign(lat) * (ROAD_W / 2 + 9); car.x += (lim - lat) * n[0]; car.z += (lim - lat) * n[1];
       car.h += Math.atan2(Math.sin(tp.a - car.h), Math.cos(tp.a - car.h)) * Math.min(1, dt * 7); // плавно разворачивает вдоль дороги
@@ -1262,7 +1299,7 @@ function frame(now) {
       if (now - car.bump > 1500) showMsg(ouch(), damage('') || hitSay(), '#ff9a7a', 1300, true);
       car.bump = now;
     }
-    for (const o of OBST) { if (Math.abs(o.i - bi) > 20) continue; const dx = car.x - o.x, dz = car.z - o.z, d = Math.hypot(dx, dz), R = o.r + 0.9; if (d >= R || d < 1e-3) continue;
+    for (const o of OBST) { if (Math.abs(o.i - bi) > 20 || car.y > 2.5) continue; const dx = car.x - o.x, dz = car.z - o.z, d = Math.hypot(dx, dz), R = o.r + 0.9; if (d >= R || d < 1e-3) continue;
       const nx = dx / d, nz = dz / d; car.x = o.x + nx * R; car.z = o.z + nz * R; const vn = car.vx * nx + car.vz * nz; if (vn < 0) { car.vx -= vn * nx * 1.5; car.vz -= vn * nz * 1.5; }
       if (now - car.bump > 700) { car.vx *= 0.75; car.vz *= 0.75; car.drift = 0; car.combo = 0; $('combo').classList.remove('on'); buzz(40); shake = Math.max(shake, 0.4); sfx('thud', { vol: 0.7, rnd: 0.2 }); burst(scene, car.x - nx * 0.9, 1, car.z - nz * 0.9, 'smoke', '#c08060', 2.2, 0.5); if (now - car.bump > 1500) showMsg(ouch(), hitSay(), '#ff9a7a', 1100, true); }
       car.bump = now; }
@@ -1296,7 +1333,7 @@ function frame(now) {
     ITEMS.beetles.forEach((b) => {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (isDim() && car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 7) { b.hit = now; car.bugs++; car.vx *= 0.85; car.vz *= 0.85; flash('#ffcf3a', 0.3); showMsg('Хрусть!', 'Жук: «Профсоюз „ТрансМарсу“ этого не простит!»', '#ffcf6a', 1200); return; }
-      if (car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
+      if (car.state === 'go' && car.y < 1 && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 5.5) {
         sfx('soft'); buzz(60); b.hit = now; car.spin = 0.7; const lost = Math.min(car.pot, 3); car.pot -= lost; car.drift = 0; car.combo = 0;
         const dm = damage(''); showMsg(ouch(), dm || (lost ? 'рассыпала ' + lost + ' картошки' : Math.random() < 0.5 ? 'Жук: «Профсоюз этого так не оставит!»' : hitSay()), '#ff8a6a', 1300, true);
       }
@@ -1326,8 +1363,12 @@ function frame(now) {
     $('turbo').querySelector('.bar').classList.toggle('hot', car.boost > 0 || car.drift > 0.55);
     $('progi').style.width = (100 * TRACK[bi].s / TOTAL) + '%'; $('turboi').style.width = clamp(car.boost > 0 ? car.boost / 3 * 100 : car.drift / 3 * 100, 0, 100) + '%';
     // бабуля
-    babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.06, car.z); babka.rotation.order = 'YXZ'; babka.rotation.y = car.h;
-    { const bk = -steer * 0.16 * Math.min(1, spd / 15) * (car.drift > 0 ? 1.5 : 1), pt = car.boost > 0 ? -0.06 : brake ? 0.07 : 0; babka.rotation.z += (bk - babka.rotation.z) * Math.min(1, dt * 6); babka.rotation.x += (pt - babka.rotation.x) * Math.min(1, dt * 5); } // крен в повороте, клевок при торможении
+    { // подвеска на пружинах: крен от поворота, клевок от разгона и тормоза, просадка при приземлении
+      const S = car.sus, yr = Math.atan2(Math.sin(car.h - car.ph), Math.cos(car.h - car.ph)) / Math.max(dt, 1e-3), al = (spd - car.pspd) / Math.max(dt, 1e-3); car.ph = car.h; car.pspd = spd;
+      const rT = car.y > 0.05 ? 0 : clamp(-yr * spd * 0.012, -0.24, 0.24) * (car.drift > 0 ? 1.3 : 1), pT = car.y > 0.05 ? -0.05 : clamp(-al * 0.02, -0.12, 0.14);
+      S.vr += (60 * (rT - S.r) - 8 * S.vr) * dt; S.r += S.vr * dt; S.vp += (55 * (pT - S.p) - 7 * S.vp) * dt; S.p += S.vp * dt; S.vy += (90 * (0 - S.y) - 9 * S.vy) * dt; S.y += S.vy * dt;
+      babka.position.set(car.x, 0.15 + Math.sin(tsec * 6) * 0.04 + car.y + S.y, car.z); babka.rotation.order = 'YXZ'; babka.rotation.y = car.h; babka.rotation.z = S.r; babka.rotation.x = S.p;
+      FX.pool.position.y = 0.09 - car.y - S.y; FX.pool.scale.setScalar(Math.max(0.3, 1 - car.y * 0.12)); }
     if (car.drift > 0.3 && spd > 8 && Math.random() < 0.5) { const dl = car.drift, col = dl > 1.6 ? '#ff6ad5' : dl > 0.9 ? '#ffb04a' : '#7fe8ff'; burst(scene, car.x - Math.sin(car.h) * 1.1 + rnd(-0.4, 0.4), 0.3, car.z - Math.cos(car.h) * 1.1 + rnd(-0.4, 0.4), 'spark', col, 0.9 + Math.min(1, dl * 0.4), 0.25); } // искры заноса: голубые → оранжевые → розовые
     FX.body.rotation.z = -steer * 0.18 * Math.min(1, slip * 3 + 0.3); FX.body.rotation.x = car.boost > 0 ? -0.08 : 0;
     { const d = FX.ded, tz = steer * 0.32 * Math.min(1, slip * 3 + 0.2) + (car.spin > 0 ? Math.sin(tsec * 30) * 0.3 : 0), tx = car.boost > 0 ? -0.35 : 0;
@@ -1343,7 +1384,7 @@ function frame(now) {
   // предметы: анимация
   let n2 = 0; ITEMS.pots.forEach((p, k) => { if (!p.on) return; pots.setMatrixAt(n2++, mat(p.x, 0.75 + Math.sin(tsec * 3 + k) * 0.15, p.z, 1, 1, 1, tsec * 2 + k, 0.4)); }); pots.count = n2; pots.instanceMatrix.needsUpdate = true;
   ITEMS.beetles.forEach((b, k) => beetles.setMatrixAt(k, mat(b.x, 0.05 + Math.abs(Math.sin(tsec * 12 + k)) * 0.06, b.z, 1, 1, 1, b.a))); beetles.count = ITEMS.beetles.length; beetles.instanceMatrix.needsUpdate = true;
-  stepDust(dt); stepTrucks(dt, now); if (MODEL_Q.length) buildModelBand();
+  stepDust(dt); stepTrucks(dt, now); stepDyn(dt); if (MODEL_Q.length) buildModelBand();
   { const zn = car.state === 'go' ? zoneAt(car.idx) : null, storm = zn && zn.kind === 'storm';
     scene.fog.density += ((storm ? 0.02 : 0.0062) - scene.fog.density) * Math.min(1, dt * 1.5);
     $('storm').style.opacity = storm ? 1 : 0; stepMeteors(dt, now, zn && zn.kind === 'meteor');
@@ -1492,7 +1533,7 @@ function startFarm() {
   stopFishing(); stopDefense(); if (!farmScene) buildFarmScene();
   FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
-  babka.position.set(-3.5, 0.15, 5.6); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
+  babka.position.set(-3.5, 0.15, 5.6); babka.rotation.x = babka.rotation.z = 0; FX.pool.position.y = 0.09; FX.pool.scale.setScalar(1); babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
   growBeds(Date.now()); for (let i = 0; i < 9; i++) plantMesh(i); FS.bugs = []; FS.bugT = 5; FS.sel = -1; FS.lastPlant = 0;
   $('inv').textContent = invText();
   introCard(ORDERS.farm); radio('<b>Марс-ФМ:</b> дачники «Заречной», сезон открыт! Жуки уже точат жвала, а медведи — ложки');
@@ -1657,7 +1698,7 @@ function startDefense() {
   }
   DF.g.visible = true; FS.plants.forEach((p) => (p.visible = false)); FS.sparks.forEach((p) => (p.visible = false));
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false; trail.visible = false;
-  babka.position.set(1.2, 0.15, -8.5); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = 0; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  babka.position.set(1.2, 0.15, -8.5); babka.rotation.x = babka.rotation.z = 0; FX.pool.position.y = 0.09; FX.pool.scale.setScalar(1); babka.rotation.y = 0; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
   FX.body.add(DF.gun); DF.gun.position.set(0.25, 1.55, 0.35); DF.gun.rotation.set(0, 0, 0);
   (DF.bears || []).forEach((b) => DF.g.remove(b.g));
   monPreload('yeti').catch(() => {}); Object.assign(DF, { yeti: false, t: 0, left: 60, jars: 12, shells: 2, bears: [], spawnT: 1.2, wave: 0, hits: 0, boss: false, recoil: 0, flashT: 0, st: 'go', sayT: 3 });
@@ -2282,7 +2323,7 @@ function startFishing() {
   FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
   // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
   fishScene.add(babka); fishScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
-  babka.position.set(-2.4, 0.15, 0.4); babka.rotation.x = babka.rotation.z = 0; babka.rotation.y = Math.PI / 2; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  babka.position.set(-2.4, 0.15, 0.4); babka.rotation.x = babka.rotation.z = 0; FX.pool.position.y = 0.09; FX.pool.scale.setScalar(1); babka.rotation.y = Math.PI / 2; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
   Object.assign(FISH, { st: 'drill', drl: 0, t: 0, left: 75, wait: 0, bite: 0, tension: 0.4, prog: 0, fish: null, low: 0, catch: [], hold: false, sayT: 6, catT: 0, som: false, somUsed: false });
   FISH.drill.visible = true; FISH.drill.position.set(0, 0, 0); FISH.fishM.visible = false;
   fishCam.position.set(2.2, 2.8, 6.8); fishCam.lookAt(-0.8, 0.9, 0);
@@ -2476,7 +2517,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { DYN, get IT() { return ITEMS; }, get OBST() { return OBST; }, MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
