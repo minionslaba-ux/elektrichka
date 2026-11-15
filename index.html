@@ -160,6 +160,8 @@ body.farm.seedson #inv{display:none}#seeds.on{display:block;animation:pop .3s cu
 #reload{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:7;border:0;border-radius:14px;padding:13px 16px;background:rgba(255,255,255,.1);color:var(--ink);font:900 14px system-ui,sans-serif;border:1px solid var(--line)}
 #reload.need{background:var(--hot);color:#2a1406;animation:pinp .6s infinite}
 #jars{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));white-space:nowrap;transform:translateX(-50%);z-index:6;font-weight:900;font-size:18px;border-radius:12px;padding:6px 14px;pointer-events:none}
+/* ---------- пешие миссии ---------- */
+body.walk #zl,body.walk #zr,body.walk #turbo,body.walk #prog,body.walk #tr,body.walk #tl,body.walk #fishHud,body.walk #farmHud,body.walk #defHud{display:none}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -897,9 +899,13 @@ const ORDERS = {
   jam: { name: 'Варенье Лёхе', icon: '🫙', desc: '6 банок. Удары и жуки бьют банки', who: 'Внук Лёха ждёт' },
   pies: { name: 'Пирожки Максу', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Макс ждёт' },
   seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
-  farm: { name: 'Дача: огород', icon: '🌱', desc: 'Посади, полей, гоняй жуков тапком. Урожай даёт бонус к заказам', who: 'Грядки ждут' },
-  defense: { name: 'Оборона дачи', icon: '🔫', desc: 'Медведи с полюса идут за вареньем. Дробовик заряжен солью', who: 'Погреб с вареньем' },
-  fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва' },
+  farm: { name: 'Дача: огород', icon: '🌱', desc: 'Посади, полей, гоняй жуков тапком. Урожай даёт бонус к заказам', who: 'Грядки ждут', km: false },
+  defense: { name: 'Оборона дачи', icon: '🔫', desc: 'Медведи с полюса идут за вареньем. Дробовик заряжен солью', who: 'Погреб с вареньем', km: false },
+  w_find: { name: 'Где дедова челюсть?', icon: '🦷', desc: 'Пешком по даче: дед потерял челюсть, газету, очки, носок, валидол и ушанку', who: 'Дед шамкает', km: false },
+  w_bugs: { name: 'Тапком!', icon: '🩴', desc: 'Пешком: жуки лезут на грядки — бегай и шлёпай. Рассаду не топчи', who: 'Огород в опасности', km: false },
+  w_goat: { name: 'Зорька сбежала!', icon: '🐐', desc: 'Пешком: коза удрала и прыгает на 6 метров. Загони её в сарай', who: 'Коза Зорька', km: false },
+  w_steal: { name: 'Верни лейку', icon: '🚿', desc: 'Пешком, тихо: Валя утащила лейку. Крадись, пока она смотрит в телескоп', who: 'Соседка Валя', km: false },
+  fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва', km: false },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
 let ORDER = 'potato'; try { if (ORDERS[localStorage.getItem('bm_order')]) ORDER = localStorage.getItem('bm_order'); } catch (e) {}
@@ -1016,7 +1022,7 @@ function floatText(txt, x, y, z, col) {
   e.style.left = ((PV.x + 1) / 2 * innerWidth) + 'px'; e.style.top = ((1 - PV.y) / 2 * innerHeight) + 'px';
   $('fl').appendChild(e); setTimeout(() => e.remove(), 950);
 }
-function introCard(o) { $('introT').textContent = o.icon + ' ' + o.name; $('introS').textContent = o.who + ' · ' + (TOTAL / 1000).toFixed(1).replace('.', ',') + ' км · ' + o.desc; const el = $('intro'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); clearTimeout(introCard.t); introCard.t = setTimeout(() => el.classList.remove('on'), 2300); }
+function introCard(o) { $('introT').textContent = o.icon + ' ' + o.name; $('introS').textContent = o.who + ' · ' + (o.km === false ? '' : (TOTAL / 1000).toFixed(1).replace('.', ',') + ' км · ') + o.desc; const el = $('intro'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); clearTimeout(introCard.t); introCard.t = setTimeout(() => el.classList.remove('on'), 2300); }
 function warnBanner(txt) { $('warnT').innerHTML = '⚠ <i>' + txt + '</i> ⚠'; const el = $('warn'); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); clearTimeout(warnBanner.t); warnBanner.t = setTimeout(() => el.classList.remove('on'), 2450); }
 function confetti() {
   const cols = ['#ffb04a', '#ff6ad8', '#7fe8ff', '#7dff9a', '#ffe08a', '#ff5a4a'];
@@ -1044,6 +1050,8 @@ function startMsg(first) {
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 function newRun(first) {
+  if (ORDER.startsWith('w_')) { startWalk(ORDER); return; }
+  stopWalk();
   if (ORDER === 'defense') { startDefense(); return; }
   stopDefense();
   if (ORDER === 'farm') { startFarm(); return; }
@@ -1103,9 +1111,9 @@ const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStar
 /* ---------- управление: левая/правая половина экрана ---------- */
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
-addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
-const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { WK.ptr = e.pointerId; WK.px = e.clientX; WK.py = e.clientY; return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointermove', (e) => { if (WK.active && e.pointerId === WK.ptr) { WK.px = e.clientX; WK.py = e.clientY; } if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
+const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; if (e.pointerId === WK.ptr) WK.ptr = null; touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
 const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
 addEventListener('keydown', (e) => { if (DF.active && (e.code === 'KeyR' || e.code === 'ArrowDown')) defReload();  if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
@@ -1144,6 +1152,7 @@ function frame(now) {
   if (FISH.active) { fishFrame(dt, now); return; }
   if (FS.active) { farmFrame(dt, now); return; }
   if (DF.active) { defFrame(dt, now); return; }
+  if (WK.active) { walkFrame(dt, now); return; }
   // руль
   const L = input.tl || input.kl, R = input.tr || input.kr;
   const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : 0) : 0;
@@ -1415,11 +1424,12 @@ $('farmBack').onclick = (e) => { e.stopPropagation(); showHub(); };
 
 /* ---------- 🗺 КАРТА КОЛОНИИ ---------- */
 const PLACES_MAP = [
-  { id: 'dacha', e: '🏡', name: 'Дача бабы Тани', x: 24, y: 70, d: 'Огород, куры, Зорька и погреб с вареньем', m: ['farm', 'defense'] },
+  { id: 'dacha', e: '🏡', name: 'Дача бабы Тани', x: 24, y: 70, d: 'Огород, куры, Зорька и погреб с вареньем', m: ['farm', 'defense', 'w_find', 'w_bugs', 'w_goat'] },
+  { id: 'street', e: '🔭', name: 'Улица Садовая', x: 46, y: 86, d: 'Соседка Валя, её телескоп и наша лейка', m: ['w_steal'] },
   { id: 'kids', e: '🏠', name: 'Дом внуков', x: 72, y: 74, d: 'Макс и Лёха ждут гостинцы. Доставка на турбо-кресле по трассе', m: ['potato', 'jam', 'pies', 'seed'] },
   { id: 'crater', e: '🧊', name: 'Кратер Королёва', x: 76, y: 30, d: 'Подлёдная рыбалка. Говорят, тут живёт Царь-сом', m: ['fish'] },
   { id: 'trans', e: '🏢', name: 'Офис «ТрансМарса»', x: 44, y: 42, d: 'Тут работает Димон, «логист стратегического уровня»', m: ['dimon'] },
-  { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', lock: 'Скоро: пешие миссии' },
+  { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', lock: 'Скоро: торг с роботами' },
   { id: 'clinic', e: '🏥', name: 'Поликлиника №1', x: 52, y: 58, d: 'Талон № 4 000 017', lock: 'Скоро: самая смешная очередь' },
   { id: 'port', e: '🚀', name: 'Космодром', x: 84, y: 54, d: 'Билет на Землю', lock: 'Финал: копилка' },
   { id: 'olymp', e: '🌋', name: 'Гора Олимп', x: 22, y: 22, d: 'Спит. Пока', lock: 'Скоро: извержение' },
@@ -1432,11 +1442,11 @@ function drawMapSvg() {
   h += '<polygon points="8,30 22,14 36,30" fill="#7a3828"/><polygon points="18,18.5 22,14 26,18.5" fill="#ff7a3a" opacity=".8"/>';
   h += road('24,70 40,66 52,58 60,66 72,74', '#2a1a22', 7) + road('24,70 40,66 52,58 60,66 72,74', '#7fe8ff', 1.2, '3 3');
   h += road('52,58 44,42 60,34 76,30', '#2a1a22', 5) + road('52,58 44,42 60,34 76,30', '#ff6ad8', 1, '2 3');
-  h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,22', '#2a1a22', 3);
+  h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,22', '#2a1a22', 3) + road('24,70 34,80 46,86', '#2a1a22', 4) + road('24,70 34,80 46,86', '#ffcf6a', 1, '2 3');
   $('mapSvg').innerHTML = h;
 }
 function showMap() {
-  stopFarm(); stopFishing(); stopDefense(); $('end').classList.remove('on');
+  stopWalk(); stopFarm(); stopFishing(); stopDefense(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
   $('mapSub').textContent = '· копилка на билет: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; $('mapBank').style.width = frac * 100 + '%';
   const ripe = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length, d1 = (() => { try { return !!localStorage.getItem('bm_d1'); } catch (e) { return false; } })();
@@ -1571,6 +1581,233 @@ function endDefense() {
   showMsg('Рассвет!', 'медведи отступили на полюс', '#ffcf8a', 1500); setTimeout(() => $('end').classList.add('on'), 1300);
 }
 $('reload').onclick = (e) => { e.stopPropagation(); defReload(); };
+
+/* ---------- 🚶 ПЕШИЕ МИССИИ: бабуля пешком по даче и к соседке ---------- */
+let WK = { active: false, k: new Set(), ptr: null };
+function personMesh(o) { // процедурный человечек: юбка, кофта, платок в горошек, руки и ноги на шарнирах
+  const g = new THREE.Group(), lm = new THREE.MeshLambertMaterial({ vertexColors: true }), u = {};
+  const part = (fn, x, y, z, parent) => { const B = new Builder(null, true); fn(B); const p = new THREE.Group(); p.position.set(x, y, z); p.add(new THREE.Mesh(B.build(), lm)); (parent || g).add(p); return p; };
+  u.body = part((B) => {
+    B.add(new THREE.CylinderGeometry(0.28, 0.46, 0.62, 14), mat(0, 0.76, 0), o.skirt, SMOOTH);
+    B.add(new THREE.CylinderGeometry(0.25, 0.3, 0.5, 14), mat(0, 1.27, 0), o.coat, SMOOTH);
+    B.add(BALL2, mat(0, 1.7, 0, 0.21, 0.23, 0.21), '#f0c8a8', SMOOTH);
+    B.add(BALL2, mat(0, 1.75, -0.03, 0.245, 0.245, 0.245), (cx, cy, cz, nx, ny, nz) => TC.set(nz > 0.5 && cy < 1.86 ? '#f0c8a8' : o.scarf), SMOOTH);
+    B.add(new THREE.ConeGeometry(0.1, 0.16, 6), mat(0, 1.52, -0.14, 1, 1, 1, 0, 0.6), o.scarf);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; B.add(BALL2, mat(Math.cos(a) * 0.23, 1.8 + Math.sin(k * 2) * 0.04, -0.03 + Math.sin(a) * 0.23, 0.03, 0.03, 0.03), o.dots); }
+    B.add(BALL2, mat(0, 1.66, 0.21, 0.045, 0.045, 0.045), '#e0a088', SMOOTH);
+    if (o.apron) B.add(BOX, mat(0, 0.85, 0.3, 0.42, 0.5, 0.04, 0, -0.12), o.apron);
+  }, 0, 0, 0);
+  const E = new Builder(null); E.add(BOX, mat(0, 1.73, 0.2, 0.3, 0.06, 0.04), o.glass || '#7fe8ff', { emit: true }); u.body.add(new THREE.Mesh(E.build(), bakedMat));
+  u.legL = part((B) => { B.add(CYL, mat(0, -0.25, 0, 0.11, 0.5, 0.11), '#e8d8c8'); B.add(BOX, mat(0, -0.5, 0.06, 0.16, 0.09, 0.28), o.shoe || '#6a2a3a'); }, -0.13, 0.55, 0);
+  u.legR = part((B) => { B.add(CYL, mat(0, -0.25, 0, 0.11, 0.5, 0.11), '#e8d8c8'); B.add(BOX, mat(0, -0.5, 0.06, 0.16, 0.09, 0.28), o.shoe || '#6a2a3a'); }, 0.13, 0.55, 0);
+  u.armL = part((B) => { B.add(CYL, mat(0, -0.22, 0, 0.1, 0.46, 0.1), o.coat); B.add(BALL2, mat(0, -0.47, 0, 0.065, 0.065, 0.065), '#f0c8a8'); }, -0.33, 1.47, 0, u.body);
+  u.armR = part((B) => { B.add(CYL, mat(0, -0.22, 0, 0.1, 0.46, 0.1), o.coat); B.add(BALL2, mat(0, -0.47, 0, 0.065, 0.065, 0.065), '#f0c8a8'); }, 0.33, 1.47, 0, u.body);
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(0.45, 16), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.3, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; g.add(sh); u.shadow = sh;
+  g.userData = u; return g;
+}
+function catMesh() { // кот Гоша на своих четырёх
+  const g = new THREE.Group(), B = new Builder(null, true), stripe = (cx, cy, cz) => TC.set(Math.round(cz * 14) % 2 ? '#e8892e' : '#c86a1e');
+  B.add(BALL2, mat(0, 0.3, 0, 0.17, 0.15, 0.3), stripe, SMOOTH); B.add(BALL2, mat(0, 0.45, 0.3, 0.14, 0.13, 0.13), '#e8892e', SMOOTH);
+  for (const sd of [-1, 1]) { B.add(new THREE.ConeGeometry(0.05, 0.1, 4), mat(sd * 0.08, 0.58, 0.3, 1, 1, 1, 0, 0, sd * -0.3), '#c86a1e'); B.add(CYL, mat(sd * 0.09, 0.1, 0.18, 0.06, 0.22, 0.06), '#e8892e'); B.add(CYL, mat(sd * 0.09, 0.1, -0.18, 0.06, 0.22, 0.06), '#e8892e'); }
+  B.add(BALL2, mat(0, 0.42, 0.42, 0.06, 0.045, 0.03), '#f4e0c8', SMOOTH); B.add(CYL, mat(0, 0.45, -0.38, 0.05, 0.4, 0.05, 0, -0.7), '#d87a26');
+  g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  const E = new Builder(null); for (const sd of [-1, 1]) E.add(BALL2, mat(sd * 0.055, 0.48, 0.41, 0.025, 0.02, 0.01), '#9aff6a', { emit: true }); g.add(new THREE.Mesh(E.build(), bakedMat));
+  return g;
+}
+function emojiSprite(e, s = 1, glow = 'rgba(255,220,120,.85)') {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  const gr = x.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, glow); gr.addColorStop(1, 'rgba(255,200,80,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+  x.font = '70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(e, 64, 70);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthWrite: false, transparent: true })); sp.scale.setScalar(s); return sp;
+}
+function buildWalk() {
+  const R = WK.root = new THREE.Group(); farmScene.add(R);
+  WK.tan = personMesh({ skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a', apron: '#e8dcc0' }); R.add(WK.tan);
+  const T = new Builder(null, true); T.add(BOX, mat(0, -0.55, 0.06, 0.13, 0.05, 0.32), '#3a6ad8'); T.add(BOX, mat(0, -0.5, 0.0, 0.14, 0.05, 0.1), '#ff5a8a');
+  WK.tapok = new THREE.Mesh(T.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); WK.tan.userData.armR.add(WK.tapok);
+  WK.cat = catMesh(); R.add(WK.cat);
+  const ar = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 3), new THREE.MeshBasicMaterial({ color: '#ffcf4a', transparent: true, opacity: 0.9 })); ar.geometry.rotateX(Math.PI / 2); WK.arrow = ar; R.add(ar);
+  WK.bugMesh = new THREE.InstancedMesh(beetleGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 10); WK.bugMesh.frustumCulled = false; WK.bugMesh.count = 0; R.add(WK.bugMesh);
+  // временная рассада на пустых грядках (для «Тапком!»)
+  const S = new Builder(null, true); for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); for (let q = 0; q < 6; q++) S.add(new THREE.ConeGeometry(0.1, 0.35, 4), mat(x + ((q % 3) - 1) * 0.7, 0.5, z + (Math.floor(q / 3) - 0.5) * 0.9), '#5ac84a'); }
+  WK.sprouts = new THREE.Mesh(S.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); R.add(WK.sprouts);
+  // двор соседки Вали за забором: купол, бочки, куст, телескоп, табличка
+  const V = WK.valyaG = new THREE.Group(); R.add(V); const VB = new Builder(null, true);
+  VB.add(DOME, mat(6.5, -0.1, 18.5, 3.2, 3, 3.2), '#c8b0e0', SMOOTH); VB.add(CYL, mat(6.5, 0.3, 18.5, 6.6, 0.6, 6.6), '#5a4a6a');
+  VB.add(BOX, mat(4.6, 0.12, 15.6, 2, 0.24, 1.2), '#8a6a8a');
+  for (const [x, z] of [[-2.5, 10.4], [2.6, 11.4]]) { VB.add(CYL2, mat(x, 0.55, z, 0.9, 1.1, 0.9), '#3a6a8a', SMOOTH); VB.add(new THREE.TorusGeometry(0.46, 0.04, 4, 14), mat(x, 0.8, z, 1, 1, 1, 0, Math.PI / 2), '#2a4a6a'); }
+  VB.add(ICO, mat(5.9, 0.7, 13.2, 1.0, 0.8, 1.0), '#4a9a4a', { jit: 0.3 }); VB.add(ICO, mat(-1.2, 0.6, 14.6, 0.8, 0.65, 0.8, 1), '#4a9a4a', { jit: 0.3 });
+  for (const a of [0, 2.1, 4.2]) VB.add(CYL, mat(0.5 + Math.sin(a) * 0.25, 0.55, 15.9 + Math.cos(a) * 0.25, 0.04, 1.1, 0.04, 0, Math.cos(a) * 0.25, -Math.sin(a) * 0.25), '#30343c');
+  for (let x = -11; x <= 11; x += 1.4) VB.add(BOX, mat(x, 0.5, 20.5, 0.12, 1, 0.08), '#7a6a8a');
+  V.add(new THREE.Mesh(VB.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+  WK.scope = new THREE.Group(); WK.scope.position.set(0.5, 1.1, 15.9); V.add(WK.scope);
+  const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 1.2, 10), new THREE.MeshLambertMaterial({ color: '#d8dce0' })); tb.rotation.x = Math.PI / 2; tb.position.z = 0.2; WK.scope.add(tb);
+  { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#f0e8d0'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#5a1a2a'; x.font = '900 24px system-ui,sans-serif'; x.textAlign = 'center'; x.fillText('ПОСТОРОННИМ —', 128, 40); x.fillText('НЕЛЬЗЯ.', 128, 72); x.fillText('ТАНЕ — ОСОБЕННО', 128, 104);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) })); sg.position.set(-4.5, 1.4, 9.2); sg.rotation.y = Math.PI; V.add(sg);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.4, 6), new THREE.MeshLambertMaterial({ color: '#7a5232' })); pole.position.set(-4.5, 0.5, 9.25); V.add(pole); }
+  WK.valya = personMesh({ skirt: '#3a3a4a', coat: '#5a4a9a', scarf: '#3a9ad8', dots: '#ffffff', glass: '#ff9ad8', shoe: '#2a2a3a' }); WK.valya.position.set(0.5, 0, 15.2); V.add(WK.valya);
+  WK.eyes = emojiSprite('👀', 1.1, 'rgba(255,120,120,.8)'); WK.eyes.position.set(0.5, 2.7, 15.2); V.add(WK.eyes);
+  const cg = new THREE.CircleGeometry(12, 24, -0.5, 1.0); cg.rotateX(-Math.PI / 2);
+  WK.cone = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ color: '#ff3a3a', transparent: true, opacity: 0.22, depthWrite: false })); WK.cone.position.set(0.5, 0.06, 15.2); V.add(WK.cone);
+  WK.can = emojiSprite('🚿', 1.1); R.add(WK.can);
+  WK.items = [];
+}
+const WALK_BASE = [{ x: -8, z: -9, r: 6.3 }, { x: 7.5, z: -1.5, r: 1.6 }, { x: 6.6, z: -5.5, r: 1.6 }, { x: 8.4, z: -5.5, r: 1.6 }, { x: -6.5, z: 3.5, r: 0.75 }];
+const WALK_VALYA = [{ x: 6.5, z: 18.5, r: 3.5 }, { x: -2.5, z: 10.4, r: 0.55 }, { x: 2.6, z: 11.4, r: 0.55 }, { x: 0.5, z: 15.6, r: 0.6 }, { x: 5.9, z: 13.2, r: 0.7 }, { x: -1.2, z: 14.6, r: 0.6 }];
+const WALK_COVER = [[-2.5, 10.4], [2.6, 11.4], [5.9, 13.2], [-1.2, 14.6]];
+function walkCollide(x, z, r, list) {
+  for (const c of list) { const dx = x - c.x, dz = z - c.z, d = Math.hypot(dx, dz), m = c.r + r; if (d < m && d > 1e-4) { x = c.x + dx / d * m; z = c.z + dz / d * m; } }
+  x = clamp(x, -11.5, 11.5); z = WK.fenceOpen ? clamp(z, -3, 19.6) : clamp(z, -12, 6.8); return [x, z];
+}
+const lerpA = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * Math.min(1, k);
+const WSAY = (arr) => radio(arr[Math.floor(Math.random() * arr.length)]);
+
+const FIND_ITEMS = [
+  { e: '🦷', name: 'Дедова челюсть', pos: [[7.4, 0.6, 0.7], [-6.5, 1.5, 4.5], [3.1, 0.7, -3.1]], line: ['Куры клевали ею зерно. Говорят, удобно', 'Плавала в бочке. Дед: «Я её мыл!»', 'Торчала из грядки и жевала укроп'] },
+  { e: '📰', name: '«Марсианская правда» 1987 г.', pos: [[5.3, 0.6, -5.5], [-3.5, 0.6, -2.4], [-10, 0.6, 5.5]], line: ['Дед читает её 39 лет. Дошёл до прогноза погоды', 'Гоша на ней спал. Теперь там прогноз на кошачьем', 'Ею накрыли рассаду. Рассада в курсе новостей 1987 года'] },
+  { e: '💊', name: 'Валидол', pos: [[6.5, 1.0, 4.8], [0, 0.7, 0], [-2.5, 0.6, 6.2]], line: ['Лежал на лавочке. Гоша его лизнул и спокоен как удав', 'Посажен в грядку. Дед ждал урожай валидола', 'У забора. Валя говорит, что это не её'] },
+  { e: '👓', name: 'Очки деда', pos: [[-10.8, 0.6, -1], [10.6, 0.6, -10], [0.5, 0.6, -10.8]], line: ['Были на Гоше. Гоша теперь видит лучше деда', 'Лежали у теплицы. Помидоры научились читать', 'В дальнем углу. Картошка смотрит на мир шире'] },
+  { e: '🧦', name: 'Дедов носок', pos: [[10.6, 0.9, 6.3], [-10.6, 0.9, 6.3], [-1, 0.6, -11.3]], line: ['Висел на заборе. Медведи обходят дачу стороной', 'На заборе. Валя думала, это флаг капитуляции', 'Куры свили в нём гнездо. Отдали без яиц'] },
+  { e: '🧢', name: 'Ушанка', goat: true, line: ['Была на Зорьке. Зорька отдала с боем и обиделась'] },
+];
+const WALKS = {
+  w_find: {
+    start() { const R = WK.root; WK.items.forEach((it) => R.remove(it.sp)); WK.items = FIND_ITEMS.map((it) => { const k = Math.floor(Math.random() * (it.pos ? it.pos.length : 1)), p = it.pos ? it.pos[k] : [0, 1.9, 0]; const sp = emojiSprite(it.e, 1.0); R.add(sp); return { e: it.e, name: it.name, x: p[0], y: p[1], z: p[2], line: it.line[k] || it.line[0], goat: it.goat, sp, got: false }; });
+      WK.found = 0; WK.left = 75; FS.goat.position.set(-5, 0, 1); WK.gt = [-5, 1]; WK.arrow.visible = true;
+      hint('Держи палец на экране — бабуля идёт <b>туда</b>. Жёлтая стрелка покажет, где искать', 5000); WSAY(['<b>Дед:</b> Таня, ш-ш-шелюсть! Где моя шелюсть?!', '<b>Дед:</b> И гашету! И валидол! И ушанку! Шрочно!']); },
+    frame(dt, ts) { const g = FS.goat; // Зорька бродит в ушанке
+      const fx = g.position.x - WK.p.x, fz = g.position.z - WK.p.z, fd = Math.hypot(fx, fz) || 1; const hasHat = WK.items.some((it) => it.goat && !it.got);
+      if (hasHat && fd < 4) { g.position.x = clamp(g.position.x + fx / fd * dt * 2.7, -10.5, 10.5); g.position.z = clamp(g.position.z + fz / fd * dt * 2.7, -6, 6.2); g.rotation.y = Math.atan2(fx, fz); g.children[0].position.y = Math.abs(Math.sin(ts * 9)) * 0.08; WK.gt = [g.position.x, g.position.z]; }
+      else { const gx = WK.gt[0] - g.position.x, gz = WK.gt[1] - g.position.z, gd = Math.hypot(gx, gz); if (gd < 0.3) WK.gt = [rnd(-6, -1), rnd(-2, 5)]; else { g.position.x += gx / gd * dt * 0.9; g.position.z += gz / gd * dt * 0.9; g.rotation.y = Math.atan2(gx, gz); } }
+      let near = null, nd = 1e9;
+      for (const it of WK.items) { if (it.got) continue; if (it.goat) { it.x = g.position.x; it.z = g.position.z + 0.5; it.y = 2.1; } it.sp.position.set(it.x, it.y + 0.35 + Math.sin(ts * 3 + it.x) * 0.12, it.z);
+        const d = Math.hypot(it.x - WK.p.x, it.z - WK.p.z); if (d < nd) { nd = d; near = it; } it.sp.visible = it.goat || d < 5;
+        if (d < 1.4) { it.got = true; it.sp.visible = false; WK.found++; showMsg(it.e + ' ' + it.name + '!', it.line, '#ffcf8a', 1900); confettiSmall(); bump($('order')); if (WK.found === WK.items.length) walkEnd(true); } }
+      if (near) { const dx = near.x - WK.p.x, dz = near.z - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; } else WK.arrow.visible = false;
+      $('order').textContent = WK.items.map((it) => (it.got ? it.e : '❔')).join(' ') + '  ·  ' + fmt(Math.max(0, WK.left));
+      if (WK.sayT <= 0) { WK.sayT = rnd(8, 12); WSAY(['<b>Дед:</b> Таня, я без шелюсти даже ворчать не могу!', '<b>Гоша</b> делает вид, что помогает искать. Ищет миску', '<b>Соседка Валя:</b> у меня дед ничего не теряет. Потому что у меня нет деда', '<b>Марс-ФМ:</b> в «Заречной» найдена вставная челюсть. Владельца просят не волноваться и не улыбаться']); } },
+    end(win) { const n = WK.found, pay = n * 120 + (win ? Math.round(WK.left) * 6 : 0);
+      return { title: win ? 'Дед снова при зубах и при газете!' : n ? 'Дед: «Шпашибо и на этом»' : 'Дед: «Ш-ш-ш-ш…» (без челюсти не понять)', stars: win ? (WK.left > 30 ? 3 : 2) : 1, sub: '🦷 Пешком: «Где дедова челюсть?»',
+        rows: [['Найдено', n + ' из 6'], ['Осталось времени', win ? fmt(WK.left) : '—'], ['Дед благодарен', win ? 'шамкает с чувством' : 'ворчит беззвучно']], pay }; },
+  },
+  w_bugs: { cam: [15, 11.5, 11.5, 10, 0.45],
+    start() { WK.bugs = []; WK.bugT = 1; WK.sw = 0; WK.eaten = 0; WK.tramp = 0; WK.trT = 0; WK.left = 60; WK.swing = 0; WK.tapok.visible = true; WK.sprouts.visible = FARM.beds.some((b) => !b.c);
+      hint('Веди бабулю к жуку — тапок <b>сам шлёпнет</b>. По грядкам не топчись!', 5000); WSAY(['<b>Дед:</b> Таня, жуки! Целая колонна! С транспарантами!', '<b>Марс-ФМ:</b> профсоюз жуков объявил забастовку на грядках бабы Тани']); },
+    frame(dt, ts) {
+      WK.bugT -= dt; if (WK.st === 'go' && WK.bugT <= 0 && WK.bugs.length < 9) { WK.bugT = Math.max(0.7, 1.7 - WK.t * 0.017) * rnd(0.7, 1.2); const a = rnd(0, 6.28), i = Math.floor(Math.random() * 9), [bx, , bz] = bedPos(i), x = Math.cos(a) * 13, z = clamp(Math.sin(a) * 13, -11, 6.5); const dx = x - bx, dz = z - bz, d = Math.hypot(dx, dz); WK.bugs.push({ x, z, tx: bx + dx / d * 1.45, tz: bz + dz / d * 1.45, eat: 0, dead: 0, sp: rnd(1.5, 2.1) + WK.t * 0.012 }); }
+      WK.swing = Math.max(0, WK.swing - dt * 4); let n = 0;
+      WK.bugs = WK.bugs.filter((b) => {
+        if (b.dead) { b.dead += dt; b.y = (b.y || 0.35) + dt * 10; b.x += b.vx * dt; b.z += b.vz * dt; if (b.dead > 0.9) return false; }
+        else { const dx = b.tx - b.x, dz = b.tz - b.z, d = Math.hypot(dx, dz); if (d > 0.15) { b.x += dx / d * dt * b.sp; b.z += dz / d * dt * b.sp; b.h = Math.atan2(dx, dz); } else { b.eat += dt; if (b.eat > 3.5) { WK.eaten++; b.dead = 0.01; b.vx = 0; b.vz = 0; farmFloat(['Жук: «Ботва — общенародное достояние!»', 'Хрум!', 'Жук наелся и улетел'][Math.floor(Math.random() * 3)], b.x, b.z, '#ff8a6a'); } }
+          if (WK.st === 'go' && Math.hypot(b.x - WK.p.x, b.z - WK.p.z) < 1.5) { b.dead = 0.01; const a = Math.atan2(b.x - WK.p.x, b.z - WK.p.z); b.vx = Math.sin(a) * 9; b.vz = Math.cos(a) * 9; WK.sw++; WK.swing = 1; shake = 0.2; flash('#ffcf3a', 0.15); farmFloat(['Шлёп!', 'Тапком его!', 'Брысь!', 'Жук: «Профсоюз!»', 'Хрясь!'][Math.floor(Math.random() * 5)], b.x, b.z, '#ffcf6a'); bump($('order')); } }
+        WK.bugMesh.setMatrixAt(n++, mat(b.x, b.dead ? b.y : 0.35, b.z, 0.55, 0.55, 0.55, (b.h || 0) + (b.dead ? ts * 20 : 0))); return true; });
+      WK.bugMesh.count = n; WK.bugMesh.instanceMatrix.needsUpdate = true;
+      WK.tan.userData.armR.rotation.x = WK.swing > 0 ? -2.6 + (1 - WK.swing) * 2.4 : WK.tan.userData.armR.rotation.x;
+      // не топтать рассаду
+      const sp = Math.hypot(WK.vx, WK.vz); let onBed = false; for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); if (Math.abs(WK.p.x - x) < 1.0 && Math.abs(WK.p.z - z) < 1.0) onBed = true; }
+      if (onBed && sp > 1) { WK.trT += dt; if (WK.trT > 0.6) { WK.trT = 0; WK.tramp++; farmFloat(['Ой, рассаду!', 'Дед: «Таня, по картошке!»', 'Топ-топ, минус огурец'][Math.floor(Math.random() * 3)], WK.p.x, WK.p.z, '#ff8a6a'); } } else WK.trT = 0;
+      $('order').textContent = '🩴 ' + WK.sw + ' жуков · съели: ' + WK.eaten + ' · ' + fmt(Math.max(0, WK.left)); $('order').classList.toggle('bad', WK.eaten >= 4);
+      if (WK.sayT <= 0) { WK.sayT = rnd(7, 11); WSAY(['<b>Дед:</b> Слева! Нет, справа! Таня, они везде!', '<b>Соседка Валя:</b> у меня жуков нет. Они меня боятся', '<b>Гоша</b> поймал жука и принёс тебе. Жук тоже не понял зачем', '<b>Марс-ФМ:</b> жуки «Заречной» требуют тапки помягче']); } },
+    end(win) { const pay = Math.max(50, WK.sw * 15 + (WK.eaten === 0 ? 200 : 0) - WK.tramp * 5); FARM.swats += WK.sw; saveFarm();
+      return { title: WK.eaten === 0 ? 'Ни листочка не отдала! Жуки пишут жалобу' : WK.eaten < 4 ? 'Отбилась! Погрызли самую малость' : 'Жуки пообедали. Бабуля в ярости', stars: WK.eaten === 0 && WK.sw >= 12 ? 3 : WK.eaten < 4 ? 2 : 1, sub: '🩴 Пешком: «Тапком!»',
+        rows: [['Жуков отшлёпано', WK.sw], ['Ботвы съели', WK.eaten + ' раз'], ['Растоптала рассады', WK.tramp ? WK.tramp + ' (−' + WK.tramp * 5 + ' ₽)' : 'ни кустика']], pay }; },
+  },
+  w_goat: { cam: [13.5, 10.5, 10.5, 9.5, 0.6],
+    start() { WK.left = 90; WK.jCD = 2; WK.jump = null; WK.inBarn = 0; FS.goat.position.set(-6, 0, -1.5); WK.gt = [-6, -1.5]; WK.door = emojiSprite('🚪', 1.3, 'rgba(120,255,140,.8)'); WK.root.add(WK.door); WK.door.position.set(7.5, 2.6, 0.4);
+      const rg = new THREE.RingGeometry(1.7, 2.1, 28); rg.rotateX(-Math.PI / 2); WK.ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: '#7aff8a', transparent: true, opacity: 0.6, depthWrite: false })); WK.ring.position.set(7.5, 0.05, 0.9); WK.root.add(WK.ring); WK.arrow.visible = true;
+      hint('Зорька убегает от бабули. Заходи с другой стороны и <b>гони к сараю</b> (зелёный круг)', 5500); WSAY(['<b>Дед:</b> Таня, Зорька шлем сняла и ушла! Скафандр оставила!', '<b>Марс-ФМ:</b> в «Заречной» замечена коза на высоте 6 метров. Это не НЛО, это Зорька']); },
+    frame(dt, ts) { const g = FS.goat, gp = g.position, BX = 7.5, BZ = 0.9;
+      if (WK.inBarn) { WK.inBarn += dt; gp.x += (BX - gp.x) * dt * 3; gp.z += (-1.2 - gp.z) * dt * 3; g.scale.setScalar(Math.max(0.01, 1 - WK.inBarn)); return; }
+      WK.jCD -= dt;
+      if (WK.jump) { const j = WK.jump; j.t += dt / 0.95; const k = Math.min(1, j.t); gp.x = j.x0 + (j.x1 - j.x0) * k; gp.z = j.z0 + (j.z1 - j.z0) * k; gp.y = Math.sin(k * Math.PI) * 3.2; g.rotation.x = -Math.sin(k * Math.PI * 2) * 0.4; if (k >= 1) { WK.jump = null; gp.y = 0; g.rotation.x = 0; } }
+      else { const dx = gp.x - WK.p.x, dz = gp.z - WK.p.z, d = Math.hypot(dx, dz) || 1; let vx = 0, vz = 0;
+        if (d < 5.5) { vx = dx / d; vz = dz / d; const s = 3.4;
+          // у стены — скользит вдоль, а не упирается
+          if ((gp.x > 10.5 && vx > 0) || (gp.x < -10.5 && vx < 0)) { vx = 0; vz = (vz >= 0 ? 1 : -1); } if ((gp.z > 6 && vz > 0) || (gp.z < -11 && vz < 0)) { vz = 0; vx = (vx >= 0 ? 1 : -1); }
+          vx *= s * 1.08; vz *= s * 1.08;
+          if (d < 1.7 && WK.jCD <= 0 && Math.random() < 0.45) { const a = Math.atan2(dx, dz) + rnd(-1.1, 1.1), L = rnd(4.5, 6.5); WK.jump = { t: 0, x0: gp.x, z0: gp.z, x1: clamp(gp.x + Math.sin(a) * L, -10.5, 10.5), z1: clamp(gp.z + Math.cos(a) * L, -10.5, 6) }; WK.jCD = 3.2; farmFloat(['Бе-е-е! (слабое тяготение)', 'Зорька: «Догони сначала!»', 'Прыжок на 6 метров!'][Math.floor(Math.random() * 3)], gp.x, gp.z, '#9fe8ff'); }
+        } else { const gx = WK.gt[0] - gp.x, gz = WK.gt[1] - gp.z, gd = Math.hypot(gx, gz); if (gd < 0.3) WK.gt = [clamp(gp.x + rnd(-3, 3), -10, 10), clamp(gp.z + rnd(-3, 3), -10, 6)]; else { vx = gx / gd * 0.8; vz = gz / gd * 0.8; } }
+        let nx = gp.x + vx * dt, nz = gp.z + vz * dt; const fo = WK.fenceOpen; WK.fenceOpen = false; [nx, nz] = walkCollide(nx, nz, 0.5, WALK_BASE.filter((c) => c.r > 1)); WK.fenceOpen = fo; nx = clamp(nx, -10.8, 10.8); nz = clamp(nz, -11, 6.3); gp.x = nx; gp.z = nz;
+        if (vx || vz) g.rotation.y = lerpA(g.rotation.y, Math.atan2(vx, vz), dt * 8); g.children[0].position.y = Math.abs(Math.sin(ts * 9)) * 0.08 * Math.min(1, Math.hypot(vx, vz)); }
+      { const dx = gp.x - WK.p.x, dz = gp.z - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.visible = d > 3; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; }
+      WK.ring.material.opacity = 0.45 + Math.sin(ts * 5) * 0.25; WK.door.position.y = 2.6 + Math.sin(ts * 3) * 0.12;
+      if (!WK.jump && Math.hypot(gp.x - BX, gp.z - BZ) < 2.0) { WK.inBarn = 0.01; showMsg('Зорька в сарае!', 'Дед закрыл дверь на швабру', '#9fe8a0', 1600); setTimeout(() => walkEnd(true), 1100); }
+      $('order').textContent = '🐐 Загони Зорьку в сарай · ' + fmt(Math.max(0, WK.left));
+      if (WK.sayT <= 0) { WK.sayT = rnd(7, 11); WSAY(['<b>Дед:</b> Таня, заходи слева! Она левее не прыгает!', '<b>Соседка Валя:</b> а моя коза дома сидит. Потому что у меня нет козы', '<b>Гоша</b> гонит Зорьку. Зорька гонит Гошу. Гоша передумал', '<b>Марс-ФМ:</b> рекорд колонии по прыжкам в высоту снова у козы']); } },
+    end(win) { const pay = win ? 400 + Math.round(WK.left) * 5 : 80; g0(); WK.root.remove(WK.door); WK.root.remove(WK.ring);
+      return { title: win ? 'Зорька дома! Молоко сегодня будет со вкусом обиды' : 'Зорька ушла к Вале. Валя её доит и говорит, что так и было', stars: win ? (WK.left > 40 ? 3 : 2) : 1, sub: '🐐 Пешком: «Зорька сбежала!»',
+        rows: [['Коза', win ? 'в сарае' : 'у Вали'], ['Осталось времени', win ? fmt(WK.left) : '—'], ['Прыжков Зорьки', 'рекорд колонии']], pay }; },
+  },
+  w_steal: {
+    start() { WK.fenceOpen = true; WK.side = -1; WK.valyaG.visible = true; WK.vs = 'scope'; WK.vt = rnd(3, 4.5); WK.sweep = 0; WK.caught = 0; WK.carry = false; WK.left = 120; WK.can.visible = true; WK.can.position.set(4.3, 0.9, 15.3); WK.p.set(0, 0, 3.5); WK.h = 0;
+      hint('Пока Валя смотрит в телескоп — иди. Появились 👀 — <b>прячься за бочку или куст</b>', 6000); WSAY(['<b>Дед:</b> Таня, Валя опять нашу лейку утащила! С 2071 года «поливает»!', '<b>Соседка Валя:</b> это моя лейка. Я на ней фломастером написала']); },
+    frame(dt, ts) {
+      WK.vt -= dt; const V = WK.valya;
+      if (WK.vs === 'scope') { V.rotation.y = lerpA(V.rotation.y, 0, dt * 6); WK.cone.visible = false; WK.eyes.visible = false; WK.scope.rotation.x = -0.6; if (WK.vt <= 0) { WK.vs = 'warn'; WK.vt = 1.0; farmFloat('Хм?..', 0.5, 15.2, '#ffcf8a'); } }
+      else if (WK.vs === 'warn') { WK.eyes.visible = true; WK.eyes.scale.setScalar(1 + Math.sin(ts * 20) * 0.15); V.rotation.y = lerpA(V.rotation.y, Math.PI, dt * 3); if (WK.vt <= 0) { WK.vs = 'look'; WK.vt = rnd(2.2, 3); WK.sweep = Math.random() < 0.5 ? -0.7 : 0.7; } }
+      else { WK.eyes.visible = true; const s = Math.sin(ts * 1.6) * 0.7, dir = Math.PI + s; V.rotation.y = dir; WK.cone.visible = true; WK.cone.rotation.y = Math.atan2(-Math.cos(dir), Math.sin(dir));
+        if (WK.st === 'go' && WK.p.z > 7.8) { const dx = WK.p.x - 0.5, dz = WK.p.z - 15.2, d = Math.hypot(dx, dz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - dir), Math.cos(Math.atan2(dx, dz) - dir)));
+          const hid = WALK_COVER.some(([x, z]) => Math.hypot(WK.p.x - x, WK.p.z - z) < 1.3);
+          if (d < 12 && da < 0.5 && !hid) { WK.caught++; flash('#ff3a2a', 0.4); shake = 0.4; showMsg('Таня! Я всё вижу!', WK.caught >= 3 ? 'Валя вызвала МарсЖЭК' : 'Валя пишет жалобу в МарсЖЭК (' + WK.caught + ' из 3)', '#ff8a6a', 1600, true); WK.carry = false; WK.can.position.set(4.3, 0.9, 15.3); WK.p.set(0, 0, 3.5); WK.vx = WK.vz = 0; WK.vs = 'scope'; WK.vt = 2.5; if (WK.caught >= 3) walkEnd(false); } }
+        if (WK.vt <= 0) { WK.vs = 'scope'; WK.vt = rnd(2.6, 4.2); if (Math.random() < 0.5) WSAY(['<b>Соседка Валя:</b> ой, на Юпитере опять пятно. Кто-то варенье разлил', '<b>Соседка Валя:</b> вижу Сатурн! Колец нет. Сняли, наверное, на зиму', '<b>Соседка Валя:</b> Луна на месте. Земля на месте. Таня… где Таня?']); } }
+      if (!WK.carry && Math.hypot(WK.p.x - 4.3, WK.p.z - 15.3) < 1.3) { WK.carry = true; showMsg('Лейка у бабули!', 'Теперь тихонько домой, за забор', '#9fe8ff', 1400); bump($('order')); }
+      if (WK.carry) WK.can.position.set(WK.p.x, 2.5 + Math.sin(ts * 8) * 0.05, WK.p.z); else WK.can.position.y = 0.9 + Math.sin(ts * 3) * 0.1;
+      if (WK.carry && WK.p.z < 6 && WK.st === 'go') { showMsg('Лейка дома!', 'Валя пока не заметила. Заметит — скажет, что так и было', '#9fe8a0', 1600); walkEnd(true); }
+      $('order').textContent = (WK.carry ? '🚿 Неси домой' : '🚿 Забери лейку') + ' · попалась: ' + WK.caught + '/3 · ' + fmt(Math.max(0, WK.left)); $('order').classList.toggle('bad', WK.caught >= 2);
+      if (WK.sayT <= 0) { WK.sayT = rnd(9, 13); WSAY(['<b>Дед</b> шепчет по рации: «Таня, приём, ты за бочкой? Я тебя не вижу. Это хорошо»', '<b>Гоша</b> громко мурчит у Вали под окном. Предатель', '<b>Марс-ФМ:</b> в «Заречной» соседи снова делят лейку. Счёт 47:46']); } },
+    end(win) { const pay = win ? Math.max(150, 500 - WK.caught * 100 + Math.round(WK.left) * 3) : 60;
+      return { title: win ? 'Лейка вернулась домой! Валя ещё не знает' : 'Валя победила. Лейка теперь «общая», то есть её', stars: win ? (WK.caught === 0 ? 3 : 2) : 1, sub: '🚿 Пешком: «Верни лейку» · улица Садовая',
+        rows: [['Лейка', win ? 'дома' : 'у Вали'], ['Попалась Вале', WK.caught + ' раз'], ['Жалоб в МарсЖЭК', WK.caught ? WK.caught + ' (жена Димона разберётся)' : '0']], pay }; },
+  },
+};
+function g0() { if (FS.goat) { FS.goat.position.set(-6, 0, 0); FS.goat.scale.setScalar(1); FS.goat.rotation.set(0, 0, 0); } }
+function startWalk(id) {
+  stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk();
+  scene.add(babka); farmScene.add(skyG); if (DF.g) DF.g.visible = false; FS.plants.forEach((p) => (p.visible = true)); FS.sparks.forEach((p) => (p.visible = false)); FS.bugMesh.count = 0;
+  WK.active = true; WK.id = id; WK.st = 'go'; WK.t = 0; WK.sayT = 6; WK.side = 1; WK.fenceOpen = false; WK.ptr = null; WK.vx = WK.vz = 0; WK.h = Math.PI; WK.ph = 0; WK.p = new THREE.Vector3(1.5, 0, 4.5);
+  WK.root.visible = true; WK.valyaG.visible = false; WK.can.visible = false; WK.arrow.visible = false; WK.tapok.visible = false; WK.sprouts.visible = false; WK.bugMesh.count = 0; WK.items.forEach((it) => (it.sp.visible = false)); g0();
+  document.body.classList.add('walk'); $('end').classList.remove('on'); $('order').classList.remove('bad');
+  WALKS[id].start(); introCard(ORDERS[id]); WK.cat.position.set(WK.p.x - 1, 0, WK.p.z + 1);
+}
+function stopWalk() { if (!WK.active) return; WK.active = false; document.body.classList.remove('walk'); if (WK.root) WK.root.visible = false; g0(); if (WK.door) { WK.root.remove(WK.door); WK.root.remove(WK.ring); WK.door = null; } scene.add(skyG); }
+function walkEnd(win) {
+  if (WK.st !== 'go') return; WK.st = 'end'; const r = WALKS[WK.id].end(win);
+  $('etitle').innerHTML = letters(r.title, 0.025); $('esub').textContent = r.sub;
+  $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < r.stars ? '★' : '☆'}</span>`).join('');
+  $('etab').innerHTML = r.rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('') + `<tr><td><b>Пенсия за миссию</b></td><td><b>+${r.pay} ₽</b></td></tr>`;
+  const before = BANK; BANK += r.pay; try { localStorage.setItem('bm_bank', BANK); localStorage.setItem('bm_w_' + WK.id, Math.max(r.stars, +localStorage.getItem('bm_w_' + WK.id) || 0)); } catch (e) {}
+  $('banki').style.width = Math.min(100, before / TICKET * 100) + '%'; setTimeout(() => ($('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'), 1100);
+  $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽';
+  if (win) confetti(); setTimeout(() => $('end').classList.add('on'), 1300);
+}
+function walkFrame(dt, now) {
+  const ts = now / 1000, W = WK; W.t += dt; W.sayT -= dt; if (W.st === 'go') { W.left -= dt; if (W.left <= 0) walkEnd(W.id === 'w_bugs' ? W.eaten < 4 : false); }
+  const port = innerWidth < innerHeight; farmCam.aspect = innerWidth / innerHeight; farmCam.fov = port ? 60 : 50; farmCam.updateProjectionMatrix();
+  // управление: палец относительно бабули на экране (или стрелки/WASD)
+  let ix = 0, iz = 0;
+  if (W.ptr != null) { const v = PV.set(W.p.x, 1, W.p.z).project(farmCam), sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight, dx = W.px - sx, dy = W.py - sy, d = Math.hypot(dx, dy); if (d > 14) { const k = Math.min(1, d / 60); ix = dx / d * k * W.side; iz = dy / d * k * W.side; } }
+  { const kx = (W.k.has('R') ? 1 : 0) - (W.k.has('L') ? 1 : 0), kz = (W.k.has('D') ? 1 : 0) - (W.k.has('U') ? 1 : 0); if (kx || kz) { const d = Math.hypot(kx, kz); ix = kx / d * W.side; iz = kz / d * W.side; } }
+  if (W.st !== 'go') ix = iz = 0;
+  const SPD = 4.3; W.vx += (ix * SPD - W.vx) * Math.min(1, dt * 10); W.vz += (iz * SPD - W.vz) * Math.min(1, dt * 10);
+  [W.p.x, W.p.z] = walkCollide(W.p.x + W.vx * dt, W.p.z + W.vz * dt, 0.35, W.fenceOpen ? WALK_BASE.concat(WALK_VALYA) : WALK_BASE);
+  const sp = Math.hypot(W.vx, W.vz); if (sp > 0.3) W.h = lerpA(W.h, Math.atan2(W.vx, W.vz), dt * 12); W.ph += sp * dt * 2.8;
+  const T = W.tan, u = T.userData, hop = W.fenceOpen ? Math.max(0, 1 - Math.abs(W.p.z - 7.5) / 0.7) * 0.6 : 0, sw = Math.sin(W.ph) * Math.min(1, sp / 3) * 0.7;
+  T.position.set(W.p.x, hop, W.p.z); T.rotation.y = W.h; u.legL.rotation.x = sw; u.legR.rotation.x = -sw; u.armL.rotation.x = -sw * 0.8; u.armR.rotation.x = sw * 0.8; u.body.position.y = Math.abs(Math.cos(W.ph)) * 0.06 * Math.min(1, sp / 3); u.shadow.position.y = 0.03 - hop;
+  WALKS[W.id].frame(dt, ts);
+  // Гоша идёт следом, сбоку
+  { const c = W.cat, tx = W.p.x - Math.sin(W.h) * 1.1 + Math.cos(W.h) * 0.7, tz = W.p.z - Math.cos(W.h) * 1.1 - Math.sin(W.h) * 0.7, dx = tx - c.position.x, dz = tz - c.position.z, d = Math.hypot(dx, dz);
+    if (d > 0.25) { const s = Math.min(d * 3, 5.5); c.position.x += dx / d * s * dt; c.position.z += dz / d * s * dt; c.rotation.y = lerpA(c.rotation.y, Math.atan2(dx, dz), dt * 10); c.children[0].position.y = Math.abs(Math.sin(ts * 14)) * 0.05; } }
+  FS.hens.forEach((h, k) => { h.rotation.x = Math.max(0, Math.sin(ts * 4 + k * 2)) * 0.5; h.rotation.y = Math.sin(ts * 0.5 + k) * 1.2; });
+  // камера сзади-сверху; в миссии у Вали смотрим с другой стороны
+  const CM = WALKS[W.id].cam || [9, 8.2, 7.4, 7.6, 1], cy = port ? CM[0] : CM[2], cz = (port ? CM[1] : CM[3]) * W.side, fk = CM[4], fx = W.p.x * fk, fz = -1 + (W.p.z + 1) * fk;
+  farmCam.position.set(fx * 0.85, cy, fz + cz); farmCam.lookAt(fx * 0.92, 0.6, fz - 1.8 * W.side);
+  if (shake > 0) { farmCam.position.x += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.5); }
+  skyG.position.copy(farmCam.position); renderer.render(farmScene, farmCam); adapt(dt);
+}
+const WKEY = { ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R', ArrowUp: 'U', KeyW: 'U', ArrowDown: 'D', KeyS: 'D' };
+addEventListener('keydown', (e) => { if (WKEY[e.code]) WK.k.add(WKEY[e.code]); });
+addEventListener('keyup', (e) => { if (WKEY[e.code]) WK.k.delete(WKEY[e.code]); });
+addEventListener('blur', () => WK.k.clear());
 
 /* ---------- 🎣 РЫБАЛКА в ледяном кратере Королёва ---------- */
 const FISHES = [
@@ -1740,7 +1977,7 @@ function endFishing() {
 
 /* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
 let firstEver = true; try { firstEver = !localStorage.getItem('bm_seen'); localStorage.setItem('bm_seen', '1'); } catch (e) {}
-if (firstEver || ORDER === 'fish' || ORDER === 'farm' || ORDER === 'defense') ORDER = 'potato'; // первый заход — всегда езда
+if (firstEver || ORDER.startsWith('w_') || ORDER === 'fish' || ORDER === 'farm' || ORDER === 'defense') ORDER = 'potato'; // первый заход — всегда езда
 genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
@@ -1750,7 +1987,7 @@ function afterFirst() {
   setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
