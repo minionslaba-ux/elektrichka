@@ -132,6 +132,34 @@ body.farm.seedson #inv{display:none}#seeds.on{display:block;animation:pop .3s cu
 #seeds .row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 #seeds button{border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);border-radius:12px;padding:8px 2px;font:700 12px system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 #seeds button i{font-size:26px;font-style:normal}#seeds button small{color:var(--dim);font-weight:500;font-size:11px}
+/* ---------- карта колонии ---------- */
+#map{position:fixed;inset:0;z-index:12;display:none;background:radial-gradient(ellipse at 50% 40%,#b8603e 0%,#8a4430 55%,#4a2230 100%);overflow:hidden}
+#map.on{display:block;animation:cardIn .4s ease-out both}
+#map svg{position:absolute;inset:0;width:100%;height:100%}
+#map .hdr{position:absolute;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top));z-index:2;border-radius:14px;padding:10px 14px}
+#map .hdr b{font-size:18px}#map .hdr small{color:var(--dim);font-size:12px}
+#map .hdr .bar{height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}#map .hdr .bar i{display:block;height:100%;background:linear-gradient(90deg,#7fe8ff,#ffe08a)}
+.pin{position:absolute;transform:translate(-50%,-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:0;background:none;color:var(--ink);font:800 12px system-ui,sans-serif;text-shadow:0 1px 4px #000;padding:0}
+.pin i{font-style:normal;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;background:rgba(30,14,22,.72);border:2px solid var(--hot);box-shadow:0 0 18px rgba(255,176,74,.45);animation:pinp 2.2s ease-in-out infinite}
+.pin.lock i{border-color:rgba(255,255,255,.25);box-shadow:none;filter:grayscale(.8);opacity:.7;animation:none}
+.pin .bdg{position:absolute;top:-6px;right:-10px;background:#ff5a4a;color:#fff;border-radius:10px;padding:1px 6px;font-size:11px}
+.pin span{max-width:110px;text-align:center;line-height:1.15}
+@keyframes pinp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#mapSheet{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));margin:0 auto;max-width:460px;z-index:3;border-radius:18px;padding:14px;display:none}
+#mapSheet.on{display:block;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
+#mapSheet h3{margin:0 0 4px;font-size:18px}#mapSheet p{margin:0 0 10px;color:var(--dim);font-size:13px}
+#mapSheet .ms{display:grid;gap:8px}
+#mapSheet button.m{width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);border-radius:12px;padding:10px 12px;font:700 15px system-ui,sans-serif;cursor:pointer}
+#mapSheet button.m small{display:block;color:var(--dim);font-weight:500;font-size:12px;margin-top:2px}
+#mapSheet button.m.story{background:linear-gradient(90deg,rgba(90,110,80,.35),rgba(255,176,74,.12))}
+#end .btns2{display:grid;grid-template-columns:1fr 1fr;gap:8px}#end .btns2 button.alt{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line)}
+/* ---------- оборона дачи ---------- */
+#defHud{display:none}body.def #defHud{display:block}body.def #zl,body.def #zr,body.def #turbo,body.def #prog,body.def #tr,body.def #tl,body.def #fishHud,body.def #farmHud{display:none}
+#shells{position:fixed;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:7;display:flex;gap:6px;align-items:center}
+#shells b{width:18px;height:42px;border-radius:5px;background:linear-gradient(#e8402a 70%,#d8b040 70%);box-shadow:0 0 10px rgba(232,64,42,.5)}#shells b.e{background:rgba(255,255,255,.12);box-shadow:none}
+#reload{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:7;border:0;border-radius:14px;padding:13px 16px;background:rgba(255,255,255,.1);color:var(--ink);font:900 14px system-ui,sans-serif;border:1px solid var(--line)}
+#reload.need{background:var(--hot);color:#2a1406;animation:pinp .6s infinite}
+#jars{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));white-space:nowrap;transform:translateX(-50%);z-index:6;font-weight:900;font-size:18px;border-radius:12px;padding:6px 14px;pointer-events:none}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -162,8 +190,13 @@ body.farm.seedson #inv{display:none}#seeds.on{display:block;animation:pop .3s cu
 <div id="hint"></div>
 <div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
   <div class="bank"><div class="bl">КОПИЛКА НА БИЛЕТ ДО ЗЕМЛИ</div><div class="bar"><i id="banki"></i></div><small id="bankt"></small></div>
-  <div class="lab">СЛЕДУЮЩИЙ ЗАКАЗ</div><div id="orders"></div>
-  <button id="again">Поехали!</button></div></div>
+  <div class="lab" style="display:none">СЛЕДУЮЩИЙ ЗАКАЗ</div><div id="orders" style="display:none"></div>
+  <div class="btns2"><button id="again" class="alt">🔁 Ещё раз</button><button id="toMap">🗺 На карту</button></div></div></div>
+<div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
+  <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
+  <div id="pins"></div>
+  <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
+<div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <div id="err"></div>
 <script>
 /* Площадка: web / pikabu / vk / ok / tg / max / gamepush / rt. В прототипе — web. */
@@ -865,6 +898,7 @@ const ORDERS = {
   pies: { name: 'Пирожки Максу', icon: '🥟', desc: 'Довези горячими — успей до остывания', who: 'Внук Макс ждёт' },
   seed: { name: 'Рассада на дачу', icon: '🌱', desc: 'Дед держит её в люльке. Долгие заносы — роняет', who: 'Дача ждёт' },
   farm: { name: 'Дача: огород', icon: '🌱', desc: 'Посади, полей, гоняй жуков тапком. Урожай даёт бонус к заказам', who: 'Грядки ждут' },
+  defense: { name: 'Оборона дачи', icon: '🔫', desc: 'Медведи с полюса идут за вареньем. Дробовик заряжен солью', who: 'Погреб с вареньем' },
   fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва' },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
@@ -1010,6 +1044,8 @@ function startMsg(first) {
   hint(first ? 'Держи палец <b>слева</b> или <b>справа</b> — бабулю заносит. Долгий занос = <b>турбо</b>' : 'Занос — турбо. Красные круги — сюда упадёт метеорит!', first ? 6000 : 3500);
 }
 function newRun(first) {
+  if (ORDER === 'defense') { startDefense(); return; }
+  stopDefense();
   if (ORDER === 'farm') { startFarm(); return; }
   stopFarm();
   if (ORDER === 'fish') { startFishing(); return; }
@@ -1060,17 +1096,19 @@ function renderOrders() {
   document.querySelectorAll('.ord').forEach((b) => (b.onclick = () => { ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (e) {} renderOrders(); }));
 }
 $('again').onclick = () => newRun(false);
+$('toMap').onclick = () => showMap();
+$('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin')) $('mapSheet').classList.remove('on'); });
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 
 /* ---------- управление: левая/правая половина экрана ---------- */
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); } touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
-const up = (e) => { touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
+const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
 const KL = { ArrowLeft: 1, KeyA: 1 }, KR = { ArrowRight: 1, KeyD: 1 };
-addEventListener('keydown', (e) => { if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
+addEventListener('keydown', (e) => { if (DF.active && (e.code === 'KeyR' || e.code === 'ArrowDown')) defReload();  if (FISH.active && e.code === 'Space' && !e.repeat) { FISH.hold = true; fishTap(); }  if (car.stuck && !e.repeat && (KL[e.code] || KR[e.code] || e.code === 'Space')) { car.stuck.taps++; bump($('combo')); } if (KL[e.code]) input.kl = true; if (KR[e.code]) input.kr = true; });
 addEventListener('keyup', (e) => { if (FISH.active && e.code === 'Space') FISH.hold = false;  if (KL[e.code]) input.kl = false; if (KR[e.code]) input.kr = false; });
 addEventListener('blur', () => { touches.clear(); input.kl = input.kr = input.tl = input.tr = false; });
 
@@ -1105,6 +1143,7 @@ function frame(now) {
   const tsec = now / 1000;
   if (FISH.active) { fishFrame(dt, now); return; }
   if (FS.active) { farmFrame(dt, now); return; }
+  if (DF.active) { defFrame(dt, now); return; }
   // руль
   const L = input.tl || input.kl, R = input.tr || input.kr;
   const steer = car.state === 'go' && !car.spin ? (L && !R ? 1 : R && !L ? -1 : 0) : 0;
@@ -1303,7 +1342,7 @@ function plantMesh(i) {
 }
 function invText() { return Object.entries(CROPS).map(([k, c]) => c.e + ' ' + (FARM.inv[k] || 0)).join('  ·  '); }
 function startFarm() {
-  stopFishing(); if (!farmScene) buildFarmScene();
+  stopFishing(); stopDefense(); if (!farmScene) buildFarmScene();
   FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
   farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
   babka.position.set(-3.5, 0.15, 5.6); babka.rotation.y = Math.PI * 0.85; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false; trail.visible = false;
@@ -1366,13 +1405,172 @@ function farmUse() { // урожай с дачи едет в заказ: бон�
   const k = ORDER_CROP[car.mode || ORDER]; if (!k) return null; const n = Math.min(FARM.inv[k] || 0, 10); if (!n) return null;
   FARM.inv[k] -= n; saveFarm(); return { n, e: CROPS[k].e, name: CROPS[k].name, pay: n * 40 };
 }
-function showHub() {
+function showHub() { showMap(); return;
   stopFarm(); stopFishing();
   $('etitle').innerHTML = letters('Куда едем, Таня?', 0.03); $('esub').textContent = 'С дачи: ' + invText(); $('estars').innerHTML = ''; $('etab').innerHTML = '';
   $('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'; $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽';
   renderOrders(); $('end').classList.add('on');
 }
 $('farmBack').onclick = (e) => { e.stopPropagation(); showHub(); };
+
+/* ---------- 🗺 КАРТА КОЛОНИИ ---------- */
+const PLACES_MAP = [
+  { id: 'dacha', e: '🏡', name: 'Дача бабы Тани', x: 24, y: 70, d: 'Огород, куры, Зорька и погреб с вареньем', m: ['farm', 'defense'] },
+  { id: 'kids', e: '🏠', name: 'Дом внуков', x: 72, y: 74, d: 'Макс и Лёха ждут гостинцы. Доставка на турбо-кресле по трассе', m: ['potato', 'jam', 'pies', 'seed'] },
+  { id: 'crater', e: '🧊', name: 'Кратер Королёва', x: 76, y: 30, d: 'Подлёдная рыбалка. Говорят, тут живёт Царь-сом', m: ['fish'] },
+  { id: 'trans', e: '🏢', name: 'Офис «ТрансМарса»', x: 44, y: 42, d: 'Тут работает Димон, «логист стратегического уровня»', m: ['dimon'] },
+  { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', lock: 'Скоро: пешие миссии' },
+  { id: 'clinic', e: '🏥', name: 'Поликлиника №1', x: 52, y: 58, d: 'Талон № 4 000 017', lock: 'Скоро: самая смешная очередь' },
+  { id: 'port', e: '🚀', name: 'Космодром', x: 84, y: 54, d: 'Билет на Землю', lock: 'Финал: копилка' },
+  { id: 'olymp', e: '🌋', name: 'Гора Олимп', x: 22, y: 13, d: 'Спит. Пока', lock: 'Скоро: извержение' },
+];
+function drawMapSvg() {
+  const road = (pts, col, w, dash) => `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${w}" ${dash ? 'stroke-dasharray="' + dash + '"' : ''} stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  let h = '<defs><radialGradient id="ice"><stop offset="0" stop-color="#e8f4ff"/><stop offset="1" stop-color="#9ab8d8"/></radialGradient></defs>';
+  for (let k = 0; k < 40; k++) { const x = (k * 37) % 100, y = (k * 53) % 100; h += `<circle cx="${x}" cy="${y}" r="${0.6 + (k % 4) * 0.5}" fill="rgba(60,20,20,.25)"/>`; }
+  h += '<ellipse cx="76" cy="30" rx="13" ry="8" fill="#6a3a2a"/><ellipse cx="76" cy="30" rx="10" ry="6" fill="url(#ice)" opacity=".9"/>';
+  h += '<polygon points="8,22 22,4 36,22" fill="#7a3828"/><polygon points="18,9 22,4 26,9" fill="#ff7a3a" opacity=".8"/>';
+  h += road('24,70 40,66 52,58 60,66 72,74', '#2a1a22', 7) + road('24,70 40,66 52,58 60,66 72,74', '#7fe8ff', 1.2, '3 3');
+  h += road('52,58 44,42 60,34 76,30', '#2a1a22', 5) + road('52,58 44,42 60,34 76,30', '#ff6ad8', 1, '2 3');
+  h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,13', '#2a1a22', 3);
+  $('mapSvg').innerHTML = h;
+}
+function showMap() {
+  stopFarm(); stopFishing(); stopDefense(); $('end').classList.remove('on');
+  drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
+  $('mapSub').textContent = '· копилка на билет: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽'; $('mapBank').style.width = frac * 100 + '%';
+  const ripe = FARM.beds.filter((b) => b.c && b.g >= CROPS[b.c].t).length, d1 = (() => { try { return !!localStorage.getItem('bm_d1'); } catch (e) { return false; } })();
+  $('pins').innerHTML = PLACES_MAP.map((p) => { const bdg = p.id === 'dacha' && ripe ? `<em class="bdg">✨${ripe}</em>` : p.id === 'trans' && !d1 ? '<em class="bdg">!</em>' : p.id === 'port' ? `<em class="bdg" style="background:#3a8a5a">${Math.round(frac * 100)}%</em>` : '';
+    return `<button class="pin${p.lock ? ' lock' : ''}" data-p="${p.id}" style="left:${p.x}%;top:${p.y}%"><i>${p.e}</i>${bdg}<span>${p.name}</span></button>`; }).join('');
+  $('pins').querySelectorAll('.pin').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openPlace(b.dataset.p); }));
+  $('mapSheet').classList.remove('on'); $('map').classList.add('on'); document.body.classList.add('mapon');
+}
+function openPlace(id) {
+  const p = PLACES_MAP.find((q) => q.id === id); $('msT').textContent = p.e + ' ' + p.name; $('msD').textContent = p.d;
+  if (p.lock) { $('msL').innerHTML = `<button class="m" disabled>🔒 ${p.lock}${p.id === 'port' ? '<small>Билет до Земли: ' + BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽</small>' : ''}</button>`; }
+  else $('msL').innerHTML = p.m.map((k) => { const o = ORDERS[k], st = ORDER_CROP[k] && FARM.inv[ORDER_CROP[k]] ? ' · с дачи: ' + CROPS[ORDER_CROP[k]].e + ' ' + Math.min(10, FARM.inv[ORDER_CROP[k]]) : '';
+    return `<button class="m${o.story ? ' story' : ''}" data-o="${k}">${o.icon} ${o.name}<small>${o.story ? 'Сюжет · ' : ''}${o.desc}${st}</small></button>`; }).join('');
+  $('msL').querySelectorAll('button[data-o]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); ORDER = b.dataset.o; try { localStorage.setItem('bm_order', ORDER); } catch (er) {} $('map').classList.remove('on'); document.body.classList.remove('mapon'); newRun(false); }));
+  $('mapSheet').classList.add('on');
+}
+
+/* ---------- 🔫 ОБОРОНА ДАЧИ: медведи с полюса против дробовика с солью ---------- */
+const BEARS = {
+  cub: { name: 'медвежонок', hp: 1, sp: 7, s: 0.7, steal: 1 },
+  bucket: { name: 'медведь с ведром', hp: 1, sp: 3.6, s: 1.1, steal: 3 },
+  helmet: { name: 'медведь в каске', hp: 2, sp: 4.2, s: 1.15, steal: 2 },
+  boss: { name: 'Михал Потапыч', hp: 6, sp: 3, s: 1.7, steal: 5 },
+};
+const BABKA_SHOT = ['Ишь, сладкоежка!', 'Брысь, мохнатый!', 'Не трожь варенье!', 'В моё время медведи по огородам не лазили!', 'Соли захотел?', 'Получи, варенечник!'];
+const BEAR_OUCH = ['Ай!', 'Уй-уй!', 'Ой, соль!', 'Мама!', 'За что?!'];
+let DF = { active: false };
+function bearMesh(type) {
+  const t = BEARS[type], g = new THREE.Group(), B = new Builder(null, true), fur = type === 'boss' ? '#e8d8c8' : '#e8c8b0';
+  B.add(BALL2, mat(0, 1.0, 0, 0.7, 0.65, 0.95), fur, SMOOTH); B.add(BALL2, mat(0, 1.55, 0.75, 0.45, 0.42, 0.42), fur, SMOOTH);
+  B.add(BALL2, mat(0, 1.45, 1.1, 0.18, 0.14, 0.16), '#c8a890', SMOOTH); B.add(BALL2, mat(0, 1.5, 1.24, 0.07, 0.06, 0.05), '#2a1a14', SMOOTH);
+  for (const sd of [-1, 1]) { B.add(BALL2, mat(sd * 0.3, 1.92, 0.7, 0.13, 0.13, 0.08), fur, SMOOTH); B.add(BALL2, mat(sd * 0.16, 1.66, 1.1, 0.05, 0.05, 0.03), '#1a1010', SMOOTH); }
+  for (const [a, b2] of [[-0.35, -0.5], [0.35, -0.5], [-0.35, 0.5], [0.35, 0.5]]) B.add(CYL, mat(a, 0.4, b2, 0.3, 0.8, 0.3), fur);
+  if (type === 'bucket') B.add(CYL2, mat(0.6, 1.1, 0.5, 0.45, 0.5, 0.45), '#9aa0a8', SMOOTH);
+  if (type === 'helmet') B.add(BALL2, mat(0, 1.85, 0.72, 0.5, 0.28, 0.5), '#e8b030', SMOOTH);
+  if (type === 'boss') { B.add(BALL2, mat(0, 1.9, 0.72, 0.52, 0.3, 0.52), '#ffd040', SMOOTH); B.add(BOX, mat(0, 2.6, 0.2, 1.4, 0.6, 0.06), '#e8dcc0'); B.add(CYL, mat(0, 2.1, 0.2, 0.06, 0.9, 0.06), '#7a5232'); }
+  const m = new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); g.add(m);
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.62, 12, 10), new THREE.MeshBasicMaterial({ color: '#bfe8ff', transparent: true, opacity: 0.2, depthWrite: false })); helm.position.set(0, 1.6, 0.8); g.add(helm);
+  if (type === 'boss') { const c = document.createElement('canvas'); c.width = 256; c.height = 96; const x = c.getContext('2d'); x.fillStyle = '#e8dcc0'; x.fillRect(0, 0, 256, 96); x.fillStyle = '#3a1a10'; x.font = '900 26px system-ui,sans-serif'; x.textAlign = 'center'; x.fillText('ВАРЕНЬЕ —', 128, 40); x.fillText('НАРОДНОЕ!', 128, 76);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.56), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) })); sg.position.set(0, 2.6, 0.24); g.add(sg); }
+  g.scale.setScalar(t.s * 1.5); return g;
+}
+function startDefense() {
+  stopFishing(); stopFarm(); if (!farmScene) buildFarmScene();
+  DF.active = true; document.body.classList.add('def'); $('end').classList.remove('on');
+  if (!DF.g) {
+    DF.g = new THREE.Group(); farmScene.add(DF.g);
+    const C = new Builder(null, true); C.add(BOX, mat(0, 0.15, 0, 2.6, 0.3, 1.8), '#6a4a32'); C.add(BOX, mat(0, 0.32, 0, 2.2, 0.06, 1.4), '#8a6a4a'); for (let k = 0; k < 6; k++) C.add(CYL2, mat(-0.9 + k * 0.36, 0.6, 0, 0.26, 0.5, 0.26), k % 2 ? '#e8303a' : '#ff8a3a', SMOOTH);
+    const cel = new THREE.Mesh(C.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); cel.position.set(0, 0, -6); DF.g.add(cel); DF.cellar = cel;
+    const S = new Builder(null, true); for (const sd of [-0.06, 0.06]) S.add(CYL, mat(sd, 0, 0.55, 0.07, 1.1, 0.07, 0, Math.PI / 2), '#2a2a30'); S.add(BOX, mat(0, -0.05, -0.1, 0.16, 0.16, 0.5), '#6a4028');
+    DF.gun = new THREE.Mesh(S.build(), new THREE.MeshLambertMaterial({ vertexColors: true }));
+    const mf = new GlowList(); mf.add(0, 0, 1.15, '#ffe0a0', 2); DF.flashG = new THREE.Group(); mf.make(DF.flashG, 1.6); DF.gun.add(DF.flashG); DF.flashG.visible = false;
+    DF.salt = []; for (let k = 0; k < 24; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: '#ffffff' })); m.visible = false; DF.g.add(m); DF.salt.push(m); }
+  }
+  DF.g.visible = true; FS.plants.forEach((p) => (p.visible = false)); FS.sparks.forEach((p) => (p.visible = false));
+  farmScene.add(babka); farmScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false; trail.visible = false;
+  babka.position.set(1.2, 0.15, -8.5); babka.rotation.y = 0; FX.flame.visible = FX.flame2.visible = false; FX.pool.visible = false;
+  FX.body.add(DF.gun); DF.gun.position.set(0.25, 1.55, 0.35); DF.gun.rotation.set(0, 0, 0);
+  (DF.bears || []).forEach((b) => DF.g.remove(b.g));
+  Object.assign(DF, { t: 0, left: 60, jars: 12, shells: 2, bears: [], spawnT: 1.2, wave: 0, hits: 0, boss: false, recoil: 0, flashT: 0, st: 'go', sayT: 3 });
+  introCard(ORDERS.defense); radio('<b>Марс-ФМ:</b> внимание, к «Заречной» движется бригада медведей с полярной шапки. Заприте варенье!');
+  hint('Тапай по медведю — выстрел солью. Патроны кончились — <b>перезарядка</b> (кнопка или свайп вниз)', 4500); defHud();
+}
+function stopDefense() { if (!DF.active) return; DF.active = false; document.body.classList.remove('def'); if (DF.g) DF.g.visible = false; if (FS.plants) FS.plants.forEach((p) => (p.visible = true)); FX.body.remove(DF.gun); scene.add(babka); scene.add(skyG); FX.flame.visible = FX.flame2.visible = true; FX.pool.visible = true; }
+function defHud() { $('jars').textContent = '🫙 ' + DF.jars + ' банок в погребе'; [...$('shells').children].forEach((b, i) => b.classList.toggle('e', i >= DF.shells)); $('reload').classList.toggle('need', DF.shells === 0); }
+function defReload() { if (!DF.active || DF.shells === 2) return; DF.shells = 2; defHud(); FX.ded.rotation.z = 0.5; farmFloat2('Дед: «Держи, Таня, патроны!»'); }
+function dfFloat(t, x, y, z, col) { const v = new THREE.Vector3(x, y, z).project(farmCam); const e = document.createElement('div'); e.className = 'f'; e.textContent = t; if (col) e.style.color = col; e.style.left = ((v.x + 1) / 2 * innerWidth) + 'px'; e.style.top = ((1 - v.y) / 2 * innerHeight) + 'px'; $('fl').appendChild(e); setTimeout(() => e.remove(), 950); }
+function farmFloat2(t) { const e = document.createElement('div'); e.className = 'f'; e.textContent = t; e.style.left = '50%'; e.style.top = '62%'; $('fl').appendChild(e); setTimeout(() => e.remove(), 950); }
+function defTap(cx, cy) {
+  if (!DF.active || DF.st !== 'go') return;
+  if (DF.shells <= 0) { farmFloat2('Щёлк! Перезаряди!'); bump($('reload')); return; }
+  DF.shells--; defHud(); DF.recoil = 1; DF.flashT = 0.08; DF.flashG.visible = true; shake = 0.35; flash('#fff2d0', 0.25);
+  // ищем медведя под пальцем
+  let best = null, bd = 1e9;
+  for (const b of DF.bears) { if (b.run) continue; const p = new THREE.Vector3(b.x, 1.9 * BEARS[b.type].s, b.z).project(farmCam), sx = (p.x + 1) / 2 * innerWidth, sy = (1 - p.y) / 2 * innerHeight, d = Math.hypot(sx - cx, sy - cy), rad = 110 * BEARS[b.type].s * (14 / Math.max(6, b.z + 16)); if (d < Math.max(38, rad) && d < bd) { bd = d; best = b; } }
+  // солевой заряд летит в точку
+  const tgt = best ? new THREE.Vector3(best.x, 1.2, best.z) : new THREE.Vector3((cx / innerWidth - 0.5) * 30, 1, 20);
+  DF.salt.forEach((m, k) => { m.visible = true; m.position.set(1.5 + rnd(-0.1, 0.1), 1.9, -7.6); m.userData.v = tgt.clone().sub(m.position).normalize().multiplyScalar(rnd(38, 48)).add(new THREE.Vector3(rnd(-2, 2), rnd(-1, 2), rnd(-2, 2))); m.userData.t = 0.6; });
+  if (!best) return;
+  best.hp--; best.hitT = 0.4; DF.hits++;
+  if (best.hp <= 0) { best.run = true; best.dropped = best.carry; best.carry = 0; dfFloat(BEAR_OUCH[Math.floor(Math.random() * BEAR_OUCH.length)], best.x, 2.4, best.z, '#ffcf6a');
+    if (best.dropped) { DF.jars += best.dropped; defHud(); farmFloat2('Банка спасена! 🫙'); }
+    if (best.type === 'boss') { showMsg('Михал Потапыч бежит!', 'держится за мягкое место и обещает вернуться с пластырем', '#ffd040', 2200); radio('<b>Марс-ФМ:</b> медвежий профсоюз сообщает: Михал Потапыч взял больничный'); }
+    else if (Math.random() < 0.5) showMsg(BABKA_SHOT[Math.floor(Math.random() * BABKA_SHOT.length)], '', '#ffcf8a', 900); }
+  else dfFloat('Бум! Ещё ' + best.hp, best.x, 2.6, best.z, '#ffffff');
+}
+const farmGroundY = (x, z) => { const r = Math.hypot(x, z); return r > 22 ? (Math.sin(x * 0.05) + Math.sin(z * 0.07)) * Math.min(8, (r - 22) * 0.2) : 0; };
+function spawnBear() {
+  DF.wave++; const r = Math.random(), type = !DF.boss && DF.t > 38 ? 'boss' : r < 0.35 ? 'cub' : r < 0.7 ? 'bucket' : 'helmet'; if (type === 'boss') DF.boss = true;
+  const g = bearMesh(type); DF.g.add(g); const x = rnd(-12, 12), z = rnd(24, 32);
+  DF.bears.push({ type, g, x, z, hp: BEARS[type].hp, run: false, carry: 0, hitT: 0, ph: Math.random() * 6 });
+  if (type === 'boss') { showMsg('Михал Потапыч!', 'главный по варенью, в золотом шлеме', '#ffd040', 1800); warnBanner('МИХАЛ ПОТАПЫЧ'); }
+}
+function defFrame(dt, now) {
+  const tsec = now / 1000; DF.t += dt; if (DF.st === 'go') DF.left -= dt;
+  const port = innerWidth < innerHeight; farmCam.aspect = innerWidth / innerHeight; farmCam.fov = port ? 70 : 55; farmCam.updateProjectionMatrix();
+  farmCam.position.set(3.2, port ? 7.5 : 6.2, port ? -17 : -15.5); farmCam.lookAt(0, 1.2, 9);
+  if (shake > 0) { farmCam.position.x += (Math.random() - 0.5) * shake; farmCam.position.y += (Math.random() - 0.5) * shake; shake = Math.max(0, shake - dt * 2); }
+  // волны
+  DF.spawnT -= dt; if (DF.st === 'go' && DF.spawnT <= 0 && DF.left > 4) { spawnBear(); DF.spawnT = Math.max(0.9, 2.6 - DF.t * 0.03) * rnd(0.7, 1.2); if (DF.t > 20 && Math.random() < 0.3) spawnBear(); }
+  DF.bears = DF.bears.filter((b) => {
+    const T = BEARS[b.type];
+    if (b.run) { b.z += dt * 16; b.x += Math.sin(b.ph) * dt * 4; b.g.rotation.y = Math.PI; b.g.position.y = Math.abs(Math.sin(tsec * 18)) * 0.5; if (b.z > 70) { DF.g.remove(b.g); return false; } }
+    else if (b.carry) { b.z += dt * T.sp * 0.8; b.g.rotation.y = Math.PI; if (b.z > 60) { DF.g.remove(b.g); return false; } }
+    else { const dx = 0 - b.x, dz = -6 - b.z, d = Math.hypot(dx, dz); b.x += dx / d * dt * T.sp; b.z += dz / d * dt * T.sp; b.g.rotation.y = Math.atan2(dx, dz);
+      if (d < 1.8) { const n = Math.min(DF.jars, T.steal); DF.jars -= n; b.carry = n || 1; defHud(); bump($('jars')); flash('#ff3a2a', 0.3); showMsg(n ? 'Утащил ' + plural(n, 'банку', 'банки', 'банок') + '!' : 'Погреб пуст!', b.type === 'boss' ? 'Михал Потапыч доволен' : 'Дед: «Таня, он с вареньем удирает!»', '#ff8a6a', 1200, true); } }
+    const jump = !b.run && b.z < 8.5 && b.z > 6.5 ? Math.sin((8.5 - b.z) / 2 * Math.PI) * 1.2 : 0; // через забор
+    if (!b.run) b.g.position.y = farmGroundY(b.x, b.z) + jump + Math.abs(Math.sin(tsec * 10 + b.ph)) * 0.12; else b.g.position.y += farmGroundY(b.x, b.z);
+    b.g.position.x = b.x; b.g.position.z = b.z; if (b.hitT > 0) { b.hitT -= dt; b.g.position.y += b.hitT * 2; b.g.rotation.z = Math.sin(b.hitT * 40) * 0.2; } else b.g.rotation.z = 0;
+    return true;
+  });
+  // соль, отдача, вспышка
+  DF.salt.forEach((m) => { if (!m.visible) return; m.userData.t -= dt; m.position.addScaledVector(m.userData.v, dt); if (m.userData.t <= 0) m.visible = false; });
+  DF.recoil = Math.max(0, DF.recoil - dt * 6); FX.body.rotation.x = -DF.recoil * 0.12; DF.gun.rotation.x = -DF.recoil * 0.4;
+  if (DF.flashT > 0) { DF.flashT -= dt; if (DF.flashT <= 0) DF.flashG.visible = false; }
+  FX.ded.rotation.z += (0 - FX.ded.rotation.z) * Math.min(1, dt * 3); FX.cat.scale.setScalar(DF.bears.some((b) => !b.run && b.z < 10) ? 0.6 : 1); FX.tail.rotation.z = Math.sin(tsec * 3) * 0.6;
+  DF.sayT -= dt; if (DF.sayT <= 0) { DF.sayT = rnd(7, 11); radio(['<b>Дед:</b> Таня, левее! Ещё левее! Это я, не стреляй!', '<b>Соседка Валя:</b> у меня медведей нет. Потому что у меня варенье невкусное', '<b>Марс-ФМ:</b> медведи требуют признать варенье общенародным достоянием', '<b>Макс:</b> баб Тань, оставь хоть одну банку!', '<b>Гоша</b> спрятался под лавку и делает вид, что так и задумано'][Math.floor(Math.random() * 5)]); }
+  $('order').textContent = '🔫 ' + fmt(Math.max(0, DF.left)) + ' до рассвета · попаданий: ' + DF.hits; $('order').classList.toggle('bad', DF.jars <= 3);
+  if (DF.st === 'go' && (DF.left <= 0 || DF.jars <= 0)) endDefense();
+  skyG.position.copy(farmCam.position); renderer.render(farmScene, farmCam); adapt(dt);
+}
+function endDefense() {
+  DF.st = 'end'; const jars = DF.jars, pay = jars * 60 + DF.hits * 10;
+  const title = jars >= 10 ? 'Погреб цел! Медведи ушли за пластырями' : jars >= 5 ? 'Отбились! Полпогреба варенья спасено' : jars > 0 ? 'Медведи наелись, но и бабка не сдалась' : 'Погреб пуст. Медведи пишут благодарность';
+  $('etitle').innerHTML = letters(title, 0.025); $('esub').textContent = '🔫 Оборона дачи · дробовик с солью';
+  const st = jars >= 10 ? 3 : jars >= 5 ? 2 : 1; $('estars').innerHTML = [0, 1, 2].map((i) => `<span style="animation-delay:${0.45 + i * 0.28}s">${i < st ? '★' : '☆'}</span>`).join('');
+  $('etab').innerHTML = `<tr><td>Банок спасено</td><td>${jars} из 12</td></tr><tr><td>Попаданий солью</td><td>${DF.hits}</td></tr><tr><td>Михал Потапыч</td><td>${DF.boss ? (DF.bears.some((b) => b.type === 'boss' && !b.run) ? 'ушёл с вареньем' : 'бежал с пластырем') : 'не пришёл'}</td></tr><tr><td><b>Продано варенья на рынке</b></td><td><b>+${pay} ₽</b></td></tr>`;
+  FARM.inv.straw = (FARM.inv.straw || 0) + Math.floor(jars / 3); saveFarm();
+  const before = BANK; BANK += pay; try { localStorage.setItem('bm_bank', BANK); } catch (e) {}
+  $('banki').style.width = Math.min(100, before / TICKET * 100) + '%'; setTimeout(() => ($('banki').style.width = Math.min(1, BANK / TICKET) * 100 + '%'), 1100);
+  $('bankt').textContent = BANK.toLocaleString('ru') + ' из ' + TICKET.toLocaleString('ru') + ' ₽' + (jars >= 3 ? ' · 🍓 +' + Math.floor(jars / 3) + ' в запасы' : '');
+  showMsg('Рассвет!', 'медведи отступили на полюс', '#ffcf8a', 1500); setTimeout(() => $('end').classList.add('on'), 1300);
+}
+$('reload').onclick = (e) => { e.stopPropagation(); defReload(); };
 
 /* ---------- 🎣 РЫБАЛКА в ледяном кратере Королёва ---------- */
 const FISHES = [
@@ -1441,7 +1639,7 @@ function fishMesh(f) {
   g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true, emissive: f.glow ? f.col : '#000', emissiveIntensity: f.glow ? 0.6 : 0 })));
 }
 function startFishing() {
-  stopFarm(); if (!fishScene) buildFishScene();
+  stopFarm(); stopDefense(); if (!fishScene) buildFishScene();
   FISH.active = true; document.body.classList.add('fish'); $('end').classList.remove('on');
   // вся команда приехала: кресло с бабкой, дед в люльке, Гоша — у лунки
   fishScene.add(babka); fishScene.add(skyG); babka.visible = true; tank.visible = false; drone.visible = false;
@@ -1542,7 +1740,7 @@ function endFishing() {
 
 /* ---------- старт: первый кадр, заезд сам через ~1 с ---------- */
 let firstEver = true; try { firstEver = !localStorage.getItem('bm_seen'); localStorage.setItem('bm_seen', '1'); } catch (e) {}
-if (firstEver || ORDER === 'fish' || ORDER === 'farm') ORDER = 'potato'; // первый заход — всегда езда
+if (firstEver || ORDER === 'fish' || ORDER === 'farm' || ORDER === 'defense') ORDER = 'potato'; // первый заход — всегда езда
 genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
@@ -1552,7 +1750,7 @@ function afterFirst() {
   setTimeout(loadModels, 150);
   setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
 }
-window.BM = { FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
