@@ -175,6 +175,10 @@ body.walk #combo,body.farm #combo,body.def #combo,body.fish #combo,body.walk #sp
 #spd,#time,#pot{font-family:KFuture,system-ui,sans-serif;letter-spacing:.02em}
 #snd{background:rgba(30,14,22,.6) center/22px no-repeat}#snd[data-m='2']{background-image:url(assets/ui/musicOn.png)}#snd[data-m='1']{background-image:url(assets/ui/audioOn.png)}#snd[data-m='0']{background-image:url(assets/ui/audioOff.png)}
 button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .ic{filter:none}#toMap .ic{filter:invert(1) brightness(.2)}
+#haggle{display:none;position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));margin:0 auto;max-width:440px;z-index:12;border-radius:18px;padding:14px}body.trading #haggle{display:block;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}body.trading #joy{display:none!important}
+#haggle .hw{font-weight:800;font-size:15px;color:var(--dim)}#haggle .hp{font-size:28px;font-weight:900;margin:4px 0 10px}#haggle .hp small{display:block;font-size:14px;color:var(--dim);font-weight:600;margin-top:2px}#haggle .btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}#haggle .hs{min-height:20px;margin:8px 0;font-size:14px;color:#ffd27a}
+#haggle .hb{position:relative;height:22px;border-radius:11px;background:linear-gradient(90deg,#ff5a4a,#ffb04a 50%,#ff5a4a)}#hgOk{position:absolute;top:0;bottom:0;border-radius:11px;background:#4ad86a;box-shadow:0 0 12px #4ad86a}#hgNd{position:absolute;top:-5px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 8px #000}
+#haggle button{border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:var(--hot);color:#2a1406}#haggle button.alt{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--line)}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -213,6 +217,7 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <button id="snd" aria-label="Звук"></button>
+<div id="haggle" class="g"><div class="hw" id="hgWho"></div><div class="hp"><span id="hgItem"></span> <b id="hgPrice">0</b> ₽ <small id="hgPat"></small></div><div class="hb"><i id="hgOk"></i><i id="hgNd"></i></div><div class="hs" id="hgSay"></div><div class="btns2"><button id="hgTalk" class="alt">🗣 Торговаться</button><button id="hgSell">🤝 Продать</button></div></div>
 <div id="joy"><i><b>◀</b><b>▶</b></i><div id="knob"></div></div>
 <div id="err"></div>
 <script>
@@ -936,6 +941,8 @@ const ORDERS = {
   w_goat: { name: 'Зорька сбежала!', icon: '🐐', desc: 'Пешком: коза удрала и прыгает на 6 метров. Загони её в сарай', who: 'Коза Зорька', km: false },
   w_steal: { name: 'Верни лейку', icon: '🚿', desc: 'Пешком, тихо: Валя утащила лейку. Крадись, пока она смотрит в телескоп', who: 'Соседка Валя', km: false },
   w_clinic: { name: 'Поликлиника №1', icon: '🏥', desc: 'Пешком: талон у робота-регистратора, очередь и «я только спросить». Успей к доктору', who: 'Робот Валерий', km: false },
+  w_office: { name: 'Офис «ТрансМарса»', icon: '🏢', desc: 'Пешком, тихо: Гоша утащил печать Димона. Найди и принеси, не попадаясь Эдуарду Кузьмичу', who: 'Димон и квартальный отчёт', km: false },
+  w_market: { name: 'Рынок «Красная пыль»', icon: '🛒', desc: 'Пешком: продай урожай роботам подороже. Торгуйся — жми, когда стрелка в зелёном', who: 'Роботы-покупатели', km: false },
   fish: { name: 'Рыбалка в кратере', icon: '🎣', desc: 'Подлёдная рыбалка с дедом и Гошей. Лови, пока клюёт', who: 'Кратер Королёва', km: false },
   dimon: { name: 'Димон: Опоздание №1', icon: '🚙', desc: 'Танк 003 к маме на новоселье. Обещал к шести. Выехал в 17:58', who: 'Мама ждёт', story: 1 },
 };
@@ -1167,7 +1174,7 @@ function joyMove(e) { if (e.pointerId !== JOY.id) return; let dx = (e.clientX - 
 function joyEnd(e) { if (e && e.pointerId !== JOY.id) return; JOY.id = null; JOY.x = JOY.y = 0; joyPlace(); }
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#haggle')) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { joyMove(e); if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; joyEnd(e); touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
@@ -1538,8 +1545,8 @@ const PLACES_MAP = [
   { id: 'street', e: '🔭', name: 'Улица Садовая', x: 46, y: 86, d: 'Соседка Валя, её телескоп и наша лейка', m: ['w_steal'] },
   { id: 'kids', e: '🏠', name: 'Дом внуков', x: 72, y: 74, d: 'Макс и Лёха ждут гостинцы. Доставка на турбо-кресле по трассе', m: ['potato', 'jam', 'pies', 'seed'] },
   { id: 'crater', e: '🧊', name: 'Кратер Королёва', x: 76, y: 30, d: 'Подлёдная рыбалка. Говорят, тут живёт Царь-сом', m: ['fish'] },
-  { id: 'trans', e: '🏢', name: 'Офис «ТрансМарса»', x: 44, y: 42, d: 'Тут работает Димон, «логист стратегического уровня»', m: ['dimon'] },
-  { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', lock: 'Скоро: торг с роботами' },
+  { id: 'trans', e: '🏢', name: 'Офис «ТрансМарса»', x: 44, y: 42, d: 'Тут работает Димон, «логист стратегического уровня»', m: ['dimon', 'w_office'] },
+  { id: 'market', e: '🛒', name: 'Рынок «Красная пыль»', x: 18, y: 38, d: 'Торг, роботы-покупатели, курс картошки', m: ['w_market'] },
   { id: 'clinic', e: '🏥', name: 'Поликлиника №1', x: 52, y: 58, d: 'Робот-регистратор Валерий, очередь и «я только спросить»', m: ['w_clinic'] },
   { id: 'port', e: '🚀', name: 'Космодром', x: 84, y: 54, d: 'Билет на Землю', lock: 'Финал: копилка' },
   { id: 'olymp', e: '🌋', name: 'Гора Олимп', x: 22, y: 22, d: 'Спит. Пока', lock: 'Скоро: извержение' },
@@ -1811,8 +1818,8 @@ const FIND_ITEMS = [
 let clinicScene = null, KCL = null; const CL = {};
 function signTex(lines, bg, fg, w = 512, h = 192, size = 44) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.fillStyle = fg; x.font = '900 ' + size + 'px system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; lines.forEach((t, i) => x.fillText(t, w / 2, h / 2 + (i - (lines.length - 1) / 2) * size * 1.15)); return new THREE.CanvasTexture(c); }
 function signMesh(lines, w, h, bg = '#f0ece0', fg = '#2a3a5a', size) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: signTex(lines, bg, fg, 512, Math.round(512 * h / w), size) })); return m; }
-function buildClinic() {
-  const S = clinicScene = new THREE.Scene(); S.background = new THREE.Color('#2a2430'); S.fog = new THREE.Fog('#2a2430', 30, 60);
+function buildClinic(k) {
+  KCL = k; const S = clinicScene = new THREE.Scene(); S.background = new THREE.Color('#2a2430'); S.fog = new THREE.Fog('#2a2430', 30, 60);
   S.add(new THREE.HemisphereLight('#fff4e8', '#6a5a60', 1.05)); const dl = new THREE.DirectionalLight('#ffffff', 0.35); dl.position.set(0.3, 1, 0.6); S.add(dl);
   const lamps = [{ x: -4, y: 3.5, z: -2, R: 10, I: 0.7, r: 1, g: 0.95, b: 0.85 }, { x: 4, y: 3.5, z: 1, R: 10, I: 0.7, r: 0.85, g: 0.95, b: 1 }];
   const B = new Builder(lamps), put = (m, x, z, sc, ry = 0, y = 0) => { if (KCL && KCL[m]) B.add(KCL[m], mat(x, y, z, sc, sc, sc, ry), null, { vcol: true, vk: 1.15 }); };
@@ -1845,11 +1852,157 @@ function buildClinic() {
   monster('robot', 2.0, 'RobotArmature|Robot_Idle').then((r) => { r.position.set(-4.5, 0, -6.2); S.add(r); CL.robot = r; }).catch(() => {});
   monster('h_doctor_female_old', 1.8, 'Idle').then((r) => { r.position.set(4.5, 0, -6.9); S.add(r); CL.doc = r; }).catch(() => {});
   [['h_cowboy_male', 1.5, 1.9, Math.PI], ['h_oldclassy_female', 4.4, 1.9, Math.PI], ['h_worker_male', 6.2, -4.2, Math.PI * 0.8]].forEach(([n, x, z, ry]) => monster(n, 1.75, 'Idle').then((r) => { r.position.set(x, 0, z); r.rotation.y = ry; S.add(r); }).catch(() => {}));
+  return S;
 }
 function clinicBoard(lines, col) { const t = CL.board.material.map; t.image = signTex(lines, '#0a1a2a', col || '#7fffb0', 512, 289, 70).image; t.needsUpdate = true; }
+/* ---------- 🏢 ОФИС «ТРАНСМАРСА»: печать для Димона, Эдуард Кузьмич на обходе ---------- */
+let officeScene = null; const OF = {};
+function buildOffice(K) {
+  const S = officeScene = new THREE.Scene(); S.background = new THREE.Color('#1e2228'); S.fog = new THREE.Fog('#1e2228', 30, 60);
+  S.add(new THREE.HemisphereLight('#eef4ff', '#5a5a66', 1.05)); const dl = new THREE.DirectionalLight('#ffffff', 0.35); dl.position.set(-0.3, 1, 0.5); S.add(dl);
+  const B = new Builder([{ x: 0, y: 3.5, z: -2, R: 12, I: 0.6, r: 0.9, g: 0.95, b: 1 }]), put = (m, x, z, sc, ry = 0, y = 0) => { if (K[m]) B.add(K[m], mat(x, y, z, sc, sc, sc, ry), null, { vcol: true, vk: 1.15 }); };
+  const fg = new THREE.PlaneGeometry(21, 15, 21, 15); fg.rotateX(-Math.PI / 2); B.add(fg, mat(0, 0, 0), (cx, cy, cz) => TC.set((Math.floor(cx + 20) + Math.floor(cz + 20)) % 2 ? '#5a6878' : '#4e5c6c')); // ковролин
+  for (let x = -9; x <= 9; x += 3) put(x === 6 ? 'o_wallDoorway' : 'o_wallWindow', x, -7.4, 3);
+  for (let z = -6; z <= 6; z += 3) { put(z === 3 ? 'o_wallDoorway' : 'o_wall', -10.4, z, 3, Math.PI / 2); put('o_wallWindow', 10.4, z, 3, -Math.PI / 2); }
+  B.add(BOX, mat(0, 0.15, 7.6, 21, 0.3, 0.2), '#3a4450');
+  // опенспейс: ряды столов с мониторами и креслами
+  OF.desks = [];
+  for (const [x, z] of [[-5, -3], [-2, -3], [1, -3], [-5, 1.5], [-2, 1.5], [1, 1.5]]) { put('o_desk', x, z, 3, Math.PI); put('o_computerScreen', x, z - 0.1, 2.6, Math.PI, 1.14); put('o_chairDesk', x, z + 1.2, 3, Math.PI); OF.desks.push([x, z]); }
+  put('o_deskCorner', 7.5, -5.2, 3, Math.PI); put('o_laptop', 7.4, -5.4, 2.6, Math.PI, 1.14); put('o_chairDesk', 7.5, -6.4, 3); // кабинет Эдуарда Кузьмича
+  // кофемашина, принтер (машина Space Kit), фикусы, шкафы, диван, коробки курьера
+  put('o_kitchenFridgeSmall', 8.8, 3.2, 3, -Math.PI / 2); put('o_kitchenCoffeeMachine', 8.9, 1.6, 3, -Math.PI / 2, 1.2); put('o_tableCoffee', 7.4, 1.6, 2.6);
+  put('o_machine_generator', -8.6, -5.6, 2.6, Math.PI / 2); put('o_bookcaseOpen', -9.6, -1.5, 3, Math.PI / 2); put('o_bookcaseOpen', 4.4, -6.7, 3);
+  for (const [x, z] of [[-7.6, -0.5], [3.4, -0.8], [4.2, 3.6], [-7.8, 5.8], [9.4, -6.6]]) put('o_pottedPlant', x, z, 3.2);
+  put('o_loungeSofa', 6.4, 5.8, 2.6, Math.PI); put('o_cardboardBoxClosed', -6.2, 5.6, 3, 0.4); put('o_cardboardBoxClosed', -5.4, 6.2, 2.6, 1.2, 0); put('o_coatRackStanding', -9.6, 1.4, 3); put('o_trashcan', 2.6, 5.8, 3); put('o_barrels', 9.0, 5.8, 2.4);
+  S.add(new THREE.Mesh(B.build(), bakedMat));
+  const sg = (lines, w, h, x, y, z, ry, bg, fg2, size) => { const m = signMesh(lines, w, h, bg, fg2, size); m.position.set(x, y, z); m.rotation.y = ry; S.add(m); return m; };
+  sg(['«ТРАНСМАРС»', 'доставим даже на Марс'], 5.6, 1.2, -2, 3.3, -7.25, 0, '#c84a1a', '#ffffff', 34);
+  sg(['Э. К. ПЕРВОМАЙСКИЙ', 'начальник отдела логистики'], 2.6, 0.8, 7.5, 3.2, -7.2, 0, '#f0ece0', '#2a2a3a', 30);
+  sg(['КВАРТАЛЬНЫЙ ОТЧЁТ —', 'СДАТЬ ВЧЕРА'], 2.8, 1.0, 10.3, 2.4, -1.6, -Math.PI / 2, '#fff8d0', '#8a2a1a', 34);
+  sg(['ПЛАНЁРКА', 'каждые 15 минут'], 2.4, 0.9, 10.3, 2.4, 4.5, -Math.PI / 2, '#e8f0ff', '#1a2a6a', 40);
+  if (K.o_televisionModern) { const tv = new THREE.Mesh(K.o_televisionModern, KMAT); tv.scale.setScalar(3.4); tv.position.set(1.5, 2.0, -7.15); S.add(tv); }
+  OF.tv = signMesh(['ГРУЗОВ: 0', 'ЖАЛОБ: 4 000 017'], 2.1, 1.15, '#0a1a2a', '#ffcf6a', 52); OF.tv.position.set(1.5, 2.75, -6.92); S.add(OF.tv);
+  // зона взгляда начальника
+  const cg = new THREE.CircleGeometry(5, 20, -0.5, 1.0); cg.rotateX(-Math.PI / 2); OF.cone = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ color: '#ff3a3a', transparent: true, opacity: 0.22, depthWrite: false })); S.add(OF.cone);
+  OF.eyes = emojiSprite('👀', 1.0, 'rgba(255,120,120,.8)'); S.add(OF.eyes);
+  OF.stamp = emojiSprite('🔖', 1.0); S.add(OF.stamp);
+  OF.zone = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.3, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7aff8a', transparent: true, opacity: 0.6, depthWrite: false })); S.add(OF.zone);
+  monster('h_suit_male', 1.85, 'Walk').then((r) => { S.add(r); OF.boss = r; }).catch(() => {});
+  monster('h_dimon', 1.8, 'Idle').then((r) => { r.position.set(-0.7, 0, 2.9); r.rotation.y = Math.PI * 0.8; S.add(r); OF.dimon = r; }).catch(() => {});
+  [['h_oldclassy_female', -5, -1.8, Math.PI], ['h_worker_male', 1, -1.8, Math.PI], ['h_cowboy_male', 7.6, 3.4, -Math.PI / 2]].forEach(([n, x, z, ry]) => monster(n, 1.75, 'Idle').then((r) => { r.position.set(x, 0, z); r.rotation.y = ry; S.add(r); }).catch(() => {}));
+  return S;
+}
+function officeTv(lines, col) { const t = OF.tv.material.map; t.image = signTex(lines, '#0a1a2a', col || '#ffcf6a', 512, 280, 52).image; t.needsUpdate = true; }
+const OF_SPOTS = [{ n: 'кофемашина', x: 7.9, z: 1.6, no: 'В кофемашине только кофе. И то растворимый' }, { n: 'принтер', x: -7.5, z: -5.6, no: 'Принтер зажевал отчёт и просит ещё' }, { n: 'фикус', x: 3.4, z: 0.4, no: 'Под фикусом — заначка бухгалтерии. Не трогаем' }, { n: 'коробка курьера', x: -5.8, z: 4.6, no: 'В коробке — тапки. Срочные. С 2071 года' }];
+const BOSS_PATH = [[6.5, -4.6], [3.0, -1.0], [-3.5, -0.6], [-6.8, -3.6], [-0.5, -0.6], [2.6, 4.0], [5.6, 2.6]];
+const BOSS_SAY = ['Посторонним вход воспрещён!', 'Это кто? Это чья бабушка?', 'Дмитрий! Ваша мама опять тут!', 'Пропуск! Где ваш пропуск?!'];
+const OF_COVER = [[-7.6, -0.5], [3.4, -0.8], [4.2, 3.6], [-7.8, 5.8], [-9.6, -1.5], [4.4, -6.7], [6.4, 5.8], [-6.2, 5.6]];
+/* ---------- 🛒 РЫНОК «КРАСНАЯ ПЫЛЬ»: торг с роботами ---------- */
+let marketScene = null; const MK = { buyers: [] };
+const MK_GOODS = { potato: { e: '🥔', n: 'картошка', p: 30, m: 'm_beet' }, straw: { e: '🍓', n: 'клубника', p: 60, m: 'm_strawberry' }, cabbage: { e: '🥬', n: 'капуста', p: 50, m: 'm_cabbage' }, dill: { e: '🌿', n: 'укроп', p: 20, m: 'm_carrot' }, jam: { e: '🫙', n: 'варенье', p: 90, m: 'm_honey' } };
+const MK_TRICK = ['Внуки голодают!', 'Это с Земли, экологичное!', 'Вчера было дороже!', 'Сама растила, сама пела ему песни!', 'Без ГМО! Только радиация!', 'У Вали гнилое, а у меня — душа!'];
+const MK_NO = { robot: ['ОШИБКА 402: ДОРОГО', 'Мой бюджет — 3 болта', 'Пересчитываю… Нет'], human: ['Бабушка, побойтесь бога!', 'За такие деньги — на Фобосе дешевле', 'Да ну, грабёж!'], blob: ['Бульк?!', 'Хлюп-хлюп (возмущённо)', 'Блоб не понимает'] };
+const MK_AN = { robot: { walk: 'RobotArmature|Robot_Walking', idle: 'RobotArmature|Robot_Idle', yes: 'RobotArmature|Robot_Yes', no: 'RobotArmature|Robot_No', joy: 'RobotArmature|Robot_ThumbsUp' }, human: { walk: 'Walk', idle: 'Idle', yes: 'Victory', no: 'Defeat', joy: 'Victory' }, blob: { walk: 'Walk', idle: 'Idle', yes: 'Yes', no: 'Jump', joy: 'Dance' } };
+const MK_STALLS = [[-6, -4.2], [0, -4.2], [6, -4.2], [-6, 3.8], [6, 3.8]];
+const MK_WP = [[-8, -1], [-3, -1.2], [3, -0.8], [8, -1.1], [-3, 1.2], [3, 1.0], [-3, 4.2], [3, 4.6], [0, 0.8], [-8.4, 1.2], [8.4, 1.2]];
+function buildMarket(K) {
+  const S = marketScene = new THREE.Scene(); S.background = new THREE.Color('#5a3040'); S.fog = new THREE.Fog('#5a3040', 30, 70);
+  S.add(new THREE.HemisphereLight('#ffe8d8', '#5a3028', 1.1)); const dl = new THREE.DirectionalLight('#ffd8b0', 0.45); dl.position.set(0.5, 1, 0.4); S.add(dl);
+  const B = new Builder([{ x: 0, y: 4, z: 0, R: 14, I: 0.5, r: 1, g: 0.8, b: 0.6 }]), put = (m, x, z, sc, ry = 0, y = 0) => { if (K[m]) B.add(K[m], mat(x, y, z, sc, sc, sc, ry), null, { vcol: true, vk: 1.15 }); };
+  const fg = new THREE.PlaneGeometry(26, 20, 26, 20); fg.rotateX(-Math.PI / 2); B.add(fg, mat(0, 0, 0), (cx, cy, cz) => TC.set(Math.abs(cz - 0) < 1.6 || Math.abs(cx) < 1.4 ? '#9a6a52' : '#b8704a').multiplyScalar(0.92 + Math.sin(cx * 1.3 + cz) * 0.05)); // утоптанная красная пыль
+  // прилавки под навесами, с товаром
+  const FOOD = ['m_pumpkin', 'm_cabbage', 'm_carrot', 'm_tomato', 'm_apple', 'm_strawberry', 'm_honey', 'm_can', 'm_beet', 'm_bread', 'm_fish', 'm_banana', 'm_corn'];
+  MK_STALLS.forEach(([x, z], k) => { const ry = z < 0 ? 0 : Math.PI; put('m_structure-canvas', x, z, 6.4, ry); put('m_tableCloth', x, z + (z < 0 ? 0.9 : -0.9), 3.4, ry);
+    for (let q = 0; q < 4; q++) put(FOOD[(k * 3 + q) % FOOD.length], x - 1.0 + q * 0.7, z + (z < 0 ? 0.9 : -0.9), 2.2, q, 1.12);
+    put(k % 2 ? 'm_barrel' : 'm_box-large', x + 1.9, z + (z < 0 ? -0.6 : 0.6), 3.2, k); put('m_box', x - 1.9, z + (z < 0 ? -0.8 : 0.8), 3, k * 0.7); put('m_stoolBar', x + 0.4, z + (z < 0 ? -0.5 : 0.5), 2.6); });
+  put('m_machine_wireless', -9.8, 4.4, 2.4, Math.PI / 2); put('m_barrels', 9.8, -6.8, 3); put('m_tent-canvas', -10, -7, 3.4, 0.4); put('m_signpost', 1.8, 7.2, 3.4); put('m_rocks_smallA', 11, 6, 4); put('m_rocks_smallA', -11.5, -2, 3.4, 1);
+  for (let x = -12; x <= 12; x += 2.4) { B.add(BOX, mat(x, 0.5, -9.2, 0.18, 1, 0.18), '#6a4a3a'); } B.add(BOX, mat(0, 0.85, -9.2, 24, 0.12, 0.1), '#6a4a3a');
+  S.add(new THREE.Mesh(B.build(), bakedMat));
+  const sg = (lines, w, h, x, y, z, ry, bg, fg2, size) => { const m = signMesh(lines, w, h, bg, fg2, size); m.position.set(x, y, z); m.rotation.y = ry; S.add(m); return m; };
+  sg(['РЫНОК', '«КРАСНАЯ ПЫЛЬ»'], 6, 1.4, 0, 4.2, -8.6, 0, '#a8302a', '#ffe8a0', 50);
+  sg(['У ВАЛИ ДЕШЕВЛЕ', 'чем у Тани'], 2.4, 0.8, 0, 3.4, -4.2, 0, '#f0ece0', '#6a1a3a', 40);
+  sg(['КУРС КАРТОШКИ:', '1 🥔 = 0,3 кислорода'], 3, 0.9, -6, 3.4, -4.2, 0, '#0a1a2a', '#7fffb0', 36);
+  sg(['ТОРГ УМЕСТЕН', 'роботы — со скидкой на болты'], 3, 0.9, 6, 3.4, -4.2, 0, '#fff8d0', '#3a2a1a', 30);
+  for (let k = 0; k < 2; k++) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 4.4, 8), new THREE.MeshLambertMaterial({ color: '#5a3a2a' })); pole.position.set(k ? 3.1 : -3.1, 2.2, -8.6); S.add(pole); }
+  // покупатели: два робота, пришелец-слизень, дама, ковбой
+  MK.buyers = []; [['robot', 'robot', 1.8], ['robot', 'robot', 1.8], ['alien', 'blob', 1.6], ['h_oldclassy_female', 'human', 1.75], ['h_cowboy_male', 'human', 1.8]].forEach(([n, kind, h], k) => {
+    const b = { kind, x: MK_WP[k * 2][0], z: MK_WP[k * 2][1], t: MK_WP[(k * 2 + 3) % MK_WP.length], want: null, wantT: rnd(2, 8), obj: null, sp: null, h: 0 }; MK.buyers.push(b);
+    monster(n, h, MK_AN[kind].walk).then((r) => { b.obj = r; S.add(r); }).catch(() => {}); });
+  return S;
+}
+function mkGoods() { const g = {}; for (const k of ['potato', 'straw', 'cabbage', 'dill']) g[k] = Math.min(4, FARM.inv[k] || 0); const tot = Object.values(g).reduce((a, v) => a + v, 0); g.jam = tot < 6 ? 6 - tot : 0; return g; }
+function mkTradeUI() { const T = MK.trade, G = MK_GOODS[T.item]; $('hgWho').textContent = (T.b.kind === 'robot' ? '🤖 Робот-покупатель' : T.b.kind === 'blob' ? '👽 Пришелец-слизень' : '🧑 Колонист') + ' хочет: ' + G.n; $('hgItem').textContent = G.e; $('hgPrice').textContent = T.price; $('hgPat').textContent = 'терпение ' + '❤'.repeat(T.pat) + '♡'.repeat(3 - T.pat) + ' · обычная цена ' + G.p + ' ₽'; $('hgOk').style.left = ((T.okC - T.okW / 2) * 100) + '%'; $('hgOk').style.width = (T.okW * 100) + '%'; }
+function mkClose(sold) { const T = MK.trade; if (!T) return; const b = T.b, A = MK_AN[b.kind]; if (b.obj) b.obj.userData.play(sold ? A.joy : A.no); setTimeout(() => b.obj && b.obj.userData.play(A.walk), 1500); b.want = null; b.wantT = rnd(5, 9); if (b.sp) b.sp.visible = false; b.pause = 1.6; MK.trade = null; document.body.classList.remove('trading'); }
+$('hgTalk').onclick = (e) => { e.stopPropagation(); const T = MK.trade; if (!T) return; const x = 0.5 + 0.5 * Math.sin(T.ph), A = MK_AN[T.b.kind];
+  if (Math.abs(x - T.okC) < T.okW / 2) { T.price = Math.round(T.price * rnd(1.12, 1.24)); T.sp *= 1.18; T.okW = Math.max(0.08, T.okW * 0.82); T.okC = rnd(0.2, 0.8); sfx('coin'); $('hgSay').textContent = 'Бабуля: «' + MK_TRICK[Math.floor(Math.random() * MK_TRICK.length)] + '»'; if (T.b.obj) T.b.obj.userData.play(A.yes);
+    if (T.price > MK_GOODS[T.item].p * 2.2) { T.pat = 0; $('hgSay').textContent = 'Покупатель: «Это уже грабёж!» — и ушёл'; sfx('j_fail'); setTimeout(() => mkClose(false), 900); } }
+  else { T.pat--; sfx('caught'); $('hgSay').textContent = (T.b.kind === 'robot' ? 'Робот: «' : 'Покупатель: «') + MK_NO[T.b.kind][Math.floor(Math.random() * 3)] + '»'; if (T.b.obj) T.b.obj.userData.play(A.no); if (T.pat <= 0) { MK.lost++; setTimeout(() => mkClose(false), 700); } }
+  mkTradeUI(); };
+$('hgSell').onclick = (e) => { e.stopPropagation(); const T = MK.trade; if (!T) return; MK.money += T.price; MK.base += MK_GOODS[T.item].p; MK.goods[T.item]--; if (T.item !== 'jam') FARM.inv[T.item] = Math.max(0, (FARM.inv[T.item] || 0) - 1); MK.sold++; sfx('coins'); confettiSmall(); showMsg('+' + T.price + ' ₽', MK_GOODS[T.item].e + ' ' + MK_GOODS[T.item].n + ' продана' + (T.price >= MK_GOODS[T.item].p * 1.4 ? ' втридорога!' : ''), '#ffd27a', 1100); saveFarm(); mkClose(true);
+  if (Object.values(MK.goods).every((v) => v <= 0)) setTimeout(() => walkEnd(true), 1200); };
 const CUT_SAY = ['Я только спросить!', 'Мне только справку!', 'У меня талон на вчера!', 'Я ветеран Фобоса!', 'Мне только давление померить!', 'Я с ребёнком! Ему 40 лет'];
 const TANYA_SAY = ['Вас тут не стояло!', 'Молодой человек, очередь!', 'Я с шести утра стою!', 'Куда без талона?!', 'Спросить — в конец очереди!'];
+const ROOMS = { market: { pack: 'kn_market', build: (k) => buildMarket(k), wait: 'Рынок открывается… Торгуйтесь смело' }, clinic: { pack: 'kn_clinic', build: (k) => buildClinic(k), wait: 'Поликлиника открывается… Берите бахилы' }, office: { pack: 'kn_office', build: (k) => buildOffice(k), wait: '«ТрансМарс» открывается… Пропуск не забудьте' } };
 const WALKS = {
+  w_market: { scene: 'market', bounds: [-11.6, 11.6, -8.2, 6.8], cam: [12.5, 10.5, 9.6, 9, 0.9], coll: MK_STALLS.map(([x, z]) => ({ x, z: z + (z < 0 ? 0.3 : -0.3), r: 2.0 })).concat([{ x: -9.8, z: 4.4, r: 0.9 }, { x: 9.8, z: -6.8, r: 1 }]),
+    start() { WK.p.set(0, 0, 5.8); WK.h = Math.PI; WK.left = 110; Object.assign(MK, { goods: mkGoods(), money: 0, base: 0, sold: 0, lost: 0, trade: null }); document.body.classList.remove('trading');
+      const g = MK.goods; hint('В корзине: ' + Object.entries(g).filter(([, v]) => v > 0).map(([k, v]) => MK_GOODS[k].e + ' ' + v).join('  ') + '. Подходи к покупателю со значком — и <b>торгуйся</b>: жми, когда стрелка в зелёном', 6500);
+      WSAY(['<b>Соседка Валя:</b> Таня, у меня всё дешевле! Потому что у меня всё мельче', '<b>Марс-ФМ:</b> на рынке «Красная пыль» день торга. Роботы-покупатели обновили прошивку «Скидка»']); },
+    frame(dt, ts) {
+      for (const b of MK.buyers) { const o = b.obj, A = MK_AN[b.kind]; if (!o) continue;
+        if (MK.trade && MK.trade.b === b) { b.h = lerpA(b.h, Math.atan2(WK.p.x - b.x, WK.p.z - b.z), dt * 8); o.rotation.y = b.h; continue; }
+        if (b.pause > 0) { b.pause -= dt; continue; }
+        const dx = b.t[0] - b.x, dz = b.t[1] - b.z, d = Math.hypot(dx, dz); if (d < 0.4) b.t = MK_WP[Math.floor(Math.random() * MK_WP.length)]; else { b.x += dx / d * 1.2 * dt; b.z += dz / d * 1.2 * dt; b.h = lerpA(b.h, Math.atan2(dx, dz), dt * 6); }
+        o.position.set(b.x, 0, b.z); o.rotation.y = b.h;
+        if (!b.want && WK.st === 'go') { b.wantT -= dt; const have = Object.keys(MK.goods).filter((k) => MK.goods[k] > 0); if (b.wantT <= 0 && have.length) { b.want = have[Math.floor(Math.random() * have.length)]; if (b.sp) marketScene.remove(b.sp); b.sp = emojiSprite(MK_GOODS[b.want].e, 1.1); marketScene.add(b.sp); } }
+        if (b.want && b.sp) { b.sp.visible = true; b.sp.position.set(b.x, 2.6 + Math.sin(ts * 4 + b.x) * 0.12, b.z); if (MK.goods[b.want] <= 0) { b.want = null; b.sp.visible = false; } }
+        if (b.want && !MK.trade && WK.st === 'go' && Math.hypot(WK.p.x - b.x, WK.p.z - b.z) < 1.5) { const G = MK_GOODS[b.want]; MK.trade = { b, item: b.want, price: Math.round(G.p * rnd(0.6, 0.85)), pat: 3, ph: 0, sp: 2.6, okC: rnd(0.3, 0.7), okW: 0.3 };
+          document.body.classList.add('trading'); WK.vx = WK.vz = 0; JOY.id = null; JOY.x = JOY.y = 0; $('hgSay').textContent = b.kind === 'robot' ? 'Робот: «Предлагаю ' + MK.trade.price + ' ₽. Торг — функция платная»' : 'Покупатель: «Даю ' + MK.trade.price + ' ₽, и ни болта больше»'; sfx('open'); mkTradeUI(); o.userData.play(A.idle); } }
+      if (MK.trade) { const T = MK.trade; T.ph += dt * T.sp; $('hgNd').style.left = ((0.5 + 0.5 * Math.sin(T.ph)) * 100) + '%'; WK.vx = WK.vz = 0; }
+      // стрелка — к ближайшему покупателю со значком
+      { const w = MK.buyers.filter((b) => b.want && b.obj).sort((p1, p2) => Math.hypot(p1.x - WK.p.x, p1.z - WK.p.z) - Math.hypot(p2.x - WK.p.x, p2.z - WK.p.z))[0];
+        if (w && !MK.trade) { const dx = w.x - WK.p.x, dz = w.z - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.visible = d > 2.2; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; } else WK.arrow.visible = false; }
+      $('order').textContent = '🛒 ' + MK.money + ' ₽ · продано: ' + MK.sold + ' · в корзине: ' + Object.values(MK.goods).reduce((a, v) => a + v, 0) + ' · ' + fmt(Math.max(0, WK.left));
+      if (WK.sayT <= 0) { WK.sayT = rnd(9, 13); WSAY(['<b>Соседка Валя:</b> покупайте у меня! У Тани картошка с характером', '<b>Робот-покупатель:</b> сравниваю цены… У Вали дешевле. У Тани — вкуснее. Ошибка выбора', '<b>Марс-ФМ:</b> курс картошки на «Красной пыли» вырос на 2 вдоха кислорода', '<b>Гоша</b> украл с соседнего прилавка рыбу и делает вид, что так и было', '<b>Дед</b> по рации: Таня, дороже проси! Я в 72-м на рынке…']); } },
+    end(win) { document.body.classList.remove('trading'); MK.trade = null; const markup = MK.base ? MK.money / MK.base : 0, pay = MK.money;
+      return { title: MK.sold === 0 ? 'Ничего не продала. Валя торжествует' : markup >= 1.4 ? 'Продала втридорога! Роботы в шоке' : markup >= 1.05 ? 'Расторговалась! Валя нервно курит бамбук' : 'Продала, но дёшево. Добрая бабуля', stars: MK.sold === 0 ? 1 : markup >= 1.4 ? 3 : markup >= 1.05 ? 2 : 1, sub: '🛒 Пешком: рынок «Красная пыль» · торг',
+        rows: [['Продано', MK.sold + ' шт.'], ['Наценка к обычной цене', MK.base ? Math.round((markup - 1) * 100) + '%' : '—'], ['Ушли обиженными', MK.lost]], pay }; },
+    stop() { document.body.classList.remove('trading'); MK.trade = null; },
+  },
+  w_office: { scene: 'office', bounds: [-9.6, 9.6, -6.4, 6.8], cam: [12, 10, 9.4, 8.8, 0.92],
+    coll: [[-5, -3], [-2, -3], [1, -3], [-5, 1.5], [-2, 1.5], [1, 1.5]].map(([x, z]) => ({ x, z, r: 1.15 })).concat([{ x: 7.5, z: -5.2, r: 1.2 }, { x: 8.8, z: 2.4, r: 0.9 }, { x: 7.4, z: 1.6, r: 0.7 }, { x: -8.6, z: -5.6, r: 0.9 }, { x: 6.4, z: 5.8, r: 1.1 }].concat(OF_COVER.slice(0, 4).map(([x, z]) => ({ x, z, r: 0.45 })))),
+    start() { WK.p.set(-9, 0, 3); WK.h = Math.PI / 2; WK.left = 100; Object.assign(OF, { st: 'find', real: Math.floor(Math.random() * OF_SPOTS.length), checked: [], caught: 0, bi: 1, bx: BOSS_PATH[0][0], bz: BOSS_PATH[0][1], look: 0, lookT: 6, bh: 0 });
+      OF.stamp.visible = false; OF.zone.visible = false; officeTv(['ГРУЗОВ: 0', 'ЖАЛОБ: 4 000 017']); if (OF.dimon) OF.dimon.userData.play('Defeat');
+      hint('Гоша спрятал печать Димона. Обойди <b>кофемашину, принтер, фикус и коробки</b>. Не попадайся Эдуарду Кузьмичу (красный взгляд)!', 6500);
+      WSAY(['<b>Димон</b> по рации: мам, печать пропала! Отчёт до 18:00! Кузьмич меня съест', '<b>Марс-ФМ:</b> в «ТрансМарсе» квартальный отчёт. Сотрудники просят не звонить, не писать и не дышать']); },
+    frame(dt, ts) {
+      // Эдуард Кузьмич: ходит по кругу, иногда останавливается и смотрит по сторонам
+      const B0 = OF.boss; OF.lookT -= dt;
+      if (OF.look > 0) { OF.look -= dt; OF.bh += Math.sin(ts * 2.2) * dt * 1.6; if (B0) B0.userData.play('Idle'); }
+      else { const [tx, tz] = BOSS_PATH[OF.bi], dx = tx - OF.bx, dz = tz - OF.bz, d = Math.hypot(dx, dz); if (d < 0.3) OF.bi = (OF.bi + 1) % BOSS_PATH.length; else { OF.bx += dx / d * 1.7 * dt; OF.bz += dz / d * 1.7 * dt; OF.bh = lerpA(OF.bh, Math.atan2(dx, dz), dt * 6); } if (B0) B0.userData.play('Walk');
+        if (OF.lookT <= 0) { OF.lookT = rnd(6, 9); OF.look = 2.4; farmFloat('Так-так…', OF.bx, OF.bz, '#ffcf8a'); } }
+      if (B0) { B0.position.set(OF.bx, 0, OF.bz); B0.rotation.y = OF.bh; }
+      OF.cone.position.set(OF.bx, 0.05, OF.bz); OF.cone.rotation.y = Math.atan2(-Math.cos(OF.bh), Math.sin(OF.bh)); OF.cone.material.opacity = OF.look > 0 ? 0.32 : 0.18;
+      OF.eyes.visible = OF.look > 0; OF.eyes.position.set(OF.bx, 2.6, OF.bz);
+      if (WK.st === 'go') { const dx = WK.p.x - OF.bx, dz = WK.p.z - OF.bz, d = Math.hypot(dx, dz), a = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - OF.bh), Math.cos(Math.atan2(dx, dz) - OF.bh)));
+        const hid = OF_COVER.some(([x, z]) => Math.hypot(WK.p.x - x, WK.p.z - z) < 1.2);
+        OF.grace = (OF.grace || 0) - dt;
+        if (OF.grace <= 0 && ((d < 5 && a < 0.5 && !hid) || d < 0.9)) { OF.grace = 2.5; OF.caught++; sfx('caught'); sfx('j_caught'); flash('#ff3a2a', 0.35); shake = 0.3; showMsg(BOSS_SAY[Math.floor(Math.random() * BOSS_SAY.length)], OF.caught >= 3 ? 'Охрана выводит бабулю' : 'Эдуард Кузьмич выставил бабулю за дверь (' + OF.caught + ' из 3)', '#ff8a6a', 1600, true); WK.p.set(-9, 0, 3); WK.vx = WK.vz = 0; OF.look = 0; OF.lookT = 4; if (OF.caught >= 3) walkEnd(false); } }
+      // поиск печати
+      if (OF.st === 'find') for (let i = 0; i < OF_SPOTS.length; i++) { const sp = OF_SPOTS[i]; if (OF.checked.includes(i) || Math.hypot(WK.p.x - sp.x, WK.p.z - sp.z) > 1.4) continue; OF.checked.push(i);
+        if (i === OF.real) { OF.st = 'carry'; sfx('found'); confettiSmall(); showMsg('Печать нашлась!', 'Гоша: «Мур». Он её не брал. Она сама', '#9fe8ff', 1800); OF.zone.visible = true; OF.zone.position.set(-0.7, 0.04, 3.1); if (OF.dimon) OF.dimon.userData.play('Idle'); }
+        else { sfx('close'); farmFloat(sp.no, sp.x, sp.z, '#e0c2b0'); } }
+      if (OF.st === 'carry') { OF.stamp.visible = true; OF.stamp.position.set(WK.p.x, 2.6 + Math.sin(ts * 8) * 0.05, WK.p.z); OF.zone.material.opacity = 0.45 + Math.sin(ts * 5) * 0.25;
+        if (WK.st === 'go' && Math.hypot(WK.p.x + 0.7, WK.p.z - 3.1) < 1.4) { OF.st = 'done'; OF.stamp.visible = false; if (OF.dimon) OF.dimon.userData.play('Victory'); officeTv(['ОТЧЁТ СДАН', 'в 17:59'], '#7fffb0'); showMsg('Отчёт сдан!', 'Эдуард Кузьмич: «Дмитрий, премия — грамота. И маму забирайте»', '#9fe8a0', 2200); walkEnd(true); } }
+      // стрелка — к непроверенным местам или к Димону
+      { let tx, tz; if (OF.st === 'carry') { tx = -0.7; tz = 3.1; } else { const left = OF_SPOTS.filter((q, i) => !OF.checked.includes(i)).sort((p1, p2) => Math.hypot(p1.x - WK.p.x, p1.z - WK.p.z) - Math.hypot(p2.x - WK.p.x, p2.z - WK.p.z))[0]; if (left) { tx = left.x; tz = left.z; } }
+        if (tx !== undefined) { const dx = tx - WK.p.x, dz = tz - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.visible = d > 2; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; } }
+      const mm = Math.floor(40 + (100 - Math.max(0, WK.left)) / 5); $('order').textContent = (OF.st === 'carry' ? '🔖 Неси печать Димону' : '🔍 Ищи печать: ' + OF.checked.length + '/4') + ' · попалась: ' + OF.caught + '/3 · 17:' + String(Math.min(59, mm)).padStart(2, '0'); $('order').classList.toggle('bad', OF.caught >= 2);
+      if (WK.sayT <= 0) { WK.sayT = rnd(8, 12); WSAY(['<b>Эдуард Кузьмич:</b> коллеги, напоминаю: планёрка через 15 минут. И через 30. И через 45', '<b>Димон</b> шепчет: мам, только Кузьмичу на глаза не попадайся. Он маму Серёги до сих пор вспоминает', '<b>Гоша</b> сидит на принтере. Принтер доволен: тепло', '<b>Марс-ФМ:</b> «ТрансМарс» — доставим даже на Марс. Срок доставки уточняйте у Эдуарда Кузьмича', '<b>Бухгалтерия:</b> бабушка, вы к кому? Ко всем? Тогда в порядке очереди']); } },
+    end(win) { const pay = win ? Math.max(150, 450 - OF.caught * 80 + Math.round(WK.left) * 3) : 60;
+      return { title: win ? (OF.caught === 0 ? 'Кузьмич даже не заметил! Отчёт сдан' : 'Отчёт сдан в 17:59! Димон спасён') : 'Бабулю вывела охрана. Отчёт сдадут вчера', stars: win ? (OF.caught === 0 ? 3 : 2) : 1, sub: '🏢 Пешком: офис «ТрансМарса» · печать для Димона',
+        rows: [['Печать нашлась', win ? (OF_SPOTS[OF.real].n) : '—'], ['Попалась Кузьмичу', OF.caught + ' раз'], ['Премия Димону', win ? 'грамота' : 'выговор']], pay }; },
+  },
   w_clinic: { scene: 'clinic', bounds: [-8.6, 8.6, -6.3, 6.8], coll: [{ x: -4.5, z: -5, r: 1.3 }, { x: -6, z: -5, r: 0.9 }, { x: 1.5, z: 1, r: 0.8 }, { x: 4.5, z: 1, r: 0.8 }, { x: 1.5, z: 3.4, r: 0.8 }, { x: 4.5, z: 3.4, r: 0.8 }, { x: 7.6, z: 1.5, r: 0.7 }],
     cam: [11, 9.5, 9, 8.6, 0.55],
     start() { WK.p.set(-7.4, 0, 3); WK.h = Math.PI / 2; WK.left = 120; Object.assign(CL, { st: 'talon', cur: 12, mine: 0, nextT: 7, cutT: 9, cuts: [], let: 0, shooed: 0, quiet: 0, called: false });
@@ -1977,12 +2130,13 @@ function g0() { if (FS.goat) { FS.goat.position.set(-6, 0, 0); FS.goat.scale.set
 function startWalk(id) {
   loadDacha();
   hideMap();
-  if (WALKS[id].scene === 'clinic' && !clinicScene) { // зал поликлиники строится при первом заходе (модели Kenney грузятся тут же)
-    stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk(); hint('Поликлиника открывается… Берите бахилы', 2000);
-    getPack('kn_clinic').then((k) => { KCL = k; buildClinic(); startWalk(id); }).catch(() => { KCL = {}; buildClinic(); startWalk(id); }); return;
+  const RM = ROOMS[WALKS[id].scene];
+  if (RM && !RM.sc) { // помещение строится при первом заходе (его модели Kenney грузятся тут же)
+    stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk(); hint(RM.wait, 2000);
+    getPack(RM.pack).then((k) => { RM.models = k; RM.sc = RM.build(k); startWalk(id); }).catch(() => { RM.models = {}; RM.sc = RM.build({}); startWalk(id); }); return;
   }
   stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk();
-  const clin = WALKS[id].scene === 'clinic'; WK.sc = clin ? clinicScene : farmScene; WK.sc.add(WK.root); WK.bounds = WALKS[id].bounds || null; WK.coll = WALKS[id].coll || null;
+  const clin = !!RM; WK.sc = clin ? RM.sc : farmScene; WK.sc.add(WK.root); WK.bounds = WALKS[id].bounds || null; WK.coll = WALKS[id].coll || null;
   scene.add(babka); WK.sc.add(skyG); skyG.visible = !clin; if (DF.g) DF.g.visible = false; FS.plants.forEach((p) => (p.visible = true)); FS.sparks.forEach((p) => (p.visible = false)); FS.bugMesh.count = 0;
   WK.active = true; WK.id = id; WK.st = 'go'; WK.t = 0; WK.sayT = 6; WK.side = 1; WK.fenceOpen = false; WK.vx = WK.vz = 0; WK.h = Math.PI; WK.ph = 0; WK.p = new THREE.Vector3(1.5, 0, 4.5);
   WK.root.visible = true; WK.valyaG.visible = false; WK.can.visible = false; WK.arrow.visible = false; WK.tapok.visible = false; WK.sprouts.visible = false; WK.bugMesh.count = 0; WK.items.forEach((it) => (it.sp.visible = false)); g0();
@@ -2301,7 +2455,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { MK, OF, ROOMS, CL, get clinicScene() { return clinicScene; }, MON, get QC() { return QC; }, get QF() { return QF; }, get LOCALS() { return LOCALS; }, get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
