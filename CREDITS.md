@@ -25,3 +25,24 @@
 | Джинглы: старт миссии, победа, проигрыш, босс | Kenney | [Music Jingles](https://kenney.nl/assets/music-jingles) | CC0 1.0 |
 
 Звуки обрезаны, переведены в моно 22 кГц и сжаты в MP3 (46 файлов, ≈ 210 КБ). Фоновая музыка своя — её играет код игры (Web Audio), файлов нет. Пак UI Audio скачан, но пока не используется.
+
+## Модели Kenney (`assets/kn_space.bin`, `assets/kn_dacha.bin`)
+
+| Что | Набор | Лицензия |
+| --- | --- | --- |
+| Ангары, антенны, марсоходы, грузовые корабли, кратеры, метеориты, кристаллы, астронавты, пришелец, ракета на космодроме | [Space Kit](https://kenney.nl/assets/space-kit) | CC0 1.0 |
+| Конусы у дороги, трактор у дачи | [Car Kit](https://kenney.nl/assets/car-kit) | CC0 1.0 |
+| Забор с калиткой, грядки кукурузы, тыквы и дыни, кусты, цветы, кактусы, камни, дрова | [Nature Kit](https://kenney.nl/assets/nature-kit) | CC0 1.0 |
+| Бочки, ведро, лопата, тяпка, верстак, ящики, сундук, указатель | [Survival Kit](https://kenney.nl/assets/survival-kit) | CC0 1.0 |
+| Лавочка, стол, цветок в горшке, коробка | [Furniture Kit](https://kenney.nl/assets/furniture-kit) | CC0 1.0 |
+| Банки варенья, клубника, тыква, капуста | [Food Kit](https://kenney.nl/assets/food-kit) | CC0 1.0 |
+| Домик соседки Вали, клумбы, дорожка | [City Kit (Suburban)](https://kenney.nl/assets/city-kit-suburban) | CC0 1.0 |
+| Полярные медведи, цыплята, Зорька («корова» с рожками) | [Cube Pets](https://kenney.nl/assets/cube-pets) | CC0 1.0 |
+
+Автор всех наборов — Kenney (kenney.nl). Модели упакованы тем же способом, что и KayKit: цвета материалов и общей текстуры перенесены в цвета вершин, координаты сжаты до 16 бит.
+
+## Интерфейс и частицы
+- Дым, искры, вспышка выстрела (`assets/fx/`) — [Particle Pack](https://kenney.nl/assets/particle-pack), CC0.
+- Значки кнопок звука и итогов (`assets/ui/*.png`) — [Game Icons](https://kenney.nl/assets/game-icons), CC0.
+- Цифры на спидометре, таймере и счётчике — шрифт Kenney Future из [Kenney Fonts](https://kenney.nl/assets/kenney-fonts), CC0 (оставлены только цифры: кириллицы в шрифтах Kenney нет).
+- Скачаны, но пока не используются: UI Pack, UI Pack (Space Expansion), UI Audio.

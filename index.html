@@ -169,8 +169,12 @@ body.walk #zl,body.walk #zr,body.walk #turbo,body.walk #prog,body.walk #tr,body.
 #knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle at 40% 30%,#8a8e9a,#2a2c34);box-shadow:0 3px 6px rgba(0,0,0,.7),inset 0 0 0 3px var(--hot)}
 #joy i{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 9px;color:rgba(255,255,255,.45);font:900 14px system-ui,sans-serif;font-style:normal}
 body.play #joy{display:block}body.farm #joy,body.def #joy,body.fish #joy,body.mapon #joy,body.walk #joy i{display:none}body.walk #joy{display:block}
-body.walk #combo,body.farm #combo,body.def #combo,body.fish #combo{display:none}
-#snd{position:fixed;left:16px;top:calc(130px + env(safe-area-inset-top));z-index:9;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(30,14,22,.6);font-size:18px;padding:0;color:var(--ink)}body.mapon #snd{top:auto;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30}body:not(.play) #snd{display:none}
+body.walk #combo,body.farm #combo,body.def #combo,body.fish #combo,body.walk #speedfx,body.farm #speedfx,body.def #speedfx,body.fish #speedfx,body.mapon #speedfx{display:none}
+#snd{position:fixed;left:16px;top:calc(156px + env(safe-area-inset-top));z-index:9;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(30,14,22,.6);font-size:18px;padding:0;color:var(--ink)}body.mapon #snd{top:auto;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30}body:not(.play) #snd{display:none}
+@font-face{font-family:KFuture;src:url(assets/ui/kfuture.woff2) format('woff2');font-display:swap}
+#spd,#time,#pot{font-family:KFuture,system-ui,sans-serif;letter-spacing:.02em}
+#snd{background:rgba(30,14,22,.6) center/22px no-repeat}#snd[data-m='2']{background-image:url(assets/ui/musicOn.png)}#snd[data-m='1']{background-image:url(assets/ui/audioOn.png)}#snd[data-m='0']{background-image:url(assets/ui/audioOff.png)}
+button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .ic{filter:none}#toMap .ic{filter:invert(1) brightness(.2)}
 #err{position:fixed;left:16px;right:16px;bottom:16px;z-index:30;display:none;background:#5a1d24;padding:12px;border-radius:12px}
 </style>
 </head>
@@ -202,13 +206,13 @@ body.walk #combo,body.farm #combo,body.def #combo,body.fish #combo{display:none}
 <div id="end"><div class="card g"><h2 id="etitle">Внуки накормлены!</h2><div class="sub" id="esub"></div><div class="stars" id="estars"></div><table id="etab"></table>
   <div class="bank"><div class="bl">КОПИЛКА НА БИЛЕТ ДО ЗЕМЛИ</div><div class="bar"><i id="banki"></i></div><small id="bankt"></small></div>
   <div class="lab" style="display:none">СЛЕДУЮЩИЙ ЗАКАЗ</div><div id="orders" style="display:none"></div>
-  <div class="btns2"><button id="again" class="alt">🔁 Ещё раз</button><button id="toMap">🗺 На карту</button></div></div></div>
+  <div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
 <div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
   <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
   <div id="pins"></div>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
-<button id="snd" aria-label="Звук">🔊</button>
+<button id="snd" aria-label="Звук"></button>
 <div id="joy"><i><b>◀</b><b>▶</b></i><div id="knob"></div></div>
 <div id="err"></div>
 <script>
@@ -249,8 +253,9 @@ class Builder {
   constructor(lamps, keepN) { this.lamps = lamps || []; this.p = []; this.c = []; this.n = keepN ? [] : null; }
   add(geo, m, col, o = {}) {
     let g;
-    if (o.flat === false) { g = geo.clone(); if (m) g.applyMatrix4(m); g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
-    else { g = geo.index ? geo.toNonIndexed() : geo.clone(); if (m) g.applyMatrix4(m); g.computeVertexNormals(); }
+    // нормали всегда пересчитываем во Float32: у сжатых моделей (Int8) .array хранит сырые числа до 127, и свет «выгорал»
+    if (o.flat === false) { g = geo.clone(); if (m) g.applyMatrix4(m); g.deleteAttribute('normal'); g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
+    else { g = geo.index ? geo.toNonIndexed() : geo.clone(); if (m) g.applyMatrix4(m); g.deleteAttribute('normal'); g.computeVertexNormals(); }
     const P = g.attributes.position.array, N = g.attributes.normal.array, fixed = typeof col !== 'function' ? new THREE.Color(col) : null;
     for (let i = 0; i < P.length; i += 9) {
       const cx = (P[i] + P[i + 3] + P[i + 6]) / 3, cy = (P[i + 1] + P[i + 4] + P[i + 7]) / 3, cz = (P[i + 2] + P[i + 5] + P[i + 8]) / 3;
@@ -393,23 +398,27 @@ function groundH(x, z, d) { if (d === undefined) d = distToRoad(x, z); const t =
 /* ---------- модели KayKit Space Base Bits (CC0, Kay Lousberg) — догружаются после первого кадра ---------- */
 let PLACES = [], colonyProc = null, MODELS = null; const modelsG = new THREE.Group(); scene.add(modelsG);
 const kkMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-function loadModels() {
-  Promise.all([fetch('assets/kaykit.json').then((r) => r.json()), fetch('assets/kaykit.bin').then((r) => r.arrayBuffer())]).then(([man, buf]) => {
-    const out = {};
-    for (const [name, m] of Object.entries(man)) {
-      const q = new Int16Array(buf, m.p, m.v * 3), pos = new Float32Array(m.v * 3);
-      for (let i = 0; i < pos.length; i++) { const a = i % 3; pos[i] = m.mn[a] + (q[i] + 32767) / 65534 * (m.mx[a] - m.mn[a]); }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(buf, m.n, m.v * 3), 3, true));
-      g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, m.c, m.v * 3), 3, true));
-      g.setIndex(new THREE.BufferAttribute(m.x32 ? new Uint32Array(buf, m.x, m.i) : new Uint16Array(buf, m.x, m.i), 1));
-      g.translate(-(m.mn[0] + m.mx[0]) / 2, -m.mn[1], -(m.mn[2] + m.mx[2]) / 2); // центр по низу
-      out[name] = g;
-    }
-    MODELS = out; placeModels(); initTrucks();
-  }).catch(() => {});
+function decodePack(man, buf) { // формат: позиции Int16, нормали Int8, цвета вершин Uint8 (общий для KayKit и Kenney)
+  const out = {};
+  for (const [name, m] of Object.entries(man)) {
+    const q = new Int16Array(buf, m.p, m.v * 3), pos = new Float32Array(m.v * 3);
+    for (let i = 0; i < pos.length; i++) { const a = i % 3; pos[i] = m.mn[a] + (q[i] + 32767) / 65534 * (m.mx[a] - m.mn[a]); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(buf, m.n, m.v * 3), 3, true));
+    g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf, m.c, m.v * 3), 3, true));
+    g.setIndex(new THREE.BufferAttribute(m.x32 ? new Uint32Array(buf, m.x, m.i) : new Uint16Array(buf, m.x, m.i), 1));
+    g.translate(-(m.mn[0] + m.mx[0]) / 2, -m.mn[1], -(m.mn[2] + m.mx[2]) / 2); // центр по низу
+    out[name] = g;
+  }
+  return out;
 }
+const getPack = (n) => Promise.all([fetch('assets/' + n + '.json').then((r) => r.json()), fetch('assets/' + n + '.bin').then((r) => r.arrayBuffer())]).then(([m, b]) => decodePack(m, b));
+function loadModels() { // после первого кадра: KayKit + Kenney Space Kit для трассы, затем Kenney для дачи
+  Promise.all([getPack('kaykit'), getPack('kn_space').catch(() => ({}))]).then(([a, b]) => { MODELS = Object.assign(a, b); placeModels(); initTrucks(); setTimeout(loadDacha, 400); }).catch(() => {});
+}
+let KD = null;
+function loadDacha() { if (KD || loadDacha.busy) return; loadDacha.busy = true; getPack('kn_dacha').then((d) => { KD = d; if (farmScene) dressFarm(); }).catch(() => { loadDacha.busy = false; }); }
 let MODEL_Q = [];
 function placeModels() { // модели вписываются в мир участками: свет запекается, невидимые участки не рисуются
   MODEL_Q = []; if (!MODELS) return;
@@ -422,8 +431,8 @@ function placeModels() { // модели вписываются в мир уча
 function buildModelBand() {
   const list = MODEL_Q.shift(); if (!list) return;
   let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, cx = 0, cz = 0; for (const pl of list) { x0 = Math.min(x0, pl[1]); x1 = Math.max(x1, pl[1]); z0 = Math.min(z0, pl[3]); z1 = Math.max(z1, pl[3]); cx += pl[1]; cz += pl[3]; }
-  const B = new Builder(LAMPS.filter((L) => L.x > x0 - 40 && L.x < x1 + 40 && L.z > z0 - 40 && L.z < z1 + 40).map((L) => Object.assign({}, L, { I: L.I * 0.45 })));
-  for (const pl of list) if (MODELS[pl[0]]) B.add(MODELS[pl[0]], mat(pl[1], pl[2], pl[3], pl[4], pl[4], pl[4], pl[5]), null, { vcol: true, vk: 0.72 });
+  const B = new Builder(LAMPS.filter((L) => L.x > x0 - 40 && L.x < x1 + 40 && L.z > z0 - 40 && L.z < z1 + 40).map((L) => Object.assign({}, L, { I: L.I * 0.7 })));
+  for (const pl of list) if (MODELS[pl[0]]) B.add(MODELS[pl[0]], mat(pl[1], pl[2], pl[3], pl[4], pl[4], pl[4], pl[5]), null, { vcol: true, vk: 1.08 });
   const m = new THREE.Mesh(B.build(), bakedMat); m.userData.c = [cx / list.length, cz / list.length]; W.add(m);
   if (!MODEL_Q.length && colonyProc) colonyProc.visible = false; // свои упрощённые постройки больше не нужны
 }
@@ -602,6 +611,15 @@ function buildWorld() {
   { const lx = gx + fn[0] * 30, lz = gz + fn[1] * 30; place('landingpad_large', lx, 0, lz, 7, 0); place('lander_A', lx, 3.4, lz, 6, fa); } // космодром — сюда потом прилетит билет на Землю
   // россыпи камней набора у трассы
   for (let k = 0; k < 40; k++) { const i = Math.floor(rnd(10, TRACK.length - 10)), p = TRACK[i], n = nrm(p), sd = Math.random() < 0.5 ? -1 : 1, off = ROAD_W / 2 + rnd(5, 30), x = p.x + n[0] * off * sd, z = p.z + n[1] * off * sd; place(['rocks_A', 'rocks_B', 'rock_A'][k % 3], x, groundH(x, z) - 0.2, z, rnd(3, 6), rnd(0, 6.28)); }
+  // Kenney Space Kit: ангары, антенны, марсоходы, кратеры с метеоритами, кристаллы, астронавты, конусы, ракета
+  const faceRoad = (n, sd) => Math.atan2(-n[0] * sd, -n[1] * sd), roadside = (minOff, maxOff, cb) => { for (let t = 0; t < 6; t++) { const i = Math.floor(rnd(14, TRACK.length - 14)), p = TRACK[i], n = nrm(p), sd = Math.random() < 0.5 ? -1 : 1, off = ROAD_W / 2 + rnd(minOff, maxOff), x = p.x + n[0] * off * sd, z = p.z + n[1] * off * sd; if (distToRoad(x, z) < ROAD_W / 2 + minOff * 0.8) continue; cb(x, z, n, sd, p, i); return; } };
+  const KS = [['k_hangar_largeA', 7, 22], ['k_hangar_smallA', 7, 18], ['k_hangar_roundA', 5, 22], ['k_hangar_roundGlass', 5, 22], ['k_satelliteDish_large', 7, 14], ['k_satelliteDish', 7, 12], ['k_machine_generator', 6, 9], ['k_machine_wireless', 6, 10], ['k_craft_cargoA', 6, 18], ['k_craft_miner', 6, 16], ['k_barrels', 6, 8], ['k_machine_barrelLarge', 5, 9], ['k_rover', 6, 7]];
+  for (let k = 0; k < 36; k++) { const [m, sc, o] = KS[k % KS.length]; roadside(o, o * 1.8, (x, z, n, sd) => place(m, x, groundH(x, z) - 0.1, z, sc, faceRoad(n, sd) + rnd(-0.3, 0.3))); }
+  for (let k = 0; k < 12; k++) roadside(16, 45, (x, z) => { const big = k % 2, sc = rnd(10, 16); place(big ? 'k_craterLarge' : 'k_crater', x, groundH(x, z) - 0.35, z, sc, rnd(0, 6.28)); if (k % 3 === 0) place('k_meteor_detailed', x, groundH(x, z) - 0.6, z, sc * 0.22, rnd(0, 6.28)); });
+  for (let k = 0; k < 10; k++) roadside(10, 35, (x, z) => place(k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', x, groundH(x, z) - 0.2, z, rnd(5, 8), rnd(0, 6.28)));
+  for (let k = 0; k < 9; k++) roadside(2.5, 5, (x, z, n, sd) => place(k % 3 === 2 ? 'k_alien' : k % 2 ? 'k_astronautA' : 'k_astronautB', x, groundH(x, z) - 0.05, z, 2.6, faceRoad(n, sd) + Math.PI + rnd(-0.5, 0.5)));
+  for (let k = 0; k < 7; k++) roadside(0.9, 1.1, (x, z, n, sd, p, i) => { for (let q = 0; q < 3; q++) { const pp = TRACK[Math.min(TRACK.length - 1, i + q * 3)], nn = nrm(pp), cx = pp.x + nn[0] * (ROAD_W / 2 + 0.9) * sd, cz = pp.z + nn[1] * (ROAD_W / 2 + 0.9) * sd; place('a_cone', cx, groundH(cx, cz), cz, 1.7, rnd(0, 6.28)); } });
+  { const rx = gx + fn[0] * 30 + Math.sin(fa) * 14, rz = gz + fn[1] * 30 + Math.cos(fa) * 14, ry = groundH(rx, rz); place('k_rocket_baseA', rx, ry, rz, 5, 0); place('k_rocket_fuelA', rx, ry + 8, rz, 5, 0); place('k_rocket_fuelA', rx, ry + 10.5, rz, 5, 0); place('k_rocket_topA', rx, ry + 13, rz, 5, 0); place('k_platform_large', rx, ry - 0.05, rz, 6, 0); }
   for (const sd of [-1, 1]) { const px = fin.x + fn[0] * (ROAD_W / 2 + 1) * sd, pz = fin.z + fn[1] * (ROAD_W / 2 + 1) * sd; B.add(CYL, mat(px, 3, pz, 0.35, 6, 0.35), '#3a3036'); }
   E.add(BOX, mat(fin.x, 6.2, fin.z, ROAD_W + 2.6, 1.3, 0.25, fa + Math.PI / 2 - Math.PI / 2), (cx, cy, cz, nx, ny, nz) => TC.set('#ffcf6a'), { emit: true });
   const bannerG = new THREE.Group(); bannerG.position.set(fin.x, 6.2, fin.z); bannerG.rotation.y = fa; W.add(bannerG);
@@ -1008,7 +1026,7 @@ function stepMeteors(dt, now, inZone) {
         for (let q = 0; q < 10; q++) puff(m.x, m.z, 4);
         if ((m.x - car.x) ** 2 + (m.z - car.z) ** 2 < 400) flash('#fff2d0', 0.5);
         const d2 = (m.x - car.x) ** 2 + (m.z - car.z) ** 2; if (d2 < 900) shake = Math.max(shake, 0.6 * (1 - d2 / 900));
-        if (car.state === 'go' && d2 < 12) { sfx('boom'); car.spin = 0.8; car.drift = 0; car.combo = 0; showMsg('БАБАХ!', damage('метеорит! Приложи подорожник'), '#ff6a4a', 1400, true); }
+        if (car.state === 'go' && d2 < 12) { sfx('boom'); burst(scene, car.x, 1, car.z, 'smoke', '#ff8a4a', 9, 0.9); car.spin = 0.8; car.drift = 0; car.combo = 0; showMsg('БАБАХ!', damage('метеорит! Приложи подорожник'), '#ff6a4a', 1400, true); }
       }
     }
     if (m.ft >= 0) { m.ft += dt; const s = 4 + m.ft * 40; m.flash.scale.set(s, s, 1); m.flash.material.opacity = Math.max(0, 1 - m.ft * 2.5); if (m.ft > 0.4) { m.ft = -1; m.flash.visible = false; } }
@@ -1167,6 +1185,7 @@ let last = performance.now(), firstFrame = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  stepBursts(dt);
   const tsec = now / 1000;
   { const drive = !FISH.active && !FS.active && !DF.active && !WK.active && car.state === 'go', v = Math.hypot(car.vx, car.vz); sndEngine(isDim() ? 'tank' : 'engine', drive ? 0.22 + Math.min(0.25, v / 120) + (car.boost > 0 ? 0.15 : 0) : 0, 0.75 + v / 45 + (car.boost > 0 ? 0.2 : 0)); }
   if (FISH.active) { fishFrame(dt, now); return; }
@@ -1226,8 +1245,8 @@ function frame(now) {
     }
     if (car.boost > 0) car.boost -= dt;
     // предметы
-    ITEMS.pots.forEach((p) => { if (p.on && (p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 4.4) { p.on = false; sfx('pot', { rnd: 0.2 }); car.pot++; floatText('+1 🥔', p.x, 1.6, p.z); bump($('pot')); if (ORDER === 'potato') bump($('order'), 'bumpc'); for (let q = 0; q < 3; q++) puff(p.x, p.z, 2); } });
-    ITEMS.pads.forEach((p) => { if ((p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 5 && car.boost < 1.2) { sfx('turbo'); car.boost = 1.6; flash('#5fe0ff', 0.3); floatText('ТУРБО!', p.x, 1.5, p.z, '#7fe8ff'); } });
+    ITEMS.pots.forEach((p) => { if (p.on && (p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 4.4) { p.on = false; sfx('pot', { rnd: 0.2 }); burst(scene, p.x, 1.2, p.z, 'spark', '#ffd27a', 2.4, 0.35); car.pot++; floatText('+1 🥔', p.x, 1.6, p.z); bump($('pot')); if (ORDER === 'potato') bump($('order'), 'bumpc'); for (let q = 0; q < 3; q++) puff(p.x, p.z, 2); } });
+    ITEMS.pads.forEach((p) => { if ((p.x - car.x) ** 2 + (p.z - car.z) ** 2 < 5 && car.boost < 1.2) { sfx('turbo'); burst(scene, car.x, 0.9, car.z, 'spark', '#7fe8ff', 5, 0.45); car.boost = 1.6; flash('#5fe0ff', 0.3); floatText('ТУРБО!', p.x, 1.5, p.z, '#7fe8ff'); } });
     ITEMS.beetles.forEach((b) => {
       const [x, z, a] = at(b.i, Math.sin(tsec * b.sp + b.ph) * (ROAD_W / 2 + 2)); b.x = x; b.z = z; b.a = a + (Math.cos(tsec * b.sp + b.ph) > 0 ? Math.PI / 2 : -Math.PI / 2);
       if (isDim() && car.state === 'go' && now - b.hit > 2000 && (x - car.x) ** 2 + (z - car.z) ** 2 < 7) { b.hit = now; car.bugs++; car.vx *= 0.85; car.vz *= 0.85; flash('#ffcf3a', 0.3); showMsg('Хрусть!', 'Жук: «Профсоюз „ТрансМарсу“ этого не простит!»', '#ffcf6a', 1200); return; }
@@ -1326,14 +1345,16 @@ function buildFarmScene() {
   // дом-купол с окнами, забор, лавочка, бочка, курятник, теплица с фитолампами
   B.add(DOME, mat(-8, -0.1, -9, 6, 4.8, 6), '#e0d4cc'); B.add(CYL, mat(-8, 0.4, -9, 12.4, 0.8, 12.4), '#6a5258');
   for (let k = 0; k < 5; k++) { const a = Math.PI * 0.25 + k * 0.28, wx = -8 + Math.cos(a) * 5.7, wz = -9 + Math.sin(a) * 5.7; E.add(BOX, mat(wx, 1.6, wz, 1, 0.8, 0.1, -a + Math.PI / 2), '#ffd28a', { emit: true }); gl.add(wx, 1.6, wz, '#ffb060', 0.5); }
-  for (let x = -12; x <= 12; x += 1.2) { B.add(BOX, mat(x, 0.6, 7.5, 0.14, 1.2, 0.08), '#8a6a4a'); } B.add(BOX, mat(0, 0.9, 7.5, 24, 0.1, 0.06), '#8a6a4a'); B.add(BOX, mat(0, 0.4, 7.5, 24, 0.1, 0.06), '#8a6a4a');
-  B.add(BOX, mat(6.5, 0.45, 4.8, 2.2, 0.12, 0.6), '#7a5232'); B.add(BOX, mat(6.5, 0.8, 5.05, 2.2, 0.5, 0.08), '#7a5232');
-  B.add(CYL2, mat(-6.5, 0.6, 3.5, 1.1, 1.2, 1.1), '#3a6a8a', SMOOTH);
+  const O = new Builder(lamps); // простые забор, лавочка и бочка — пока не загрузились модели Kenney
+  for (let x = -12; x <= 12; x += 1.2) { O.add(BOX, mat(x, 0.6, 7.5, 0.14, 1.2, 0.08), '#8a6a4a'); } O.add(BOX, mat(0, 0.9, 7.5, 24, 0.1, 0.06), '#8a6a4a'); O.add(BOX, mat(0, 0.4, 7.5, 24, 0.1, 0.06), '#8a6a4a');
+  O.add(BOX, mat(6.5, 0.45, 4.8, 2.2, 0.12, 0.6), '#7a5232'); O.add(BOX, mat(6.5, 0.8, 5.05, 2.2, 0.5, 0.08), '#7a5232');
+  O.add(CYL2, mat(-6.5, 0.6, 3.5, 1.1, 1.2, 1.1), '#3a6a8a', SMOOTH);
+  FS.lamps = lamps;
   B.add(BOX, mat(7.5, 1, -1.5, 2.6, 2, 2), '#a8603a'); B.add(new THREE.ConeGeometry(2, 1.2, 4), mat(7.5, 2.6, -1.5, 1, 1, 1, Math.PI / 4), '#5a3a2a');
   E.add(BOX, mat(7.5, 1.6, -5.5, 4, 3, 3), (cx, cy, cz, nx, ny) => TC.set(ny > 0.5 ? '#c84ab0' : '#ff6ad8').multiplyScalar(0.7), { emit: true }); gl.add(7.5, 3.2, -5.5, '#ff4fd0', 0.8);
   // грядки 3×3
   for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); B.add(BOX, mat(x, 0.15, z, 2.6, 0.3, 2.6), '#6a3a28'); for (const sd of [-1, 1]) { B.add(BOX, mat(x + sd * 1.36, 0.22, z, 0.12, 0.44, 2.8), '#8a6a4a'); B.add(BOX, mat(x, 0.22, z + sd * 1.36, 2.8, 0.44, 0.12), '#8a6a4a'); } }
-  farmScene.add(new THREE.Mesh(B.build(), bakedMat)); farmScene.add(new THREE.Mesh(E.build(), bakedMat)); gl.make(farmScene);
+  farmScene.add(new THREE.Mesh(B.build(), bakedMat)); farmScene.add(new THREE.Mesh(E.build(), bakedMat)); gl.make(farmScene); FS.old = new THREE.Mesh(O.build(), bakedMat); farmScene.add(FS.old);
   // почва грядок (мокрая/сухая) и растения — отдельно, обновляются
   FS.soil = []; FS.plants = []; FS.sparks = [];
   for (let i = 0; i < 9; i++) {
@@ -1354,8 +1375,31 @@ function buildFarmScene() {
   goat.position.set(-6, 0, 0); farmScene.add(goat); FS.goat = goat;
   // жуки на грядках и тапок
   FS.bugs = []; FS.bugMesh = new THREE.InstancedMesh(beetleGeo, new THREE.MeshBasicMaterial({ vertexColors: true }), 8); FS.bugMesh.frustumCulled = false; FS.bugMesh.count = 0; farmScene.add(FS.bugMesh);
+  if (KD) setTimeout(dressFarm, 0);
   FS.ray = new THREE.Raycaster(); FS.bedHit = [];
   for (let i = 0; i < 9; i++) { const [x, , z] = bedPos(i); const hm = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 2.8), new THREE.MeshBasicMaterial({ visible: false })); hm.position.set(x, 0.6, z); hm.userData.i = i; farmScene.add(hm); FS.bedHit.push(hm); }
+}
+const KMAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+function dressFarm() { // дача на моделях Kenney (Nature, Survival, Furniture, Food, City, Cube Pets, Car Kit)
+  if (!KD || !farmScene || FS.kn) return;
+  const B = new Builder(FS.lamps.map((L) => Object.assign({}, L, { I: L.I * 0.6 }))), put = (m, x, z, sc, ry = 0, y = 0) => { if (KD[m]) B.add(KD[m], mat(x, y, z, sc, sc, sc, ry), null, { vcol: true, vk: 1.2 }); };
+  for (let x = -10.5; x <= 10.5; x += 3) put(x === 1.5 ? 'n_fence_gate' : 'n_fence_planks', x, 7.5, 3);         // забор из досок с калиткой
+  for (const z of [-1.5, 1.5, 4.5]) put('n_fence_planks', -12, z, 3, Math.PI / 2); for (const z of [-1.5, 1.5, 4.5]) put('n_fence_planks', 12, z, 3, Math.PI / 2);
+  put('f_bench', 6.5, 4.9, 2.4, Math.PI); put('f_table', 9.6, 4.6, 1.9, Math.PI / 2); put('o_honey', 9.5, 4.3, 1.1, 0, 0.62); put('o_honey', 9.7, 4.9, 1.1, 0.6, 0.62); put('o_strawberry', 9.3, 4.9, 1.6, 0, 0.62);
+  put('s_barrel', -6.5, 3.5, 3.2); put('s_barrel-open', -7.5, 4.4, 3, 0.5); put('s_bucket', -5.6, 4.5, 2.6); put('s_tool-shovel', -5.2, 3.0, 3.2, 0.3); put('s_tool-hoe', -4.8, 5.7, 3.2, 1.2);
+  put('s_workbench', -2.6, -7.2, 3, 0.4); put('s_box-large', 10.5, 2.4, 3, 0.2); put('s_box', 10.4, 2.3, 3, 0.7, 0.75); put('f_cardboardBoxClosed', 9.5, 3.1, 3, 0.3); put('s_chest', -10.8, -1.4, 3, Math.PI / 2);
+  put('s_signpost', 3.4, 8.5, 3.2); put('n_log_stack', -11, 2.6, 3, Math.PI / 2); put('n_stump_round', -10.6, 5.2, 3); put('n_mushroom_redGroup', -10.1, 5.8, 3);
+  put('n_pot_large', 4.6, 5.8, 2.6); put('f_pottedPlant', 3.7, 6.1, 2.2); put('n_plant_bushLarge', -11, 6.6, 3.2); put('n_plant_bushLarge', 11, 6.6, 3.2, 1);
+  const FL = ['n_flower_redA', 'n_flower_yellowA', 'n_flower_purpleA']; for (let x = -10.8, k = 0; x < 10.8; x += 1.35, k++) if (Math.abs(x - 1.5) > 1.6) put(FL[k % 3], x + Math.sin(k * 7) * 0.3, 6.75, 3.4, k);
+  for (let k = 0; k < 4; k++) { put('n_crops_cornStageD', -10.6 + k * 1.1, -0.2, 2.4, k); put(k % 2 ? 'n_crop_pumpkin' : 'n_crop_melon', -10.6 + k * 1.1, 1.1, 2.6, k); }
+  put('o_pumpkin', 6.2, 1.9, 2.2); put('o_cabbage', 5.7, 2.6, 2); put('n_crops_leafsStageB', 9.8, -3.2, 2.6); put('n_crop_carrot', 10.6, -3.4, 2.6); put('n_crop_turnip', 10.2, -2.4, 2.6);
+  put('a_tractor', 15.5, 2.5, 1.7, -0.5);
+  for (let k = 0; k < 22; k++) { const a = k * 2.399 + 0.3, r = 17 + (k * 37 % 13), x = Math.cos(a) * r, z = Math.sin(a) * r; if (z > 8 && Math.abs(x) < 13) continue; const y = farmGroundY(x, z) - 0.1;
+    put(['n_cactus_tall', 'n_rock_tallA', 'n_cactus_short', 'n_rock_largeA', 'n_rock_smallA', 'n_grass_large'][k % 6], x, z, 3.4 + (k % 3) * 0.8, k, y); }
+  FS.kn = new THREE.Mesh(B.build(), bakedMat); farmScene.add(FS.kn); FS.old.visible = false;
+  // куры — кубические цыплята, Зорька — белая рогатая «корова» Cube Pets (сойдёт за козу), медведи — полярные
+  FS.hens.forEach((h) => { const m = h.children[0]; m.geometry = KD['p_animal-chick'].clone().scale(0.3, 0.3, 0.3); m.material = KMAT; });
+  { const m = FS.goat.children[0], hl = FS.goat.children[1]; m.geometry = KD['p_animal-cow'].clone().scale(0.75, 0.75, 0.75); m.material = KMAT; hl.scale.setScalar(1.75); hl.position.set(0, 0.65, 0.15); }
 }
 function plantMesh(i) {
   const b = FARM.beds[i], g = FS.plants[i]; while (g.children.length) { const c = g.children[0]; g.remove(c); c.geometry.dispose(); }
@@ -1371,6 +1415,7 @@ function plantMesh(i) {
 }
 function invText() { return Object.entries(CROPS).map(([k, c]) => c.e + ' ' + (FARM.inv[k] || 0)).join('  ·  '); }
 function startFarm() {
+  loadDacha();
   hideMap();
   stopFishing(); stopDefense(); if (!farmScene) buildFarmScene();
   FS.active = true; document.body.classList.add('farm'); $('end').classList.remove('on');
@@ -1393,7 +1438,7 @@ function farmTap(cx, cy) {
   if (!FS.active) return; if ($('seeds').classList.contains('on')) { $('seeds').classList.remove('on'); document.body.classList.remove('seedson'); return; }
   const m = new THREE.Vector2(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); FS.ray.setFromCamera(m, farmCam);
   // сначала жуки — тапком
-  for (const bg of FS.bugs) { const p = new THREE.Vector3(bg.x, 0.6, bg.z).project(farmCam), sx = (p.x + 1) / 2 * innerWidth, sy = (1 - p.y) / 2 * innerHeight; if (Math.hypot(sx - cx, sy - cy) < 46) { bg.dead = 0.01; sfx('slap', { rnd: 0.2 }); FARM.swats++; farmFloat(['Брысь!', 'Тапком его!', 'Жук: «Профсоюз!»', 'Шлёп!'][Math.floor(Math.random() * 4)], bg.x, bg.z, '#ffcf6a'); flash('#ffcf3a', 0.25); shake = 0.25; return; } }
+  for (const bg of FS.bugs) { const p = new THREE.Vector3(bg.x, 0.6, bg.z).project(farmCam), sx = (p.x + 1) / 2 * innerWidth, sy = (1 - p.y) / 2 * innerHeight; if (Math.hypot(sx - cx, sy - cy) < 46) { bg.dead = 0.01; sfx('slap', { rnd: 0.2 }); burst(farmScene, bg.x, 0.5, bg.z, 'spark', '#ffe08a', 1.8, 0.3); FARM.swats++; farmFloat(['Брысь!', 'Тапком его!', 'Жук: «Профсоюз!»', 'Шлёп!'][Math.floor(Math.random() * 4)], bg.x, bg.z, '#ffcf6a'); flash('#ffcf3a', 0.25); shake = 0.25; return; } }
   const hit = FS.ray.intersectObjects(FS.bedHit)[0]; if (!hit) return; const i = hit.object.userData.i, b = FARM.beds[i], [x, , z] = bedPos(i);
   if (!b.c) { openSeeds(i); return; }
   const cr = CROPS[b.c];
@@ -1498,6 +1543,16 @@ const BEAR_OUCH = ['Ай!', 'Уй-уй!', 'Ой, соль!', 'Мама!', 'За 
 let DF = { active: false };
 function bearMesh(type) {
   const t = BEARS[type], g = new THREE.Group(), B = new Builder(null, true), fur = type === 'boss' ? '#e8d8c8' : '#e8c8b0';
+  if (KD && KD['p_animal-polar']) { // полярный медведь Kenney Cube Pets + свои ведро, каска, корона и плакат
+    B.add(KD['p_animal-polar'], mat(0, 0, 0.1, 1.3, 1.3, 1.3), null, { vcol: true, vk: 1 });
+    if (type === 'bucket') B.add(CYL2, mat(0.95, 0.9, 0.4, 0.45, 0.5, 0.45), '#9aa0a8', SMOOTH);
+    if (type === 'helmet') B.add(BALL2, mat(0, 1.95, 0.1, 0.62, 0.32, 0.62), '#e8b030', SMOOTH);
+    if (type === 'boss') { B.add(BALL2, mat(0, 1.98, 0.1, 0.64, 0.34, 0.64), '#ffd040', SMOOTH); B.add(BOX, mat(0, 2.75, -0.3, 1.4, 0.6, 0.06), '#e8dcc0'); B.add(CYL, mat(0, 2.25, -0.3, 0.06, 0.9, 0.06), '#7a5232'); }
+    g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
+    if (type === 'boss') { const c = document.createElement('canvas'); c.width = 256; c.height = 96; const x = c.getContext('2d'); x.fillStyle = '#e8dcc0'; x.fillRect(0, 0, 256, 96); x.fillStyle = '#3a1a10'; x.font = '900 26px system-ui,sans-serif'; x.textAlign = 'center'; x.fillText('ВАРЕНЬЕ —', 128, 40); x.fillText('НАРОДНОЕ!', 128, 76);
+      const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.56), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) })); sg.position.set(0, 2.75, -0.26); g.add(sg); }
+    g.scale.setScalar(t.s * 1.5); return g;
+  }
   B.add(BALL2, mat(0, 1.0, 0, 0.7, 0.65, 0.95), fur, SMOOTH); B.add(BALL2, mat(0, 1.55, 0.75, 0.45, 0.42, 0.42), fur, SMOOTH);
   B.add(BALL2, mat(0, 1.45, 1.1, 0.18, 0.14, 0.16), '#c8a890', SMOOTH); B.add(BALL2, mat(0, 1.5, 1.24, 0.07, 0.06, 0.05), '#2a1a14', SMOOTH);
   for (const sd of [-1, 1]) { B.add(BALL2, mat(sd * 0.3, 1.92, 0.7, 0.13, 0.13, 0.08), fur, SMOOTH); B.add(BALL2, mat(sd * 0.16, 1.66, 1.1, 0.05, 0.05, 0.03), '#1a1010', SMOOTH); }
@@ -1512,6 +1567,7 @@ function bearMesh(type) {
   g.scale.setScalar(t.s * 1.5); return g;
 }
 function startDefense() {
+  loadDacha();
   hideMap();
   stopFishing(); stopFarm(); if (!farmScene) buildFarmScene();
   DF.active = true; document.body.classList.add('def'); $('end').classList.remove('on');
@@ -1522,6 +1578,7 @@ function startDefense() {
     const S = new Builder(null, true); for (const sd of [-0.06, 0.06]) S.add(CYL, mat(sd, 0, 0.55, 0.07, 1.1, 0.07, 0, Math.PI / 2), '#2a2a30'); S.add(BOX, mat(0, -0.05, -0.1, 0.16, 0.16, 0.5), '#6a4028');
     DF.gun = new THREE.Mesh(S.build(), new THREE.MeshLambertMaterial({ vertexColors: true }));
     const mf = new GlowList(); mf.add(0, 0, 1.15, '#ffe0a0', 2); DF.flashG = new THREE.Group(); mf.make(DF.flashG, 1.6); DF.gun.add(DF.flashG); DF.flashG.visible = false;
+    { const ms = new THREE.Sprite(new THREE.SpriteMaterial({ map: fxTex('muzzle'), color: '#ffe0a0', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); ms.position.set(0, 0, 1.5); ms.scale.setScalar(1.5); DF.flashG.add(ms); }
     DF.salt = []; for (let k = 0; k < 24; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: '#ffffff' })); m.visible = false; DF.g.add(m); DF.salt.push(m); }
   }
   DF.g.visible = true; FS.plants.forEach((p) => (p.visible = false)); FS.sparks.forEach((p) => (p.visible = false));
@@ -1549,7 +1606,7 @@ function defTap(cx, cy) {
   const tgt = best ? new THREE.Vector3(best.x, 1.2, best.z) : new THREE.Vector3((cx / innerWidth - 0.5) * 30, 1, 20);
   DF.salt.forEach((m, k) => { m.visible = true; m.position.set(1.5 + rnd(-0.1, 0.1), 1.9, -7.6); m.userData.v = tgt.clone().sub(m.position).normalize().multiplyScalar(rnd(38, 48)).add(new THREE.Vector3(rnd(-2, 2), rnd(-1, 2), rnd(-2, 2))); m.userData.t = 0.6; });
   if (!best) return;
-  best.hp--; best.hitT = 0.4; DF.hits++; setTimeout(() => sfx('bearhit', { rnd: 0.3 }), 70);
+  best.hp--; best.hitT = 0.4; DF.hits++; burst(farmScene, best.x, 2.2 * BEARS[best.type].s, best.z, 'spark', '#ffffff', 3.5, 0.3); setTimeout(() => sfx('bearhit', { rnd: 0.3 }), 70);
   if (best.hp <= 0) { best.run = true; best.dropped = best.carry; best.carry = 0; dfFloat(BEAR_OUCH[Math.floor(Math.random() * BEAR_OUCH.length)], best.x, 2.4, best.z, '#ffcf6a');
     if (best.dropped) { DF.jars += best.dropped; defHud(); farmFloat2('Банка спасена! 🫙'); }
     if (best.type === 'boss') { showMsg('Михал Потапыч бежит!', 'держится за мягкое место и обещает вернуться с пластырем', '#ffd040', 2200); radio('<b>Марс-ФМ:</b> медвежий профсоюз сообщает: Михал Потапыч взял больничный'); }
@@ -1656,12 +1713,19 @@ function buildWalk() {
   WK.sprouts = new THREE.Mesh(S.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); R.add(WK.sprouts);
   // двор соседки Вали за забором: купол, бочки, куст, телескоп, табличка
   const V = WK.valyaG = new THREE.Group(); R.add(V); const VB = new Builder(null, true);
+  const kput = (m, x, z, sc, ry = 0, y = 0) => VB.add(KD[m], mat(x, y, z, sc, sc, sc, ry), null, { vcol: true, vk: 1 });
+  if (KD) { // у Вали — настоящий земной домик (City Kit), бочки, кусты, клумбы и дорожка Kenney
+    kput('c_building-type-a', 6.5, 18.6, 6, Math.PI); for (const [x, z] of [[-2.5, 10.4], [2.6, 11.4]]) kput('s_barrel', x, z, 3.2, x); kput('n_plant_bushLarge', 5.9, 13.2, 3.6); kput('n_plant_bushLarge', -1.2, 14.6, 3.2, 1);
+    kput('c_planter', 3.2, 15.9, 3.4); kput('c_planter', 9.8, 15.4, 3.4); for (let z = 11; z < 15.5; z += 1.2) kput('c_path-stones-long', 4.6 + Math.sin(z) * 0.2, z, 3, 0.1);
+    for (let x = -10.5; x <= 10.5; x += 3) kput('n_fence_simple', x, 20.6, 3); kput('n_flower_purpleA', 1.8, 15.9, 3.2); kput('n_flower_redA', 8.6, 15.2, 3.2); kput('s_box', -6, 16, 3, 0.4); kput('s_tool-hoe', -5.3, 16.6, 3, 1);
+  } else {
   VB.add(DOME, mat(6.5, -0.1, 18.5, 3.2, 3, 3.2), '#c8b0e0', SMOOTH); VB.add(CYL, mat(6.5, 0.3, 18.5, 6.6, 0.6, 6.6), '#5a4a6a');
   VB.add(BOX, mat(4.6, 0.12, 15.6, 2, 0.24, 1.2), '#8a6a8a');
   for (const [x, z] of [[-2.5, 10.4], [2.6, 11.4]]) { VB.add(CYL2, mat(x, 0.55, z, 0.9, 1.1, 0.9), '#3a6a8a', SMOOTH); VB.add(new THREE.TorusGeometry(0.46, 0.04, 4, 14), mat(x, 0.8, z, 1, 1, 1, 0, Math.PI / 2), '#2a4a6a'); }
   VB.add(ICO, mat(5.9, 0.7, 13.2, 1.0, 0.8, 1.0), '#4a9a4a', { jit: 0.3 }); VB.add(ICO, mat(-1.2, 0.6, 14.6, 0.8, 0.65, 0.8, 1), '#4a9a4a', { jit: 0.3 });
-  for (const a of [0, 2.1, 4.2]) VB.add(CYL, mat(0.5 + Math.sin(a) * 0.25, 0.55, 15.9 + Math.cos(a) * 0.25, 0.04, 1.1, 0.04, 0, Math.cos(a) * 0.25, -Math.sin(a) * 0.25), '#30343c');
   for (let x = -11; x <= 11; x += 1.4) VB.add(BOX, mat(x, 0.5, 20.5, 0.12, 1, 0.08), '#7a6a8a');
+  }
+  for (const a of [0, 2.1, 4.2]) VB.add(CYL, mat(0.5 + Math.sin(a) * 0.25, 0.55, 15.9 + Math.cos(a) * 0.25, 0.04, 1.1, 0.04, 0, Math.cos(a) * 0.25, -Math.sin(a) * 0.25), '#30343c');
   V.add(new THREE.Mesh(VB.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
   WK.scope = new THREE.Group(); WK.scope.position.set(0.5, 1.1, 15.9); V.add(WK.scope);
   const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 1.2, 10), new THREE.MeshLambertMaterial({ color: '#d8dce0' })); tb.rotation.x = Math.PI / 2; tb.position.z = 0.2; WK.scope.add(tb);
@@ -1705,7 +1769,7 @@ const WALKS = {
       let near = null, nd = 1e9;
       for (const it of WK.items) { if (it.got) continue; if (it.goat) { it.x = g.position.x; it.z = g.position.z + 0.5; it.y = 2.1; } it.sp.position.set(it.x, it.y + 0.35 + Math.sin(ts * 3 + it.x) * 0.12, it.z);
         const d = Math.hypot(it.x - WK.p.x, it.z - WK.p.z); if (d < nd) { nd = d; near = it; } it.sp.visible = it.goat || d < 5;
-        if (d < 1.4) { it.got = true; it.sp.visible = false; WK.found++; sfx('found'); showMsg(it.e + ' ' + it.name + '!', it.line, '#ffcf8a', 1900); confettiSmall(); bump($('order')); if (WK.found === WK.items.length) walkEnd(true); } }
+        if (d < 1.4) { it.got = true; it.sp.visible = false; WK.found++; sfx('found'); burst(farmScene, it.x, it.y + 0.4, it.z, 'spark', '#ffe08a', 3, 0.5); showMsg(it.e + ' ' + it.name + '!', it.line, '#ffcf8a', 1900); confettiSmall(); bump($('order')); if (WK.found === WK.items.length) walkEnd(true); } }
       if (near) { const dx = near.x - WK.p.x, dz = near.z - WK.p.z, d = Math.hypot(dx, dz) || 1; WK.arrow.position.set(WK.p.x + dx / d * 1.5, 0.15, WK.p.z + dz / d * 1.5); WK.arrow.rotation.y = Math.atan2(dx, dz); WK.arrow.material.opacity = 0.55 + Math.sin(ts * 6) * 0.35; } else WK.arrow.visible = false;
       $('order').textContent = WK.items.map((it) => (it.got ? it.e : '❔')).join(' ') + '  ·  ' + fmt(Math.max(0, WK.left));
       if (WK.sayT <= 0) { WK.sayT = rnd(8, 12); WSAY(['<b>Дед:</b> Таня, я без шелюсти даже ворчать не могу!', '<b>Гоша</b> делает вид, что помогает искать. Ищет миску', '<b>Соседка Валя:</b> у меня дед ничего не теряет. Потому что у меня нет деда', '<b>Марс-ФМ:</b> в «Заречной» найдена вставная челюсть. Владельца просят не волноваться и не улыбаться']); } },
@@ -1722,7 +1786,7 @@ const WALKS = {
       WK.bugs = WK.bugs.filter((b) => {
         if (b.dead) { b.dead += dt; b.y = (b.y || 0.35) + dt * 10; b.x += b.vx * dt; b.z += b.vz * dt; if (b.dead > 0.9) return false; }
         else { const dx = b.tx - b.x, dz = b.tz - b.z, d = Math.hypot(dx, dz); if (d > 0.15) { b.x += dx / d * dt * b.sp; b.z += dz / d * dt * b.sp; b.h = Math.atan2(dx, dz); } else { b.eat += dt; if (b.eat > 3.5) { WK.eaten++; b.dead = 0.01; b.vx = 0; b.vz = 0; farmFloat(['Жук: «Ботва — общенародное достояние!»', 'Хрум!', 'Жук наелся и улетел'][Math.floor(Math.random() * 3)], b.x, b.z, '#ff8a6a'); } }
-          if (WK.st === 'go' && Math.hypot(b.x - WK.p.x, b.z - WK.p.z) < 1.5) { b.dead = 0.01; const a = Math.atan2(b.x - WK.p.x, b.z - WK.p.z); b.vx = Math.sin(a) * 9; b.vz = Math.cos(a) * 9; WK.sw++; sfx('slap', { rnd: 0.25 }); WK.swing = 1; shake = 0.2; flash('#ffcf3a', 0.15); farmFloat(['Шлёп!', 'Тапком его!', 'Брысь!', 'Жук: «Профсоюз!»', 'Хрясь!'][Math.floor(Math.random() * 5)], b.x, b.z, '#ffcf6a'); bump($('order')); } }
+          if (WK.st === 'go' && Math.hypot(b.x - WK.p.x, b.z - WK.p.z) < 1.5) { b.dead = 0.01; const a = Math.atan2(b.x - WK.p.x, b.z - WK.p.z); b.vx = Math.sin(a) * 9; b.vz = Math.cos(a) * 9; WK.sw++; sfx('slap', { rnd: 0.25 }); burst(farmScene, b.x, 0.5, b.z, 'spark', '#ffe08a', 1.8, 0.3); WK.swing = 1; shake = 0.2; flash('#ffcf3a', 0.15); farmFloat(['Шлёп!', 'Тапком его!', 'Брысь!', 'Жук: «Профсоюз!»', 'Хрясь!'][Math.floor(Math.random() * 5)], b.x, b.z, '#ffcf6a'); bump($('order')); } }
         WK.bugMesh.setMatrixAt(n++, mat(b.x, b.dead ? b.y : 0.35, b.z, 0.55, 0.55, 0.55, (b.h || 0) + (b.dead ? ts * 20 : 0))); return true; });
       WK.bugMesh.count = n; WK.bugMesh.instanceMatrix.needsUpdate = true;
       WK.tan.userData.armR.rotation.x = WK.swing > 0 ? -2.6 + (1 - WK.swing) * 2.4 : WK.tan.userData.armR.rotation.x;
@@ -1785,6 +1849,7 @@ const WALKS = {
 };
 function g0() { if (FS.goat) { FS.goat.position.set(-6, 0, 0); FS.goat.scale.setScalar(1); FS.goat.rotation.set(0, 0, 0); } }
 function startWalk(id) {
+  loadDacha();
   hideMap();
   stopFarm(); stopDefense(); stopFishing(); if (!farmScene) buildFarmScene(); if (!WK.root) buildWalk();
   scene.add(babka); farmScene.add(skyG); if (DF.g) DF.g.visible = false; FS.plants.forEach((p) => (p.visible = true)); FS.sparks.forEach((p) => (p.visible = false)); FS.bugMesh.count = 0;
@@ -2010,7 +2075,7 @@ requestAnimationFrame(frame);
 function afterFirst() {
   $('boot').classList.add('hide'); document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
-  setTimeout(loadModels, 150); setTimeout(loadSfx, 700);
+  setTimeout(loadModels, 150); setTimeout(loadSfx, 700); setTimeout(loadFx, 900);
   // самый первый заход — заезд стартует сам; вернувшегося игрока встречает карта колонии
   if (firstEver || /[?&]drive=1/.test(location.search)) setTimeout(() => { car.state = 'go'; startMsg(firstEver); }, 1000);
   else setTimeout(() => { showMap(); hint('С возвращением, Таня! Выбирай, куда сегодня', 3000); }, 300);
@@ -2024,6 +2089,11 @@ function sndCtx() {
   const c = SND.ctx = new C(); SND.master = c.createGain(); SND.master.gain.value = SND.mode ? 0.8 : 0; SND.master.connect(c.destination);
   SND.musG = c.createGain(); SND.musG.gain.value = SND.mode === 2 ? 0.11 : 0; SND.musG.connect(SND.master); return c;
 }
+/* частицы Kenney Particle Pack: дым, искры, вспышка выстрела */
+const FXT = {}, fxTex = (n) => FXT[n] || (FXT[n] = new THREE.TextureLoader().load('assets/fx/' + n + '.png')), BURSTS = [];
+function burst(sc, x, y, z, n, col, size, dur) { if (!sc || BURSTS.length > 40) return; const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: fxTex(n), color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); m.material.rotation = Math.random() * 6.28; m.position.set(x, y, z); m.scale.setScalar(size * 0.4); sc.add(m); BURSTS.push({ m, sc, t: 0, dur, size }); }
+function stepBursts(dt) { for (let i = BURSTS.length - 1; i >= 0; i--) { const b = BURSTS[i]; b.t += dt; const k = b.t / b.dur; b.m.scale.setScalar(b.size * (0.4 + 0.6 * Math.min(1, k * 2.5))); b.m.material.opacity = Math.max(0, 1 - k); b.m.material.rotation += dt * 2; if (k >= 1) { b.sc.remove(b.m); b.m.material.dispose(); BURSTS.splice(i, 1); } } }
+function loadFx() { dustM.material.map = fxTex('smoke'); dustM.material.needsUpdate = true; fxTex('spark'); fxTex('muzzle'); }
 function loadSfx() { // после первого кадра: 46 коротких mp3, всего ≈ 210 КБ
   const c = sndCtx(); if (!c) return;
   SFX_LIST.forEach((n) => fetch('assets/sfx/' + n + '.mp3').then((r) => r.arrayBuffer()).then((ab) => new Promise((res, rej) => c.decodeAudioData(ab, res, rej))).then((b) => { SND.buf[n] = b; }).catch(() => {}));
@@ -2064,10 +2134,10 @@ function musStart() { if (!SND.mus.timer) SND.mus.timer = setInterval(musTick, 6
 function sndSetMode(m) {
   SND.mode = m; try { localStorage.setItem('bm_snd', m); } catch (e) {} sndUnlock();
   if (SND.master) { SND.master.gain.value = m ? 0.8 : 0; SND.musG.gain.cancelScheduledValues(0); SND.musG.gain.value = m === 2 ? 0.11 : 0; }
-  $('snd').textContent = m === 2 ? '🔊' : m === 1 ? '🔉' : '🔇'; $('snd').title = m === 2 ? 'Звук и музыка' : m === 1 ? 'Только звуки' : 'Без звука';
+  $('snd').dataset.m = m; $('snd').title = m === 2 ? 'Звук и музыка' : m === 1 ? 'Только звуки' : 'Без звука';
 }
 $('snd').onclick = (e) => { e.stopPropagation(); const m = (SND.mode + 2) % 3; sndSetMode(m); showMsg(m === 2 ? 'Звук и музыка' : m === 1 ? 'Только звуки' : 'Тишина', m ? '' : 'бабуля обиделась, но молчит', '#ffcf8a', 900); if (m) sfx('click'); };
-$('snd').textContent = SND.mode === 2 ? '🔊' : SND.mode === 1 ? '🔉' : '🔇';
+$('snd').dataset.m = SND.mode;
 addEventListener('pointerdown', sndUnlock, { capture: true }); addEventListener('keydown', sndUnlock, { capture: true });
 document.addEventListener('visibilitychange', () => { if (!SND.ctx) return; if (document.hidden) SND.ctx.suspend(); else if (SND.mode) SND.ctx.resume(); });
 document.addEventListener('click', (e) => { if (e.target.closest('button') && !e.target.closest('#snd')) sfx('click', { vol: 0.7 }); }, true);
@@ -2075,7 +2145,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('button') && !e
 new MutationObserver(() => { if (!$('end').classList.contains('on') || SND.endOn) { SND.endOn = $('end').classList.contains('on'); return; } SND.endOn = true;
   const st = ($('estars').textContent.match(/★/g) || []).length; sfx(st >= 3 ? 'j_win3' : st === 2 ? 'j_win' : 'j_fail'); setTimeout(() => sfx('coins'), 900); }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 
-window.BM = { SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
+window.BM = { get KD() { return KD; }, dressFarm, SND, sfx, JOY, WK, startWalk, walkEnd, DF, startDefense, defTap, defReload, showMap, openPlace, FARM, FS, startFarm, farmTap, showHub, bedPos, get farmCam() { return farmCam; }, FISH, get ALBUM() { return ALBUM; }, startFishing, fishTap, tank, drone, get stuck() { return car.stuck; }, get MODELS() { return MODELS; }, TRUCKS, get ZONES() { return ZONES; }, get ORDER() { return ORDER; }, setOrder(o) { ORDER = o; }, get BANK() { return BANK; }, newRun, get postOn() { return postOn; }, car, TRACK, renderer, scene, perf, input, ITEMS, get TOTAL() { return TOTAL; } };
 </script>
 </body>
 </html>
