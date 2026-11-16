@@ -31,13 +31,20 @@ const T = W.TYPES = {
   umb: { m: 'k_satelliteDish', name: 'зонтик-щит', h: 3.2, hp: 55, sp: 0, dmg: 0, xp: 20, r: 2.2, fly: 7, elite: 1 },
   pusik: { m: 'm_dragon', name: 'Пусик, дракончик Зурги', h: 4, hp: 150, sp: 10, dmg: 12, xp: 60, r: 2.5, fly: 4, elite: 1, shoots: 1 },
   zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 18, xp: 300, r: 4, ground: 1, boss: 1 },
+  angler: { m: 'f_Anglerfish', name: 'рыба-удильщик', h: 2.4, hp: 16, sp: 9, dmg: 8, xp: 6, r: 1.6, fly: 2.6 },
+  gshark: { m: 'f_GoblinShark', name: 'акула-гоблин', h: 2.4, hp: 28, sp: 12, dmg: 12, xp: 9, r: 2, fly: -0.4 },
+  catf: { m: 'f_ArmoredCatfish', name: 'сом-броненосец', h: 2.6, hp: 45, sp: 6, dmg: 14, xp: 12, r: 2.2, fly: -0.3, elite: 1 },
+  larva: { m: 'f_Worm', name: 'червячок', h: 1.3, hp: 5, sp: 7, dmg: 4, xp: 1, r: 0.9, ground: 1 },
+  worm: { m: 'k_wormhead', name: 'Червь-картофелеед', h: 5, hp: 600, sp: 0, dmg: 18, xp: 350, r: 3.5, boss: 1 },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
 const EN = W.EN = []; const IM = {};
-function initMon() { if (MON) return Promise.resolve(); return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); for (const n in MODELS) if (n.startsWith('r_') || n.startsWith('s_') || n.startsWith('k_')) MON[n] = MODELS[n];
-  for (const [id, t] of Object.entries(T)) { const g = MON[t.m]; if (!g) continue; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
-    const im = new THREE.InstancedMesh(g, MAT, t.boss ? 3 : t.elite ? 6 : 60); im.count = 0; im.frustumCulled = false; im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(im.count * 3 + 180 * 3), 3); im.userData.keep = true; W.scene.add(im); IM[id] = im; } }); }
+function initMon() { if (MON) { W.addMon(); return Promise.resolve(); } return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); W.addMon(); }); }
+// подключить к бою новые модели (паки догружаются по главам): только виды, у которых ещё нет InstancedMesh
+W.addMon = function () { if (!MON) return; for (const n in MODELS) if (/^(r|s|k|f|n|o)_/.test(n)) MON[n] = MODELS[n];
+  for (const [id, t] of Object.entries(T)) { if (IM[id]) continue; const g = MON[t.m]; if (!g) continue; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
+    const im = new THREE.InstancedMesh(g, MAT, t.boss ? 3 : t.elite ? 6 : 60); im.count = 0; im.frustumCulled = false; im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(im.count * 3 + 180 * 3), 3); im.userData.keep = true; W.scene.add(im); IM[id] = im; } };
 W.spawn = function (type, x, z, o = {}) { const t = T[type]; if (!t || !IM[type]) return null; if (EN.filter((e) => e.type === type && !e.dead).length >= (t.boss ? 3 : t.elite ? 6 : 60)) return null;
   const e = Object.assign({ type, t, x, z, y: W.H(x, z), vx: 0, vz: 0, h: rnd(0, 6), hp: t.hp * (o.hpK || 1), max: t.hp * (o.hpK || 1), hit: 0, cd: 0, ph: rnd(0, 6), st: t.buried ? 'buried' : 'go', age: 0 }, o); EN.push(e); return e; };
 
@@ -137,7 +144,7 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
         if (t.fly && d < 8) { tx += fwdx * 0.8; tz += fwdz * 0.8; } // летающие держатся над марсоходом
         e.vx += (tx * sp - e.vx) * Math.min(1, dt * 3); e.vz += (tz * sp - e.vz) * Math.min(1, dt * 3); if (d < 30 && R.v > 4) { e.vx += fwdx * R.v * 0.5 * dt; e.vz += fwdz * R.v * 0.5 * dt; } }
       e.x += e.vx * dt; e.z += e.vz * dt; if (!t.still) e.h = Math.atan2(e.vx, e.vz) || e.h;
-      e.y = W.H(e.x, e.z) + (t.fly ? t.fly + Math.sin(e.ph * 0.5) * 0.6 : 0) + (e.jy || 0);
+      e.y = (W.Hs || W.H)(e.x, e.z) + (t.fly ? t.fly + Math.sin(e.ph * 0.5) * 0.6 : 0) + (e.jy || 0);
       if (t.fly === 5 && d < 3.2) e.y -= 2.5; // кальмар опускается и бьёт током
       if (t.mine && d < reach0(e)) { W.hurt(t.dmg, 'мина'); e.hp = 0; kill(e); burst(W.scene, e.x, e.y + 1, e.z, 'smoke', '#ff6a3a', 6, 0.7); shake = 0.5; sfx('boom'); continue; }
       // касание марсохода
