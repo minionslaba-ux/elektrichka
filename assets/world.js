@@ -178,6 +178,7 @@ const CH = W.CH = {
       { id: 'grib', name: 'Грибоград, город гномов', e: '🍄', x: -250, z: -200, r: 75, col: '#7aff8a', kind: 'city' },
       { id: 'shtrek', name: 'Штреки «Глубинной-3»', e: '⛏', x: -470, z: 150, r: 60, col: '#ffb04a', kind: 'mine' },
       { id: 'sea', name: 'Подземное море', e: '🌊', x: SEA4.x, z: SEA4.z, r: SEA4.r, col: '#4ad8ff', kind: 'sea' },
+      { id: 'dock4', name: 'Причал гномов', e: '🛶', x: -45, z: 95, r: 30, col: '#7fe8ff', kind: 'view', flat: 0 },
       { id: 'island', name: 'Маяк на острове', e: '🗼', x: ISLE4.x, z: ISLE4.z, r: ISLE4.r, col: '#fff07a', kind: 'isle' },
       { id: 'grot', name: 'Кристальный грот', e: '💎', x: 430, z: -330, r: 60, col: '#b07aff', kind: 'lair' },
       { id: 'lair', name: 'Логово червя', e: '🪱', x: 470, z: 420, r: 95, col: '#ff4a6a', kind: 'boss' }],

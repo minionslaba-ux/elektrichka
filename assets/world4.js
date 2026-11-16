@@ -148,7 +148,7 @@ W.footStep4 = function (dt) { const F = W.ft4; if (!F) return; const y = W.H(R.x
   let hot = null; for (const q of F.spots) if (Math.hypot(q.x - R.x, q.z - R.z) < 6) hot = q; F.warm = Math.max(0, Math.min(100, F.warm + (hot ? 30 : -F.drain) * dt));
   const gd = Math.hypot(F.goal.x - R.x, F.goal.z - R.z), near = F.spots.filter((q) => Math.hypot(q.x - F.goal.x, q.z - F.goal.z) < gd - 4).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0];
   if (W.obj) { const t = F.warm < 45 && near ? near : F.goal; W.obj.x = t.x; W.obj.z = t.z; }
-  $('wdObj').innerHTML = '🚶‍♀️ ' + F.label + ' · ' + Math.round(gd) + ' м · 🌡 <b style="color:' + (F.warm < 30 ? '#7fc8ff' : '#ffd27a') + '">' + Math.round(F.warm) + '%</b>' + (hot ? ' · греемся у камня 🔥' : ' · грейся у 🔥 тёплых камней');
+  if (F.noWarm) { F.warm = 100; if (F.extra) F.extra(dt, F); if (F.dead) { const f = F.onFail; W.footEnd4(); f(); return; } if (gd < 5) { const f = F.onWin; W.footEnd4(); f(); } return; } $('wdObj').innerHTML = '🚶‍♀️ ' + F.label + ' · ' + Math.round(gd) + ' м · 🌡 <b style="color:' + (F.warm < 30 ? '#7fc8ff' : '#ffd27a') + '">' + Math.round(F.warm) + '%</b>' + (hot ? ' · греемся у камня 🔥' : ' · грейся у 🔥 тёплых камней');
   if (gd < 5) { const f = F.onWin; W.footEnd4(); f(); } else if (F.warm <= 0) { const f = F.onFail; W.footEnd4(); f(); } };
 
 /* ---------- оборона с заграждениями: между волнами ставишь 🧱, черви грызут их, а не ворота ---------- */
@@ -312,6 +312,43 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 4 — по плану: пешком за гномом → штреки → плот гномов через море → кот Гоша + поющие кристаллы в гроте → червь
+   ===================================================================== */
+(function ch4() { const S = A.CHAPTERS[4]; if (!S) return; const di = S.findIndex((s) => s.id === 'descent'), se = S.findIndex((s) => s.id === 'sea'), go = S.find((s) => s.id === 'gosha'); if (di < 0 || se < 0 || !go) return;
+  const foot = { id: 'foot4', start() { A.setObj('Грибоград: тайник с картой штреков', byId('grib')); }, arrive: 'grib',
+    onArrive() { W.talk([['moh', 'Карта штреков — в старом тайнике. Туда «Буханка» не пролезет: только пешком, за проводником. Не отставай — в темноте заблудишься!'], ['tanya', 'Ваня, сторожи машину. Я с фонариком.']], () => run()); } };
+  function run() { const P = [[-215, -175], [-170, -150], [-140, -130], [-110, -100], [-80, -75], [-60, -60]]; const g = { x: 0, z: 0, i: 0, sp: emojiSprite('🧔', 2.6), far: 0 }; W.scene.add(g.sp);
+    W.foot4({ label: 'За гномом-проводником 🧔', goal: { x: P[P.length - 1][0], z: P[P.length - 1][1] }, goalE: '🗺', spots: [], drain: 0, noWarm: 1,
+      extra(dt, F) { if (!g.init) { g.init = 1; g.x = R.x + 5; g.z = R.z + 5; } const d = Math.hypot(g.x - R.x, g.z - R.z), tg = P[g.i]; if (tg && d < 16) { const tx = tg[0] - g.x, tz = tg[1] - g.z, tl = Math.hypot(tx, tz); if (tl < 1) g.i++; else { g.x += tx / tl * 4.2 * dt; g.z += tz / tl * 4.2 * dt; } }
+        g.sp.position.set(g.x, W.H(g.x, g.z) + 1.6 + Math.abs(Math.sin(W.t * 7)) * 0.3, g.z); g.far = d > 32 ? g.far + dt : 0; if (W.obj) { W.obj.x = g.x; W.obj.z = g.z; }
+        $('wdObj').innerHTML = '🧔 Иди за гномом: <b>' + Math.round(d) + ' м</b>' + (g.far > 0 ? ' · <b style="color:#ff6a4a">теряешь его! ' + Math.ceil(8 - g.far) + ' с</b>' : ' · не отставай, в темноте легко заблудиться'); if (g.far > 8) F.dead = 1; },
+      onWin() { W.scene.remove(g.sp); W.give('money', 600); W.give('parts', 2); W.talk([['moh', 'Карта штреков! Теперь знаем, где наши застряли.'], ['moh', 'В штреках «Глубинной-3» остались четверо. Своды трещат. Вытащите их и вагонетки с рудой — и мы покажем дорогу к червю.']], () => A.adv()); },
+      onFail() { W.scene.remove(g.sp); W.talk([['gosha', 'Мяу! (Гоша нашёл бабулю по запаху пирожков и привёл к «Буханке».)'], ['moh', 'Заблудилась? Бывает. Проводник подождёт — держись ближе.']], () => run()); } });
+    A.setObj('Иди пешком за гномом 🧔', g); }
+  foot.tick = (dt) => W.ft4 && W.footStep4(dt);
+  // описание спуска: последняя реплика теперь ведёт в тайник, а не в штреки
+  const raft = { id: 'raft4', start() { A.setObj('Причал гномов на Подземном море', byId('dock4')); }, arrive: 'dock4',
+    onArrive() { W.talk([['moh', 'Плот с семьями гномов — к маяку на острове. Плот медленный, а акулы кусают канаты. «Буханка» плавает — плыви рядом и отгоняй!'], ['ded', 'Таня, я как конвой. Только с солью.']], () => run2()); } };
+  function run2() { raftEnd(); const d = byId('dock4'), is = byId('island'), m = new THREE.Group(); const deck = new THREE.Mesh(new THREE.BoxGeometry(9, 0.8, 6), new THREE.MeshLambertMaterial({ color: '#8a5a30' })); m.add(deck); const sp = emojiSprite('🧔🧔🧔', 3); sp.position.y = 2.2; m.add(sp); W.scene.add(m);
+    W.raft4 = { m, x: d.x, z: d.z, hp: 100, tx: is.x - 20, tz: is.z, st: 3 }; W.calm = 1; W.st.fuel = Math.max(W.st.fuel, 70); W.toast('⛽ Гномы залили бочку топлива'); A.setObj('Сопроводи плот гномов к маяку', is); }
+  function raftEnd() { if (W.raft4) { W.scene.remove(W.raft4.m); W.EN.forEach((e) => { if (e.raftB) e.dead = true; }); W.raft4 = null; W.calm = 0; } }
+  clear4.push(raftEnd);
+  function biteAI(e, dt) { const F = W.raft4; if (!F) { e.dead = true; return; } const dx = F.x - e.x, dz = F.z - e.z, d = Math.hypot(dx, dz) || 1; e.vx = e.vz = 0; if (d > 5) { e.x += dx / d * e.t.sp * 0.9 * dt; e.z += dz / d * e.t.sp * 0.9 * dt; e.h = Math.atan2(dx, dz); } else { F.hp -= dt * 3.2; if (Math.random() < dt * 2) burst(W.scene, F.x, -1.5, F.z, 'smoke', '#bfefff', 2, 0.4); } }
+  raft.tick = function (dt) { const F = W.raft4; if (!F) return; const dx = F.tx - F.x, dz = F.tz - F.z, dl = Math.hypot(dx, dz); const bit = W.EN.some((e) => !e.dead && e.raftB && Math.hypot(e.x - F.x, e.z - F.z) < 6);
+    if (dl > 2 && !bit) { F.x += dx / dl * 3.4 * dt; F.z += dz / dl * 3.4 * dt; } F.m.position.set(F.x, -2.6 + Math.sin(W.t * 2) * 0.15, F.z); F.m.rotation.y = Math.atan2(dx, dz);
+    F.st -= dt; if (F.st <= 0 && dl > 25) { F.st = rnd(3, 4.2); for (let k = 0; k < 2; k++) { const a = rnd(0, 6.28); W.spawn(Math.random() < 0.7 ? 'gshark' : 'catf', F.x + Math.sin(a) * 32, F.z + Math.cos(a) * 32, { keep: 1, raftB: 1, ai: biteAI, hpK: A.bossK() * 0.7 }); } }
+    if (W.obj) { const sh = W.EN.filter((e) => !e.dead && e.raftB).sort((a, b) => Math.hypot(a.x - F.x, a.z - F.z) - Math.hypot(b.x - F.x, b.z - F.z))[0]; const t = sh && Math.hypot(sh.x - F.x, sh.z - F.z) < 30 ? sh : F; W.obj.x = t.x; W.obj.z = t.z; }
+    $('wdObj').innerHTML = '🛶 Плот: <b style="color:' + (F.hp < 35 ? '#ff6a4a' : '#9f9') + '">' + Math.round(F.hp) + '%</b> · до маяка ' + Math.round(dl) + ' м' + (bit ? ' · <b>акула грызёт канат — отгони!</b>' : '');
+    if (dl <= 2) { raftEnd(); W.give('money', 900); W.talk([['moh', 'Доплыли! Семьи на острове. Спасибо, бабушка!'], ['pip', 'Старый маяк. Тут журнал смотрителя: «Червь боится света. Любит картошку. Главный тоннель к нему завален».'], ['gosha', 'Мяу. (Гоша нюхает воздух. Гоша что-то знает. Гоша уже на том берегу.)']], () => A.adv()); }
+    else if (F.hp <= 0) { raftEnd(); W.talk([['moh', 'Плот развалился! Гномы на брёвнах доплыли обратно. Новый плот готов — давай снова, акул отгоняй раньше.']], () => run2()); } };
+  // кот Гоша: в гроте кристаллы поют — повтори мелодию, иначе проход не откроется
+  const gt = go.tick; go.tick = function (dt) { const c = W.cat; if (c && !c.sang && Math.hypot(c.x - 430, c.z + 330) < 24) { c.sang = 1; R.v = 0; W.talk([['pip', 'Поющие кристаллы! Проход откроется, если повторить их мелодию.'], ['tanya', 'Я в хоре пела. В 1974 году. Помню всё.']], () => sing()); return; } if (c && c.sang === 1) return; gt.call(this, dt); };
+  function sing() { W.simon4({ title: '💎 Поющие кристаллы', rules: 'Кристаллы звенят по очереди — повтори мелодию. Каждый раз она длиннее.', keys: ['💎 до', '🔷 ре', '🔶 ми', '🟣 фа', '🟢 соль', '🔴 ля'], len0: 3, rounds: 3, ms: 680, dms: 60, minMs: 420, maxErr: 3, who: 'Кристаллы', alarm: 'Кристаллы обиделись и замолчали' },
+    () => { W.cat.sang = 2; W.give('money', 700); W.toast('💎 Проход в кристаллах открылся!'); }, () => W.talk([['ded', 'Таня, фальшиво. Давай ещё раз — кристаллы терпеливые.']], () => sing())); }
+  S.splice(di + 1, 0, foot); S.splice(S.findIndex((s) => s.id === 'sea'), 1, raft);
+})();
 
 /* =====================================================================
    ГЛАВА 5 — по плану: торг с профсоюзом медведей → хоккей → заслонки гейзеров → таран спящих медведей → спираль → дракон
