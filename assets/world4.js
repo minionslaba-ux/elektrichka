@@ -206,6 +206,22 @@ W.tailStep4 = function (dt) { const T = W.tl4; if (!T) return; T.chk -= dt;
   $('wdObj').innerHTML = '🕵 ' + T.label + ': <b>' + Math.round(d) + ' м</b> (держи ' + T.near + '–' + T.far + ') · 👁 <b style="color:' + (T.sus > 60 ? '#ff6a4a' : T.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(T.sus) + '%</b>' + (T.look > 0 ? ' · <b style="color:#ffd24a">👀 оглядывается — стой!</b>' : '') + (T.lost > 0 ? ' · <b style="color:#7fc8ff">отстаёшь! ' + Math.ceil(T.lostMax - T.lost) + ' с</b>' : '');
   if (T.sus >= 100) { const f = T.onFail; W.tailEnd4(); f('seen'); } else if (T.lost > T.lostMax) { const f = T.onFail; W.tailEnd4(); f('lost'); } else if (T.s >= T.L) { const f = T.onWin; W.tailEnd4(); f(); } };
 
+/* ---------- переключатели: вентиль крутит себя и соседей; открыть все за N ходов ---------- */
+W.valves4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { const n = cfg.n; o.v = Array(n).fill(true); o.moves = 0; const press = (i) => [i - 1, i, i + 1].forEach((k) => { const j = (k + n) % n; o.v[j] = !o.v[j]; });
+    let tries = 0; do { o.v.fill(true); for (let k = 0; k < cfg.scramble; k++) press(Math.floor(Math.random() * n)); tries++; } while (o.v.every(Boolean) && tries < 20);
+    o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st); o.row = btns(o, o.v.map(() => ''), (i) => { if (o.done) return; press(i); o.moves++; sfx('click'); o.draw(); if (o.v.every(Boolean)) { o.done = 1; o.say('✅ ' + cfg.okSay); setTimeout(() => o.win(), 900); } else if (o.moves >= cfg.max) { o.done = 1; o.say('🌊 ' + cfg.failSay); setTimeout(() => o.fail(), 1200); } });
+    o.press = (i) => o.row.children[i].dispatchEvent(new PointerEvent('pointerdown'));
+    o.draw = () => { [...o.row.children].forEach((b, i) => { b.innerHTML = (o.v[i] ? '🟢' : '🔴') + '<br><small>вентиль ' + (i + 1) + '</small>'; }); o.st.textContent = 'Ходов: ' + o.moves + ' из ' + cfg.max + ' · открыто ' + o.v.filter(Boolean).length + ' из ' + n; };
+    o.say(cfg.hint); o.draw(); } }); };
+
+/* ---------- торг: цена, терпение, хитрости ---------- */
+W.trade4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.price = cfg.price; o.pat = cfg.patience; o.card = document.createElement('div'); o.card.className = 'card'; o.body.appendChild(o.card);
+    o.draw = () => (o.card.innerHTML = '<div class="big">' + cfg.icon + '</div><div>Цена: <b>' + o.price + ' ₽</b></div><div>Терпение: <b>' + '❤'.repeat(Math.max(0, o.pat)) + '🖤'.repeat(Math.max(0, cfg.patience - o.pat)) + '</b></div><div style="font-size:13px;opacity:.8">у вас ' + W.st.money + ' ₽ · 🥟 ' + W.st.food + '</div>');
+    const acts = cfg.acts(o); o.acts = acts; btns(o, acts.map((a) => a.t), (i) => { if (o.done) return; const r = acts[i].fn(); sfx('click'); if (r) o.say(r); o.draw(); if (o.pat <= 0 && !o.done) { o.done = 1; setTimeout(() => o.fail(), 1300); } });
+    o.draw(); o.say(cfg.hello); } }); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -239,6 +255,41 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 8 — по плану: шлюзы соляной шахты (переключатели) → гонка → торг с гномом → оборона купола с заграждениями → Толян
+   ===================================================================== */
+(function ch8() { const S = A.CHAPTERS[8]; if (!S) return; const si = S.findIndex((s) => s.id === 'salt'), ai = S.findIndex((s) => s.id === 'ahuna'), mi = S.findIndex((s) => s.id === 'storm'), ri = S.findIndex((s) => s.id === 'rig'); if (si < 0 || ai < 0 || mi < 0 || ri < 0) return;
+  const salt = { id: 'valves8', start() { A.setObj('Кратер Оккатор: соляная шахта гномов', byId('occator')); }, arrive: 'occator',
+    onArrive() { W.talk([['pip', 'Яркие пятна Оккатора — это соль: она поднялась из-под земли с водой и осталась, когда вода испарилась.'], ['moh', '<i>(по рации)</i> Шлюзы соляной шахты заело! Пять вентилей по кругу, крутишь один — соседи тоже крутятся. Открой все, пока рассол не затопил штрек.'], ['ded', 'Таня, это как краны на даче. Только кран пять, и все хулиганы.']], () => run()); } };
+  function run() { W.valves4({ title: '🔧 Шлюзы соляной шахты', rules: 'Нажатие поворачивает вентиль <b>и двух соседей</b> (по кругу). Открой все 🟢 не больше чем за <b>8 ходов</b>.', n: 5, scramble: 3, max: 8, hint: 'Гном Мох: «Ищи, где два красных рядом — крути между ними»', okSay: 'Шлюзы открыты! Рассол ушёл', failSay: 'Рассол прибывает! Гномы откачают — пробуй заново' },
+    () => { const sw = W.WEAP.salt; if (sw.lv < 5) sw.lv++; else W.PERK.salt.lv = Math.min(W.PERK.salt.max, W.PERK.salt.lv + 1); W.give('ammo', 120); W.toast('🧂 Соль Цереры: солевой дробовик сильнее!');
+      W.talk([['moh', 'Шахта дышит! Бери соль — сколько унесёшь.'], ['kolyan', '<i>(подлетает на гоночном байке)</i> Бабка! Опять ты! Спорим, до горы Ахуна я тебя сделаю? На тарелке — слабо?'], ['tanya', 'Колян, я на тарелке летала, когда ты ещё под стол пешком ходил.'], ['pip', 'Гномы залатали тарелку. Немножко. Хватит на гонку.']], () => A.adv()); },
+    () => run()); }
+  const trade = { id: 'trade8', start() { A.setObj('Гора Ахуна: гном-старатель со льдом', byId('ahuna')); }, arrive: 'ahuna',
+    onArrive() { W.talk([['pip', 'Ахуна — ледяной вулкан: вместо лавы из него выдавливается солёный лёд. Тарелке нужен лёд как топливо.'], ['gnome', 'Лёд? Есть лёд. Чистейший, вулканический. Дорого. Торгуемся?']], () => run2()); } };
+  function run2(ang) { const base = ang ? 3600 : 3000;
+    W.trade4({ title: '⛏ Торг с гномом-старателем', icon: '🧊⛏', price: base, patience: 3, hello: ang ? 'Гном (обиженно): «Опять вы. Теперь дороже!»' : 'Гном: «Три тыщи — и лёд ваш. Ну или удивите меня»', rules: 'Сбивай цену, но следи за терпением ❤. Кончится — гном уйдёт. Обмануть можно… но гномы всё помнят.',
+      acts: (o) => [
+        { t: '📉 Давай дешевле', fn() { o.pat--; if (Math.random() < 0.7) { o.price = Math.max(800, o.price - 500); return 'Гном: «Ладно… ' + o.price + '. Но ты меня утомляешь»'; } return 'Гном: «Нет!» (терпение тает)'; } },
+        { t: '🥟 Пирожок в придачу', fn() { if (W.st.food < 1) return 'Пирожков нет 😢'; W.st.food--; o.pat = Math.min(3, o.pat + 1); o.price = Math.max(800, o.price - 300); return 'Гном жуёт: «М-м… −300. И я подобрел»'; } },
+        { t: '🧔 Похвалить бороду', fn() { if (o.beard) { o.pat--; return 'Гном: «Ты уже говорила» (терпение тает)'; } o.beard = 1; o.price = Math.max(800, o.price - 400); return 'Гном краснеет: «Правда? −400»'; } },
+        { t: '🧂 Подсунуть «кристаллы» из соли', fn() { o.done = 1; W.flags.gnomeCheat = 1; W.flags.gnomeHelp = 0; setTimeout(() => o.win('cheat'), 900); return 'Гном: «О, кристаллы! Беру!» (он ещё не знает, что это соль)'; } },
+        { t: '🤝 По рукам', fn() { if (W.st.money < o.price) { return 'Денег не хватает: ' + W.st.money + ' ₽'; } W.st.money -= o.price; o.done = 1; W.flags.gnomeHelp = 1; W.flags.gnomeCheat = 0; setTimeout(() => o.win('fair'), 700); return 'Гном: «Честная сделка! Гномы такое помнят»'; } }] },
+      (how) => { W.give('fuel', 100); W.talk(how === 'cheat' ? [['tanya', 'Ваня, мне стыдно. Немножко.'], ['ded', 'Таня, это была очень хорошая соль.'], ['pip', 'Гномы узнают… Помощи от них теперь не жди.'], ['moh', '<i>(по рации)</i> Над шахтой метеоритный шторм! Твари лезут к куполу!']] : [['gnome', 'Ты честная бабка. Позовёшь — гномы придут с кирками.'], ['moh', '<i>(по рации)</i> Над шахтой метеоритный шторм! Твари лезут к куполу! Ящики у ворот — ставь заграждения!']], () => A.adv()); },
+      () => W.talk([['gnome', 'Всё! Ухожу! …Ладно, вернулся. Но теперь дороже.']], () => run2(1))); }
+  const def = { id: 'def8', start() { A.setObj('Шахта «Ледяная»: защити купол', byId('mine')); }, arrive: 'mine',
+    onArrive() { W.talk([['moh', 'Твари проснулись от тряски и лезут к куполу! Между волнами ставь ящики на жёлтых кругах — пока грызут ящик, бей их.']], () => run3()); } };
+  function run3() { const m = byId('mine'), g = { x: m.x, z: m.z }, slots = [], spawns = []; [[1, 0.3], [-0.2, 1], [0.7, -0.8]].forEach(([ax, az]) => { const l = Math.hypot(ax, az); ax /= l; az /= l; slots.push({ x: g.x + ax * 24, z: g.z + az * 24 }, { x: g.x + ax * 46, z: g.z + az * 46 }); spawns.push([g.x + ax * 95, g.z + az * 95]); });
+    W.def4({ gate: g, slots, spawns, waves: [5, 7, 9], per: 2, build: 13, type: 'jumper', chew: 14, bite: 4, hpK: 3, label: '⛏ Купол',
+      onWin() { W.give('money', 1200); W.give('parts', 4); W.talk([['moh', 'Отбились! Купол цел! Бабушка, вы — почётный гном. Борода выдаётся отдельно.'], ['pip', 'А теперь — Толян. Его камнедробилка ловит глыбы лучом… и марсоходы тоже.']], () => A.adv()); },
+      onFail() { W.talk([['moh', 'Купол пробили! Гномы залатали — давай заново, ящики ставь, откуда лезут.']], () => run3()); } }); A.setObj('Ставь заграждения 🧱 на жёлтых кругах', g); }
+  def.tick = (dt) => W.df4 && W.defStep4(dt);
+  // Толян: честная сделка — гномы помогают кирками
+  const rig = S[ri], rt = rig.tick; rig.tick = function (dt) { rt && rt.call(this, dt); const G = W.boss; if (!G || G.dead) return; if (!G.gn) { G.gn = 1; G.gt = 10; if (W.flags.gnomeHelp) W.toast('⛏ Гномы пришли на помощь!'); else if (W.flags.gnomeCheat) W.toast('🧂 Гномы узнали про соль и не пришли…'); }
+    if (W.flags.gnomeHelp && !W.paused) { G.gt -= dt; if (G.gt <= 0) { G.gt = 12; const tg = (G.parts || []).find((q) => !q.dead) || (G.immune ? null : G); if (tg) { W.hitEnemy(tg, tg.max * 0.12); burst(W.scene, tg.x, (tg.y || 0) + 3, tg.z, 'spark', '#ffd24a', 4, 0.6); W.toast('⛏ Гномы ударили кирками!'); } } } };
+  S.splice(si, 1, salt); S.splice(S.findIndex((s) => s.id === 'ahuna'), 1, trade); S.splice(S.findIndex((s) => s.id === 'storm'), 1, def);
+})();
 
 /* =====================================================================
    ГЛАВА 9 — по плану: заплатки на ветру (повтори) → песня для семян (ритм) → слежка за курьером → погоня за газовозом → Зина
