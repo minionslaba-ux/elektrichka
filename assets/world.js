@@ -76,7 +76,7 @@ W.OLY7 = OLY7;
 const base7 = (x, z) => (fbm(x / 200 + 61, z / 200 - 17) - 0.5) * 16 + (fbm(x / 35, z / 35) - 0.5) * 2.4;
 function lava7(x, z) { const dx = x - OLY7.x, dz = z - OLY7.z, r = Math.hypot(dx, dz); if (r < 80 || r > 520) return 99; const a = Math.atan2(dz, dx); let best = 99;
   for (const ra of RIV7) { let da = a - (ra + Math.sin(r / 60 + ra) * 0.08); da = Math.atan2(Math.sin(da), Math.cos(da)); best = Math.min(best, Math.abs(da) * r); } return best; }
-W.lava7 = (x, z) => W.ch === 7 && (lava7(x, z) < 6 || Math.hypot(x - OLY7.x, z - OLY7.z) < 20) && roadDist(x, z) > 8;
+W.lava7 = (x, z) => W.ch === 7 && (lava7(x, z) < 6 || (!W.flags.done && Math.hypot(x - OLY7.x, z - OLY7.z) < 20)) && roadDist(x, z) > 8;
 function raw7(x, z) { let h = base7(x, z);
   for (const c of CONES7) { const d = Math.hypot(x - c.x, z - c.z); if (d < 130) h += 42 * Math.max(0, 1 - d / 125) ** 1.25 - (d < 14 ? 7 * (1 - (d / 14) ** 2) : 0); }
   const r = Math.hypot(x - OLY7.x, z - OLY7.z); if (r < 360) { const top = 45 + 90 * Math.max(0, 1 - r / 330) ** 1.3, k = 1 - sstep(320, 340, r); h = h * (1 - k) + (top + base7(x, z) * 0.3) * k; if (r < 80) h -= 28 * (1 - (r / 80) ** 2) * sstep(0, 1, 1); }
