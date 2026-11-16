@@ -111,6 +111,70 @@ W.towerStep4 = function (dt) { const T = W.tw4; if (!T) return; const J = BM.JOY
   T.hp = Math.max(0, T.hp); $('wdObj').innerHTML = '📡 ' + T.label + ': <b style="color:' + (T.hp < 35 ? '#ff6a4a' : '#9f9') + '">' + Math.round(T.hp) + '%</b> · волна ' + T.wave + ' из ' + T.waves.length + ' · крути башню джойстиком, бей тех, кто сверлит';
   if (T.hp <= 0) { const f = T.onFail; W.towerEnd4(); f(); } };
 
+/* ---------- ритм: бегунок ходит по полосе, жми, когда он в зелёной зоне ---------- */
+W.rhythm4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.hit = 0; o.miss = 0; o.x = 0; o.dir = 1; o.cd = 0;
+    o.card = document.createElement('div'); o.card.className = 'card'; o.card.innerHTML = '<div class="big">' + (cfg.icon || '🎵') + '</div><div style="position:relative;height:34px;background:#0006;border-radius:17px;margin:8px 4px;overflow:hidden"><div class="zn" style="position:absolute;top:0;bottom:0;background:#2f7a4a"></div><div class="mk" style="position:absolute;top:2px;width:14px;height:30px;border-radius:7px;background:#ffd27a"></div></div>'; o.body.appendChild(o.card);
+    o.zn = o.card.querySelector('.zn'); o.mk = o.card.querySelector('.mk'); o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.zone = () => { const w = Math.max(cfg.zMin, cfg.z0 - o.hit * cfg.dz); o.zc = 0.25 + Math.random() * 0.5; o.zw = w; o.zn.style.left = (o.zc - w / 2) * 100 + '%'; o.zn.style.width = w * 100 + '%'; };
+    o.info = () => (o.st.textContent = 'Попаданий: ' + o.hit + ' из ' + cfg.need + ' · мимо ' + o.miss + ' из ' + cfg.maxMiss);
+    o.tap = () => { if (o.cd > 0) return; o.cd = 0.25; if (Math.abs(o.x - o.zc) <= o.zw / 2) { o.hit++; sfx('coin'); o.say(pick(cfg.okSay)); if (o.hit >= cfg.need) return o.win(); o.zone(); } else { o.miss++; sfx('caught'); o.say(cfg.missSay); if (o.miss > cfg.maxMiss) return o.fail(); } o.info(); };
+    btns(o, [cfg.btn || '🎵 Сейчас!'], () => o.tap()); o.zone(); o.info(); },
+    tick(dt) { this.cd -= dt; const sp = cfg.sp + this.hit * cfg.dsp; this.x += this.dir * sp * dt; if (this.x > 1) { this.x = 1; this.dir = -1; } if (this.x < 0) { this.x = 0; this.dir = 1; } this.mk.style.left = 'calc(' + this.x * 100 + '% - 7px)'; } }); };
+
+/* ---------- гонка с соперником-объектом (смерч, поезд…): кто первым к цели ---------- */
+W.chase4 = function (o) { W.chaseEnd4(); const C = W.ch4 = Object.assign({ s: 0, seg: [] }, o); let L = 0; for (let i = 0; i < o.path.length - 1; i++) { const l = Math.hypot(o.path[i + 1][0] - o.path[i][0], o.path[i + 1][1] - o.path[i][1]); C.seg.push(l); L += l; } C.L = L;
+  C.m = o.mesh(); W.scene.add(C.m); C.goalSp = emojiSprite(o.goalE || '🏁', 5); C.goalSp.position.set(o.goal.x, W.H(o.goal.x, o.goal.z) + 5, o.goal.z); W.scene.add(C.goalSp); return C; };
+W.chaseEnd4 = function () { const C = W.ch4; if (!C) return; W.scene.remove(C.m); W.scene.remove(C.goalSp); W.ch4 = null; W.windX = W.windZ = 0; };
+clear4.push(() => W.chaseEnd4());
+W.chaseStep4 = function (dt) { const C = W.ch4; if (!C) return; C.s = Math.min(C.L, C.s + C.sp * dt); let s = C.s, i = 0; while (i < C.seg.length - 1 && s > C.seg[i]) { s -= C.seg[i]; i++; } const k = Math.min(1, s / C.seg[i]), a = C.path[i], b = C.path[i + 1];
+  C.x = a[0] + (b[0] - a[0]) * k; C.z = a[1] + (b[1] - a[1]) * k; C.m.position.set(C.x, W.H(C.x, C.z), C.z); C.m.rotation.y += dt * 4;
+  const dx = R.x - C.x, dz = R.z - C.z, d = Math.hypot(dx, dz) || 1; if (d < 40) { const f = (1 - d / 40) * 9; W.windX = -dz / d * f + -dx / d * f * 0.4; W.windZ = dx / d * f + -dz / d * f * 0.4; if (d < 8 && (C.hurtT = (C.hurtT || 0) - dt) <= 0) { C.hurtT = 1; W.hurt(6, C.name); } } else W.windX = W.windZ = 0;
+  C.rt = (C.rt || 1) - dt; if (C.rain && C.rt <= 0 && !W.paused) { C.rt = 1.3; const [x, z] = [R.x + Math.sin(R.h) * R.v * 1.2 + rnd(-5, 5), R.z + Math.cos(R.h) * R.v * 1.2 + rnd(-5, 5)]; A.drop11(x, z); }
+  const me = Math.hypot(R.x - C.goal.x, R.z - C.goal.z), it = C.L - C.s; if (W.obj) { W.obj.x = C.goal.x; W.obj.z = C.goal.z; }
+  $('wdObj').innerHTML = C.label + ': тебе <b>' + Math.round(me) + ' м</b> · ' + C.name + 'у <b style="color:' + (it < me ? '#ff6a4a' : '#9f9') + '">' + Math.round(it) + ' м</b>';
+  if (me < 14) { const f = C.onWin; W.chaseEnd4(); f(); } else if (it <= 1) { const f = C.onFail; W.chaseEnd4(); f(); } };
+
+/* ---------- пешая вылазка: «Буханка» стоит, бабуля идёт сама; тепло кончается, греться у тёплых камней ---------- */
+W.foot4 = function (o) { W.footEnd4(true); const F = W.ft4 = Object.assign({ warm: 100, park: { x: R.x, z: R.z, h: R.h } }, o);
+  F.g = personMesh('#c84a6a'); F.g.scale.setScalar(1.2); W.scene.add(F.g); F.lamp = new THREE.PointLight('#fff2c0', 1.4, 26); W.scene.add(F.lamp);
+  F.car = new THREE.Group(); const cm = W.roverG.clone(); F.car.add(cm); F.car.position.set(R.x, R.y, R.z); F.car.rotation.y = R.h; W.scene.add(F.car);
+  F.spots.forEach((q) => { q.ring = A.ring11(q.x, q.z, '#ff9a4a', 5); }); F.goalSp = emojiSprite(o.goalE, 3); F.goalSp.position.set(o.goal.x, W.H(o.goal.x, o.goal.z) + 2.5, o.goal.z); W.scene.add(F.goalSp);
+  W.foot = 1; W.vmaxCap = 5.5; W.noFire = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); R.x += Math.sin(R.h + 1.57) * 4; R.z += Math.cos(R.h + 1.57) * 4; R.v = 0; return F; };
+W.footEnd4 = function (stay) { const F = W.ft4; if (!F) return; W.scene.remove(F.g); W.scene.remove(F.lamp); W.scene.remove(F.car); W.scene.remove(F.goalSp); F.spots.forEach((q) => q.ring && W.scene.remove(q.ring)); W.ft4 = null; W.foot = 0; W.vmaxCap = 0; W.noFire = 0; W.calm = 0;
+  if (!stay) { R.x = F.park.x; R.z = F.park.z; R.h = F.park.h; R.y = W.H(R.x, R.z); R.v = 0; } };
+clear4.push(() => W.footEnd4());
+W.footStep4 = function (dt) { const F = W.ft4; if (!F) return; const y = W.H(R.x, R.z); F.g.position.set(R.x, y + Math.abs(Math.sin(W.t * 8)) * 0.25 * Math.min(1, Math.abs(R.v) / 3), R.z); F.g.rotation.y = R.h; F.lamp.position.set(R.x + Math.sin(R.h) * 3, y + 3, R.z + Math.cos(R.h) * 3);
+  let hot = null; for (const q of F.spots) if (Math.hypot(q.x - R.x, q.z - R.z) < 6) hot = q; F.warm = Math.max(0, Math.min(100, F.warm + (hot ? 30 : -F.drain) * dt));
+  const gd = Math.hypot(F.goal.x - R.x, F.goal.z - R.z), near = F.spots.filter((q) => Math.hypot(q.x - F.goal.x, q.z - F.goal.z) < gd - 4).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0];
+  if (W.obj) { const t = F.warm < 45 && near ? near : F.goal; W.obj.x = t.x; W.obj.z = t.z; }
+  $('wdObj').innerHTML = '🚶‍♀️ ' + F.label + ' · ' + Math.round(gd) + ' м · 🌡 <b style="color:' + (F.warm < 30 ? '#7fc8ff' : '#ffd27a') + '">' + Math.round(F.warm) + '%</b>' + (hot ? ' · греемся у камня 🔥' : ' · грейся у 🔥 тёплых камней');
+  if (gd < 5) { const f = F.onWin; W.footEnd4(); f(); } else if (F.warm <= 0) { const f = F.onFail; W.footEnd4(); f(); } };
+
+/* ---------- оборона с заграждениями: между волнами ставишь 🧱, черви грызут их, а не ворота ---------- */
+const bb = document.createElement('button'); bb.textContent = '🧱 Поставить'; bb.style.cssText = pb.style.cssText.replace('#3a6aff', '#a8642a'); bb.style.display = 'none'; document.body.appendChild(bb);
+W.def4 = function (o) { W.defEnd4(); const D = W.df4 = Object.assign({ wave: 0, hp: 100, phase: 'build', t: o.build, left: o.per, bars: [], list: [] }, o); D.slots.forEach((q) => { q.ring = A.ring11(q.x, q.z, '#ffd27a', 3.2); q.bar = null; }); W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); return D; };
+W.defEnd4 = function () { const D = W.df4; if (!D) return; D.slots.forEach((q) => { if (q.ring) W.scene.remove(q.ring); if (q.bar) W.scene.remove(q.bar.m); }); D.list.forEach((e) => (e.dead = true)); W.df4 = null; W.calm = 0; bb.style.display = 'none'; };
+clear4.push(() => W.defEnd4());
+W.defPlace4 = function () { const D = W.df4; if (!D || D.left <= 0) return; const q = D.slots.filter((s) => !s.bar && Math.hypot(s.x - R.x, s.z - R.z) < 7)[0]; if (!q) return;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(6, 2.2, 1.4), new THREE.MeshLambertMaterial({ color: '#8a5a30' })); const a = Math.atan2(D.gate.x - q.x, D.gate.z - q.z); m.position.set(q.x, W.H(q.x, q.z) + 1.1, q.z); m.rotation.y = a; W.scene.add(m);
+  q.bar = { m, hp: 100 }; D.left--; sfx('thud'); W.toast('🧱 Заграждение! Осталось ящиков: ' + D.left); };
+bb.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); W.defPlace4(); };
+addEventListener('keydown', (e) => { if (W.df4 && e.code === 'KeyE') W.defPlace4(); });
+function defAI(e, dt) { const D = W.df4; if (!D) { e.dead = true; return; } e.vx = e.vz = 0; const dx = D.gate.x - e.x, dz = D.gate.z - e.z, d = Math.hypot(dx, dz) || 1;
+  const bq = D.slots.find((q) => q.bar && Math.hypot(q.x - e.x, q.z - e.z) < 4.5); if (bq) { bq.bar.hp -= dt * D.chew; if (Math.random() < dt * 2) burst(W.scene, bq.x, W.H(bq.x, bq.z) + 1.5, bq.z, 'smoke', '#8a5a30', 1.5, 0.4); if (bq.bar.hp <= 0) { W.scene.remove(bq.bar.m); bq.bar = null; W.toast('💥 Заграждение прогрызли!'); } return; }
+  if (d < 7) { D.hp -= dt * D.bite; return; } const sp = e.t.sp * 0.8; e.x += dx / d * sp * dt; e.z += dz / d * sp * dt; e.h = Math.atan2(dx, dz); }
+W.defStep4 = function (dt) { const D = W.df4; if (!D) return; D.list = D.list.filter((e) => !e.dead); D.hp = Math.max(0, D.hp);
+  const near = D.slots.some((s) => !s.bar && Math.hypot(s.x - R.x, s.z - R.z) < 7); bb.style.display = D.left > 0 && near ? 'block' : 'none';
+  D.slots.forEach((q) => { if (q.ring) q.ring.visible = !q.bar && D.left > 0; });
+  if (D.phase === 'build') { D.t -= dt; const free = D.slots.filter((s) => !s.bar).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0]; if (W.obj && free && D.left > 0) { W.obj.x = free.x; W.obj.z = free.z; }
+    $('wdObj').innerHTML = '🧱 Ставь заграждения на 🟡 кругах: ящиков <b>' + D.left + '</b> · волна ' + (D.wave + 1) + ' через <b>' + Math.ceil(D.t) + ' с</b> · ' + D.label + ' ' + Math.round(D.hp) + '%';
+    if (D.t <= 0) { D.phase = 'fight'; const n = D.waves[D.wave++]; W.toast('🪱 Волна ' + D.wave + ' из ' + D.waves.length + '!'); sfx('warn'); for (let k = 0; k < n; k++) { const sp = D.spawns[k % D.spawns.length]; const e = W.spawn(D.type, sp[0] + rnd(-6, 6), sp[1] + rnd(-6, 6), { keep: 1, ai: defAI, hpK: A.bossK() / 3 * (D.hpK || 1) }); if (e) D.list.push(e); } } }
+  else { if (W.obj) { const e = D.list.slice().sort((a, b) => Math.hypot(a.x - D.gate.x, a.z - D.gate.z) - Math.hypot(b.x - D.gate.x, b.z - D.gate.z))[0]; if (e) { W.obj.x = e.x; W.obj.z = e.z; } }
+    $('wdObj').innerHTML = '🪱 Волна ' + D.wave + ' из ' + D.waves.length + ': червей <b>' + D.list.length + '</b> · ' + D.label + ' <b style="color:' + (D.hp < 35 ? '#ff6a4a' : '#9f9') + '">' + Math.round(D.hp) + '%</b>';
+    if (!D.list.length) { if (D.wave >= D.waves.length) { const f = D.onWin; W.defEnd4(); f(); return; } D.phase = 'build'; D.t = D.build; D.left += D.per; W.toast('🧱 Передышка! +' + D.per + ' ящика на заграждения'); } }
+  if (D.hp <= 0) { const f = D.onFail; W.defEnd4(); f(); } };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -144,6 +208,46 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 11 — по плану: наперегонки со смерчем → зонд → пешком к Сотре → оборона космопорта → берег → переправа → Кракен (+колыбельная)
+   ===================================================================== */
+(function ch11() { const S = A.CHAPTERS[11]; if (!S) return; const ri = S.findIndex((s) => s.id === 'rain'), pi = S.findIndex((s) => s.id === 'probe'); if (ri < 0 || pi < 0) return;
+  const FUEL = { x: -380, z: 0 };
+  function tornado() { const g = new THREE.Group(); for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.ConeGeometry(3 + k * 2.2, 8, 12, 1, true), new THREE.MeshBasicMaterial({ color: k % 2 ? '#8a5a30' : '#c8883a', transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })); m.rotation.x = Math.PI; m.position.y = 4 + k * 6.5; g.add(m); } return g; }
+  const race = { id: 'race11', start() { A.setObj('Дюны Шангри-Ла', byId('dunes')); }, arrive: 'dunes',
+    onArrive() { W.talk([['pip', 'Дюны Титана — не из песка, а из крупинок льда и смолы. А вон — смерч! Он идёт прямо на метановую заправку.'], ['lyuba', 'Если смерч дойдёт до заправки первым — засыплет её дюной, и мы без топлива. Газуй по дороге на юг, обгони его!'], ['ded', 'Таня, это гонка с погодой. Погода не жульничает? Погода жульничает.']], () => run()); } };
+  function run() { const dn = byId('dunes'); R.x = dn.x; R.z = dn.z; R.y = W.H(R.x, R.z); R.h = Math.atan2(FUEL.x - R.x, FUEL.z - R.z); R.v = 0;
+    W.chase4({ name: 'смерч', label: '🌪 До заправки', path: [[-560, 140], [-470, 20], [FUEL.x, FUEL.z]], sp: 17, goal: FUEL, goalE: '⛽', rain: 1, mesh: tornado,
+      onWin() { W.give('fuel', 100); W.give('money', 900); W.give('ammo', 60); W.talk([['lyuba', 'Успели! Заправка цела, бак полный. Смерч обиделся и ушёл в дюны.'], ['lyuba', 'Теперь «Гюйгенс». Зонд сел на Титан в 2005 году — дальше от Земли никто никогда не садился. Где-то на равнине его маяк.']], () => A.adv()); },
+      onFail() { W.talk([['lyuba', 'Засыпало! Ничего, заправщики откопают… Смерч разворачивается — давай ещё раз, срезай где можно.']], () => run()); } });
+    A.setObj('Обгони смерч до заправки ⛽', FUEL); }
+  race.tick = (dt) => { A.hits11Step(dt); if (W.ch4) W.chaseStep4(dt); };
+  const foot = { id: 'foot11', start() { A.setObj('Ледяной вулкан Сотра', byId('sotra')); }, arrive: 'sotra',
+    onArrive() { W.talk([['pip', 'Сотра — ледяной вулкан: он извергает не лаву, а холодную воду с аммиаком. Дальше камни и лёд — «Буханка» застрянет.'], ['tanya', 'Иду пешком. С фонариком и термосом.'], ['pip', 'Тут минус 180! Грейся у тёплых камней 🔥 — они от вулкана. На вершине — раковина-эхо, в ней песня Сотры.']], () => run2()); } };
+  function run2() { const so = byId('sotra'), dx = so.x - R.x, dz = so.z - R.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d, gx = so.x + ux * 45, gz = so.z + uz * 45, L = Math.hypot(gx - R.x, gz - R.z), spots = [];
+    for (let k = 1; k <= 3; k++) { const t = k / 4, sd = k % 2 ? 9 : -9; spots.push({ x: R.x + (gx - R.x) * t - uz * sd, z: R.z + (gz - R.z) * t + ux * sd }); }
+    W.foot4({ label: 'К раковине-эху', goal: { x: gx, z: gz }, goalE: '🐚', spots, drain: 100 / (L / 4 / 5.5 + 9),
+      onWin() { W.give('money', 900); W.give('parts', 3); W.talk([['tanya', 'Записала! Песня — как колыбельная. «Баю-баюшки-баю, не ложися на краю…» Только на метановом.'], ['ded', 'Таня, ты вернулась! Я грел тебе пирожок на моторе.'], ['lyuba', 'Беда! Метановые черви ползут на космопорт! Возвращайтесь — у ворот ящики, стройте заграждения!']], () => A.adv()); },
+      onFail() { W.talk([['gosha', 'Мяу! (Гоша привёл деда. Дед на руках донёс бабулю до «Буханки» и укутал пледом.)'], ['ded', 'Таня, грейся у каждого камня. Давай ещё раз — я подсвечу фарами.']], () => run2()); } });
+    A.setObj('Дойди пешком до раковины 🐚 · грейся у 🔥', { x: gx, z: gz }); }
+  foot.tick = (dt) => W.ft4 && W.footStep4(dt);
+  const def = { id: 'def11', start() { A.setObj('Космопорт «Титан-Кольцевой»: черви идут', byId('port')); }, arrive: 'port',
+    onArrive() { W.talk([['lyuba', 'Черви ползут с трёх сторон! У ворот — ящики. Ставь заграждения на жёлтых кругах — пока черви грызут ящик, бей их.'], ['ded', 'Таня, я как на даче: забор, грядки, и кто-то лезет. Только тут черви с меня ростом.']], () => run3()); } };
+  function run3() { const pt = byId('port'), g = { x: pt.x, z: pt.z }, dirs = [[1, 0], [-1, 0], [0, -1]], slots = [], spawns = [];
+    dirs.forEach(([ax, az]) => { slots.push({ x: g.x + ax * 26, z: g.z + az * 26 }, { x: g.x + ax * 50, z: g.z + az * 50 }); spawns.push([g.x + ax * 95, g.z + az * 95]); });
+    W.def4({ gate: g, slots, spawns, waves: [5, 8, 10], per: 2, build: 14, type: 'methw', chew: 12, bite: 4, hpK: 3, label: '🛡 Ворота',
+      onWin() { W.give('money', 1500); W.give('parts', 5); W.talk([['lyuba', 'Отбились! Порт цел. Теперь — к морю Кракена. Рыбаки на берегу ждут.']], () => A.adv()); },
+      onFail() { W.talk([['lyuba', 'Ворота прогрызли! Ремонтники заделали дыру — давай снова, ставь ящики там, откуда их больше.']], () => run3()); } });
+    A.setObj('Ставь заграждения 🧱 на жёлтых кругах', g); }
+  def.tick = (dt) => W.df4 && W.defStep4(dt);
+  S.splice(ri, 1, race); const pi2 = S.findIndex((s) => s.id === 'probe'); S.splice(pi2 + 1, 0, foot, def);
+  // Кракен: на 20% здоровья — колыбельная (ритм), после неё он засыпает
+  const kr = S.find((s) => s.id === 'kraken'); const t0 = kr.tick; kr.tick = function (dt) { t0.call(this, dt); const K = W.boss; if (!K || K.dead || K.immune || K.lull || K.hp > K.max * 0.2) return; K.lull = 1; K.immune = true; K.immMsg = '🎵 он слушает…';
+    W.talk([['pip', 'Он устал! Пой ему песню Сотры — в такт, как записала!'], ['tanya', 'Баю-баю, Кракен…']], () => W.rhythm4({ title: '🎵 Колыбельная для Кракена', icon: '🦑', rules: 'Бегунок ходит по полосе. Жми «🎵», когда он в <b>зелёной</b> зоне. 8 нот — и Кракен уснёт.', need: 8, maxMiss: 4, z0: 0.24, zMin: 0.12, dz: 0.015, sp: 0.9, dsp: 0.06, okSay: ['Кракен зевнул', 'Щупальца обмякли', 'Капитан: «Тише, тише…»', 'Буль… (сонно)'], missSay: '❌ Фальшиво — Кракен приоткрыл глаз' },
+      () => { K.immune = false; W.hitEnemy(K, K.hp * 10 + 999); W.toast('😴 Кракен уснул!'); },
+      () => { K.immune = false; K.lull = 0; K.hp = Math.min(K.max, K.hp + K.max * 0.15); W.toast('🦑 Кракен проснулся и разозлился!'); })); };
+})();
 
 /* =====================================================================
    ГЛАВА 12 — по плану: фото следов «Аполлона» → буксир «Лунохода» → код шлюза в Копернике (повтор) → прыжок → тир у радиотелескопа → Взыскатель
