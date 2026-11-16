@@ -30,7 +30,7 @@ const T = W.TYPES = {
   thief: { m: 'k_craft_cargoA', name: 'фургон похитителей', h: 3.2, hp: 170, sp: 14, dmg: 0, xp: 60, r: 3.5, fly: 1.4, elite: 1, rot: Math.PI },
   umb: { m: 'k_satelliteDish', name: 'зонтик-щит', h: 3.2, hp: 55, sp: 0, dmg: 0, xp: 20, r: 2.2, fly: 7, elite: 1 },
   pusik: { m: 'm_dragon', name: 'Пусик, дракончик Зурги', h: 4, hp: 150, sp: 10, dmg: 12, xp: 60, r: 2.5, fly: 4, elite: 1, shoots: 1 },
-  zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 18, xp: 300, r: 4, ground: 1, boss: 1 },
+  zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 12, xp: 300, r: 4, ground: 1, boss: 1 },
   angler: { m: 'f_Anglerfish', name: 'рыба-удильщик', h: 2.4, hp: 16, sp: 9, dmg: 8, xp: 6, r: 1.6, fly: 2.6 },
   gshark: { m: 'f_GoblinShark', name: 'акула-гоблин', h: 2.4, hp: 28, sp: 12, dmg: 12, xp: 9, r: 2, fly: -0.4 },
   catf: { m: 'f_ArmoredCatfish', name: 'сом-броненосец', h: 2.6, hp: 45, sp: 6, dmg: 14, xp: 12, r: 2.2, fly: -0.3, elite: 1 },
@@ -92,7 +92,7 @@ W.hitEnemy = function (e, d, kx, kz) { if (e.dead) return; if (e.immune) { if (!
   if (e.hp <= 0) kill(e); };
 function kill(e) { e.dead = true; const t = e.t; sfx(t.boss ? 'boom' : 'pot', { rnd: 0.3, vol: t.boss ? 1 : 0.5 }); burst(W.scene, e.x, e.y + t.h * 0.5, e.z, 'smoke', t.boss ? '#ffb04a' : '#c8a0ff', t.h * 1.2, 0.5); burst(W.scene, e.x, e.y + t.h * 0.5, e.z, 'spark', '#ffe08a', t.h, 0.3);
   const n = Math.max(1, Math.round(t.xp / 3)); for (let k = 0; k < n; k++) gems.push({ x: e.x + rnd(-1, 1), z: e.z + rnd(-1, 1), y: e.y + 0.6, v: t.xp / n });
-  const r = Math.random(); if (r < 0.03 + PERK.gosha.lv * 0.03) loot.push(lootItem('⚙', e.x, e.z, 'parts', 1)); else if (r < 0.08 + PERK.thrift.lv * 0.06) loot.push(lootItem('🧂', e.x, e.z, 'ammo', 12)); else if (r < 0.14) loot.push(lootItem('⛽', e.x, e.z, 'fuel', 8)); else if (r < 0.13) loot.push(lootItem('🥟', e.x, e.z, 'food', 1));
+  const r = Math.random(); if (r < 0.015 + PERK.gosha.lv * 0.015) loot.push(lootItem('⚙', e.x, e.z, 'parts', 1)); else if (r < 0.08 + PERK.thrift.lv * 0.06) loot.push(lootItem('🧂', e.x, e.z, 'ammo', 12)); else if (r < 0.14) loot.push(lootItem('⛽', e.x, e.z, 'fuel', 8)); else if (r < 0.13) loot.push(lootItem('🥟', e.x, e.z, 'food', 1));
   if (t.split && !e.small) for (let k = 0; k < 2; k++) { const s = W.spawn('pink', e.x + rnd(-1.5, 1.5), e.z + rnd(-1.5, 1.5), { hpK: 0.4, small: 1 }); if (s) s.scl = 0.6; }
   if (t.spore) { W.spore = 3.5; burst(W.scene, e.x, e.y + 1, e.z, 'smoke', '#b07aff', 6, 1.2); W.say && W.say('<b>Дед:</b> Таня, споры! Руль заело! Право — это лево!'); }
   W.st.kills = (W.st.kills || 0) + 1; if (W.onKill) W.onKill(e); }
