@@ -175,6 +175,21 @@ W.defStep4 = function (dt) { const D = W.df4; if (!D) return; D.list = D.list.fi
     if (!D.list.length) { if (D.wave >= D.waves.length) { const f = D.onWin; W.defEnd4(); f(); return; } D.phase = 'build'; D.t = D.build; D.left += D.per; W.toast('🧱 Передышка! +' + D.per + ' ящика на заграждения'); } }
   if (D.hp <= 0) { const f = D.onFail; W.defEnd4(); f(); } };
 
+/* ---------- настройка: совмести свою волну с эталоном (частота и сила), пока не пришла помеха ---------- */
+W.tune4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.i = 0; o.t = cfg.time;
+    o.cv = document.createElement('canvas'); o.cv.width = 480; o.cv.height = 150; o.cv.style.cssText = 'width:100%;background:#0b1020;border-radius:12px;display:block'; o.body.appendChild(o.cv); o.g = o.cv.getContext('2d');
+    o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.next = () => { if (o.i >= cfg.n) return o.win(); o.tf = 1 + Math.floor(Math.random() * 7) * 0.5; o.ta = 0.3 + Math.floor(Math.random() * 7) * 0.1; do { o.f = 1 + Math.floor(Math.random() * 7) * 0.5; o.a = 0.3 + Math.floor(Math.random() * 7) * 0.1; } while (Math.abs(o.f - o.tf) < 0.4 && Math.abs(o.a - o.ta) < 0.15); o.hold = 0; };
+    btns(o, ['〰 реже', '〰 чаще', '🔉 тише', '🔊 громче'], (k) => { if (k === 0) o.f = Math.max(1, o.f - 0.5); if (k === 1) o.f = Math.min(4, o.f + 0.5); if (k === 2) o.a = Math.max(0.3, +(o.a - 0.1).toFixed(1)); if (k === 3) o.a = Math.min(0.9, +(o.a + 0.1).toFixed(1)); sfx('click'); });
+    o.next(); },
+    tick(dt) { const o = this, g = o.g, W2 = o.cv.width, H2 = o.cv.height; o.t -= dt; const ok = Math.abs(o.f - o.tf) < 0.01 && Math.abs(o.a - o.ta) < 0.01; o.hold = ok ? o.hold + dt : 0;
+      g.clearRect(0, 0, W2, H2); const wave = (f, a, col, w, jit) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let x = 0; x <= W2; x += 4) { const y = H2 / 2 - Math.sin(x / W2 * Math.PI * 2 * f + W.t * 2) * a * H2 * 0.42 + (jit ? (Math.random() - 0.5) * jit : 0); x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); };
+      wave(o.tf, o.ta, '#2f9a5a', 7, 0); wave(o.f, o.a, ok ? '#7aff8a' : '#ffd27a', 3, o.t < 8 ? 10 : 2);
+      o.st.innerHTML = 'Антенна ' + (o.i + 1) + ' из ' + cfg.n + ' · ☢ до волны <b style="color:' + (o.t < 8 ? '#ff6a4a' : '#9f9') + '">' + Math.max(0, Math.ceil(o.t)) + ' с</b>' + (ok ? ' · держу сигнал…' : '');
+      if (o.hold > 0.8) { o.i++; sfx('j_found'); o.say(pick(cfg.okSay)); o.t = Math.min(cfg.time, o.t + cfg.bonus); o.next(); }
+      if (o.t <= 0) o.fail(); } }); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -208,6 +223,43 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 10 — по плану: выбор с Аркадием → настройка антенн → рыбалка → охота на удильщика → бегство от трещины (от развилки) → Царь-рыба
+   ===================================================================== */
+(function ch10() { const S = A.CHAPTERS[10]; if (!S) return; const ai = S.findIndex((s) => s.id === 'antenna'), ri = S.findIndex((s) => s.id === 'run'); if (ai < 0 || ri < 0) return;
+  const land = S[0]; land.onArrive = function () { W.st.fuel = 100; const fine = () => W.st.money >= 1500;
+    W.talk([['arkady', 'Контролёр Аркадий. Предъявите билеты на пересадку до Сатурна.'], ['tanya', 'Сейчас, сейчас… Вот они… Гоша?!'], ['ded', 'Таня, Гоша доедает билеты. С аппетитом.'],
+      { who: 'arkady', text: 'Без билетов — не положено. Штраф 1500 ₽. Или отработать: станции нужна рыба. Или… вы же с удочкой? Я люблю рыбу.', ch: [
+        { t: '💸 Заплатить штраф 1500 ₽', sub: 'рыбалка обычная: 5 рыб', ok: fine, fn() { W.st.money -= 1500; W.flags.ark10 = 'fine'; } },
+        { t: '🧹 Отработать на рыбалке', sub: 'Аркадий подсветит лунки: рыба дольше, но нужно 6', fn() { W.flags.ark10 = 'work'; } },
+        { t: '🐟 «Договоримся рыбкой»', sub: 'Аркадий берёт 2 рыбы себе: нужно 7, зато +800 ₽ «за находчивость»', fn() { W.flags.ark10 = 'bribe'; W.give('money', 800); } }] },
+      ['vnuki', 'Бабуль, мы с вами! Только Аркадию не говорите, что мы тоже без билетов.'], ['arkady', 'И ещё: буря с Юпитера сбила настройку антенн. Без связи — никак.']], () => A.adv()); };
+  const fix = () => { const k = W.flags.ark10 || 'fine'; W.fishNeed10 = { fine: 5, work: 6, bribe: 7 }[k]; W.fishAt10 = k === 'work' ? 6 : 4.2; };
+  const tune = { id: 'tune10', start() { A.setObj('Антенное поле', byId('antenna')); }, arrive: 'antenna',
+    onArrive() { W.talk([['pip', 'Юпитер — как огромный магнит, он гонит волны радиации. Антенны сбились: совмести их волну с эталоном, пока не пришла следующая волна.'], ['ded', 'Таня, это как радио на даче крутить. Только радио — размером с дом.']], () => run()); } };
+  function run() { W.tune4({ title: '📡 Настройка антенн', rules: 'Зелёная волна — эталон. Кнопками подгони свою жёлтую: <b>частоту</b> (чаще/реже) и <b>силу</b> (громче/тише). Совпало — держи секунду.', n: 3, time: 40, bonus: 8, okSay: ['Есть сигнал!', 'Сатурн на проводе!', 'Пип: «Чисто, как в Заречной»'] },
+    () => { W.give('money', 900); W.give('ammo', 60); W.talk([['arkady', 'Связь есть! Сатурн на проводе: говорит, ждёт. Теперь — рыба. Станции на ужин.'], ['ded', 'Таня, удочка — это я. Я и есть удочка.']], () => { fix(); A.adv(); }); },
+    () => W.talk([['pip', 'Волна радиации сбила всё обратно! Переждали под куполом — давай снова, быстрее.']], () => run())); }
+  const fish = S.find((s) => s.id === 'fish'); const fa = fish.onArrive; fish.onArrive = function () { fix(); fa.call(this); };
+  const hunt = { id: 'hunt10', start() { A.setObj('Хаос Коннемара: удильщик с уловом', byId('chaos')); }, arrive: 'chaos',
+    onArrive() { W.talk([['pip', 'Хаос Коннемара — ледяные плиты, которые океан снизу ломает и переворачивает. Удильщик ныряет из трещины в трещину.'], ['pip', 'Под водой он светится — видно, где вынырнет. Вынырнул — бей!']], () => huntStart()); } };
+  function huntStart() { huntEnd(); const c = byId('chaos'), cr = [[0, 0], [40, 30], [-45, 25], [30, -45], [-35, -40], [70, -5], [-70, -10]].map(([x, z]) => ({ x: c.x + x, z: c.z + z }));
+    const H = W.hunt10 = { cr, t: 120, ci: 0, up: 0, glow: emojiSprite('💡', 3), ring: null }; W.scene.add(H.glow);
+    H.e = W.spawn('angler', cr[0].x, cr[0].z, { keep: 1, hpK: A.bossK() * 6, ai: huntAI, immMsg: '🌊 он под водой' }); W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); dive(H); A.setObj('Лови удильщика, когда вынырнет', cr[0]); }
+  function dive(H) { const e = H.e; let k; do { k = Math.floor(Math.random() * H.cr.length); } while (k === H.ci); H.ci = k; H.up = 0; H.ut = rnd(2.2, 3.4); e.immune = true; if (H.ring) W.scene.remove(H.ring); H.ring = A.ring11(H.cr[k].x, H.cr[k].z, '#7fe8ff', 6); }
+  function huntEnd() { const H = W.hunt10; if (!H) return; W.scene.remove(H.glow); if (H.ring) W.scene.remove(H.ring); if (H.e) H.e.dead = true; W.hunt10 = null; W.calm = 0; }
+  clear4.push(huntEnd);
+  function huntAI(e, dt) { const H = W.hunt10; if (!H) { e.dead = true; return; } const q = H.cr[H.ci]; e.vx = e.vz = 0;
+    if (!H.up) { e.jy = -14; e.x += (q.x - e.x) * Math.min(1, dt * 1.5); e.z += (q.z - e.z) * Math.min(1, dt * 1.5); H.ut -= dt; H.glow.position.set(e.x, W.H(e.x, e.z) + 0.6, e.z); H.ring.material.opacity = 0.5 + Math.sin(W.t * 10) * 0.4; if (H.ut <= 0) { H.up = 1; H.ut = rnd(2.6, 3.6); e.immune = false; e.jy = 0; sfx('splash', { vol: 0.6 }); burst(W.scene, q.x, W.H(q.x, q.z) + 1, q.z, 'smoke', '#bfefff', 4, 0.6); W.scene.remove(H.ring); H.ring = null; } }
+    else { e.jy = 0; const dx = R.x - e.x, dz = R.z - e.z; e.h = Math.atan2(-dx, -dz); H.glow.position.set(e.x, W.H(e.x, e.z) + 5, e.z); H.ut -= dt; if (H.ut <= 0) dive(H); } }
+  hunt.tick = function (dt) { const H = W.hunt10; if (!H) return; H.t -= dt; const e = H.e, q = H.cr[H.ci]; if (W.obj) { W.obj.x = q.x; W.obj.z = q.z; } if (!W.focus || W.focus.dead) W.focus = e;
+    $('wdObj').innerHTML = '🐟 Удильщик: <b>' + Math.max(0, Math.round(e.hp / e.max * 100)) + '%</b> · ' + (H.up ? '🎯 <b>вынырнул — бей!</b>' : '💡 светится — вынырнет тут') + ' · уйдёт через <b>' + Math.ceil(H.t) + ' с</b>';
+    if (e.dead) { huntEnd(); W.give('money', 1200); W.give('food', 3); W.talk([['vnuki', 'Улов вернули! И удильщик сам теперь на ужин.'], ['arkady', 'Рыба — по билету. Осталась большая проблема… Слышите? У развилки лёд трещит!'], ['pip', 'Это Царь-рыба бьётся снизу! Езжайте к развилке — оттуда дорога к её логову.']], () => A.adv()); }
+    else if (H.t <= 0) { huntEnd(); W.talk([['pip', 'Ушёл в глубину… Но он вернётся за наживкой. Давай ещё раз!']], () => huntStart()); } };
+  const runS = { id: 'fork10', start() { A.setObj('Развилка — лёд трещит', byId('fork10')); }, arrive: 'fork10', onArrive() { W.runWay10 = [[R.x, R.z], [430, -150], [W.LAIR10.x, W.LAIR10.z]]; W.talk([['ded', 'Таня, лёд под нами поёт!'], ['pip', 'Трещина пошла! Гони к логову, не останавливайся!']], () => A.adv()); } };
+  S.splice(ai, 1, tune); const fi = S.findIndex((s) => s.id === 'fish'); S.splice(fi + 1, 0, hunt); const ri2 = S.findIndex((s) => s.id === 'run'); S.splice(ri2, 0, runS);
+})();
 
 /* =====================================================================
    ГЛАВА 11 — по плану: наперегонки со смерчем → зонд → пешком к Сотре → оборона космопорта → берег → переправа → Кракен (+колыбельная)
