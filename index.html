@@ -1392,7 +1392,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 36); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 37); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : loadJS('assets/world.js').then(() => loadJS('assets/world2.js')).then(() => { WD_PART2(); return loadJS('assets/world3.js'); }).then(() => WD_PART3());
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
