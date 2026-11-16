@@ -114,7 +114,7 @@ function kill(e) { e.dead = true; const t = e.t; sfx(t.boss ? 'boom' : 'pot', { 
   W.st.kills = (W.st.kills || 0) + 1; if (W.onKill) W.onKill(e); }
 function lootItem(e, x, z, res, n) { const sp = emojiSprite(e, 1.3); sp.position.set(x, W.H(x, z) + 1, z); W.scene.add(sp); return { sp, x, z, res, n, t: 0 }; }
 W.dropLoot = (e, x, z, res, n) => loot.push(lootItem(e, x, z, res, n));
-function fire(dt) { const st = W.st;
+function fire(dt) { const st = W.st; if (W.noFire) return;
   for (const [id, w] of Object.entries(WEAP)) { if (!w.lv) continue; w.t = (w.t || 0) - dt; if (w.t > 0) continue; const L = w.lv - 1, cdm = 1 - PERK.hands.lv * 0.1;
     if (w.cost && st.ammo < w.cost) { if (!w.warn) { w.warn = 1; W.say && W.say('<b>Дед:</b> Таня, ' + w.name.toLowerCase() + ' — без патронов! Ищи ящики 🧂'); } continue; } w.warn = 0;
     const manual = !W.autoFire, lk = W.lock && !W.lock.dead && dist2(W.lock, R) < ((w.range || 20) * 1.4) ** 2 ? W.lock : null; let tgt = manual ? lk : W.focus && !W.focus.dead && dist2(W.focus, R) < (w.range || 20) ** 2 ? W.focus : nearest(w.range || 20);

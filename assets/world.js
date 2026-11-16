@@ -307,10 +307,11 @@ const CH = W.CH = {
     pois: [
       { id: 'kam', name: 'Камышин — арбузная столица', e: '🍉', x: -260, z: 160, r: 75, col: '#7aff8a', kind: 'city' },
       { id: 'bahcha', name: 'Бахча Михалыча', e: '🌱', x: -380, z: -160, r: 70, col: '#9aff6a', kind: 'farm' },
-      { id: 'ferryW', name: 'Паромная пристань', e: '⛴', x: riverX14(330) - 120, z: 330, r: 45, col: '#7fe8ff', kind: 'fuel', flat: 0 },
-      { id: 'mayak', name: 'Маяк на левом берегу', e: '🗼', x: riverX14(330) + 150, z: 330, r: 55, col: '#ffd24a', kind: 'view' },
+      { id: 'ferryW', name: 'Паромная пристань', e: '⛴', x: riverX14(420) - 120, z: 420, r: 45, col: '#7fe8ff', kind: 'fuel', flat: 0 },
+      { id: 'mayak', name: 'Маяк на левом берегу', e: '🗼', x: riverX14(420) + 150, z: 420, r: 55, col: '#ffd24a', kind: 'view' },
+      { id: 'brak', name: 'Лагерь браконьеров', e: '🎣', x: 300, z: 0, r: 60, col: '#c08aff', kind: 'view' },
       { id: 'kosa', name: 'Песчаная коса — логово Сома', e: '🐟', x: riverX14(KOSA14.z) + KOSA14.x, z: KOSA14.z, r: 40, col: '#ff4a3a', kind: 'boss', flat: 0 }],
-    roads: [[[-260, 160], [-330, 0], [-380, -160]], [[-260, 160], [-200, 260], [riverX14(330) - 120, 330]], [[riverX14(330) + 130, 330], [riverX14(330) + 160, 120], [riverX14(-330) + 170, -330]], [[-380, -160], [-260, -300], [riverX14(-330) - 130, -330]]],
+    roads: [[[-260, 160], [-330, 0], [-380, -160]], [[-260, 160], [-200, 260], [-120, 380], [riverX14(420) - 120, 420]], [[riverX14(420) + 130, 420], [riverX14(330) + 150, 300], [riverX14(330) + 160, 120], [riverX14(-330) + 170, -330]], [[-380, -160], [-260, -300], [riverX14(-330) - 130, -330]]],
     start: [-250, 220, Math.PI * 0.8],
     raw: raw14,
     road(x, z, h, k, y) { return h * (1 - k * 0.85) + y * k * 0.85; },
@@ -558,6 +559,7 @@ function buildPOIs() {
     const bh = byId('bahcha'); for (let k = 0; k < 40; k++) place(B, k % 4 ? 'n_crop_melon' : 'q_Watermelon_Crop', bh.x - 45 + (k % 8) * 12, bh.z - 30 + Math.floor(k / 8) * 13, k % 4 ? 3 : 2.2, k * 0.7); place(B, 'b_SmallBarn', bh.x + 50, bh.z + 30, 6, 2.4); place(B, 'a_tractor', bh.x + 40, bh.z - 30, 4, 1); addC(bh.x + 50, bh.z + 30, 8);
     const fw = byId('ferryW'); place(B, 'r_platform_long', fw.x + 20, fw.z, 7, 1.57); place(B, 'basemodule_D', fw.x - 24, fw.z - 14, 5, 0.3); place(B, 'lights', fw.x + 8, fw.z + 12, 5, 0);
     const my = byId('mayak'); place(B, 'structure_tall', my.x, my.z, 10, 0); place(B, 'lights', my.x, my.z, 12, 0, 9); place(B, 'n_tent_detailedOpen', my.x + 20, my.z - 16, 4, 1); addC(my.x, my.z, 5);
+    const bk = byId('brak'); [['n_tent_detailedOpen', 22, -12, 4, 2.2], ['n_tent_detailedOpen', -6, -22, 4, 0.6], ['s_campfire-pit', 0, 0, 4, 0], ['n_log_stack', -18, 16, 3, 1], ['lights', 30, 20, 4, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, bk.x + x, bk.z + z, sc, ry));
     const ks = byId('kosa'); for (let k = 0; k < 8; k++) { const a = k * 0.8; place(B, k % 2 ? 'n_log_stack' : 'n_rock_largeA', ks.x + Math.cos(a) * 30, ks.z + Math.sin(a) * 30, 3, a); }
     // мост на опорах через Волгу (закрыт): пролёты и фермы
     { const zb = 60, x0 = riverX14(zb) - 115, x1 = riverX14(zb) + 115; for (let x = x0; x <= x1; x += 23) { B.add(BOX, mat(x, 2, zb, 3, 22, 4), () => TC.set('#9a9aa4'), { emit: true }); addC(x, zb, 2.2); } B.add(BOX, mat((x0 + x1) / 2, 12.6, zb, x1 - x0 + 6, 1.2, 8), () => TC.set('#5a5a62'), { emit: true }); for (let x = x0; x < x1; x += 23) B.add(BOX, mat(x + 11.5, 15, zb, 22, 0.5, 0.5, 0, 0, 0), () => TC.set('#c84a3a'), { emit: true }); }
