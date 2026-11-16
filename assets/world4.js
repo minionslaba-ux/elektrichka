@@ -266,6 +266,19 @@ W.docs4 = function (cfg, onWin, onFail) {
       o.draw(); };
     o.row = btns(o, Object.keys(cfg.docs).map((k) => cfg.docs[k][0] + '<br><small>' + cfg.docs[k][1] + '</small>'), (i) => o.get(Object.keys(cfg.docs)[i])); o.draw(); o.say(cfg.hello); } }); };
 
+/* ---------- заслонки: закрытая заслонка гонит давление по своей трубе в открытую; не туда — пшик ---------- */
+W.dampers4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.cfg = cfg; o.tries = 0;
+    o.reset = () => { const n = cfg.names.length; o.ord = [...Array(n).keys()].sort(() => Math.random() - 0.5); o.pipe = {}; for (let i = 0; i < n; i++) o.pipe[o.ord[i]] = i + 1 < n ? o.ord[i + 1] : 'T'; o.p = Array(n).fill(1); o.open = Array(n).fill(true); o.pT = 0; o.draw(); };
+    o.card = document.createElement('div'); o.card.className = 'card'; o.card.style.fontSize = '14px'; o.body.appendChild(o.card); o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.row = btns(o, cfg.names.map((nm) => nm), (i) => o.shut(i)); btns(o, ['↺ Открыть все заново'], () => { o.tries++; sfx('click'); o.say('Заслонки открыты. Давление вернулось.'); o.reset(); });
+    o.draw = () => { const nm = (k) => (k === 'T' ? '🚙 под «Буханкой»' : cfg.names[k]); o.card.innerHTML = '<b>Трубы:</b><br>' + Object.keys(o.pipe).map((k) => nm(+k) + ' → ' + nm(o.pipe[k])).join('<br>') + '<div style="margin-top:6px">Давление под «Буханкой»: <b>' + '💨'.repeat(o.pT) + '</b> ' + o.pT + ' из ' + cfg.names.length + '</div>';
+      [...o.row.children].forEach((b, i) => { b.innerHTML = (o.open[i] ? '🟢 ' : '⛔ ') + cfg.names[i] + '<br><small>давление ' + o.p[i] + '</small>'; }); o.st.textContent = 'Попыток: ' + (o.tries + 1); };
+    o.shut = (i) => { if (!o.open[i] || o.done) return; o.open[i] = false; const to = o.pipe[i], amt = o.p[i]; o.p[i] = 0; sfx('thud');
+      if (to === 'T') { o.pT += amt; } else if (o.open[to]) { o.p[to] += amt; } else { o.say('💨 Пшик! Труба ведёт в закрытую заслонку — давление ушло'); sfx('dry'); }
+      o.draw(); if (o.open.every((x) => !x)) { if (o.pT >= cfg.names.length) { o.done = 1; o.say('🌋 Ба-бах! Гейзер подбросил «Буханку»!'); setTimeout(() => o.win(), 900); } else o.say('Мало давления… Открой все и попробуй в другом порядке'); } };
+    o.reset(); o.say(cfg.hint); } }); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -299,6 +312,35 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 5 — по плану: торг с профсоюзом медведей → хоккей → заслонки гейзеров → таран спящих медведей → спираль → дракон
+   ===================================================================== */
+(function ch5() { const S = A.CHAPTERS[5]; if (!S) return; const ar = S.find((s) => s.id === 'arrive'), gy = S.find((s) => s.id === 'geyser'), au = S.find((s) => s.id === 'aurora'); if (!ar || !gy || !au) return;
+  ar.onArrive = function () { W.st.fuel = 100; W.give('food', 3); W.toast('⛽ Полярники заправили полный бак и дали пирожков'); W.talk([['potap', 'Профсоюз медведей Северной шапки приветствует! Лёд — наш. Хотите воды — платите: 40 банок варенья.'], ['tanya', 'Михал Потапыч?! Это ты у меня с дачи варенье унёс?!'], ['potap', 'Было дело. Вкусное. Потому и сорок. Торгуйтесь — профсоюз уважает торг.']], () => run()); };
+  function run() { W.trade4({ title: '🐻‍❄️ Торг с профсоюзом медведей', icon: '🐻‍❄️🫙', price: 40, patience: 3, hello: 'Потапыч: «Сорок банок. Или хоккей — если смелые»', rules: 'Цена — в банках варенья (это патроны деда 🧂). Сбивай цену, следи за терпением ❤. Или вызови медведей на хоккей.',
+      acts: (o) => [
+        { t: '📉 Тридцать — и по рукам', fn() { o.pat--; if (Math.random() < 0.65) { o.price = Math.max(10, o.price - 8); return 'Потапыч: «Ладно, ' + o.price + '. Профсоюз недоволен»'; } return 'Потапыч: «Р-р-р. Нет»'; } },
+        { t: '📜 Стихи деда о медведях', fn() { if (o.poem) { o.pat--; return 'Потапыч: «Второй раз не так трогательно»'; } o.poem = 1; o.price = Math.max(10, o.price - 10); return 'Дед читает… Потапыч прослезился: −10'; } },
+        { t: '🥟 Пирожки профсоюзу', fn() { if (W.st.food < 2) return 'Пирожков мало'; W.st.food -= 2; o.price = Math.max(10, o.price - 6); o.pat = Math.min(3, o.pat + 1); return 'Медведи жуют: −6, подобрели'; } },
+        { t: '🏒 «Сыграем в хоккей!»', fn() { o.done = 1; W.flags.hockey = 1; setTimeout(() => o.win('hockey'), 700); return 'Потапыч: «Хоккей?! Ха! Кратер Королёв, 90 секунд»'; } },
+        { t: '🫙 По рукам', fn() { if (W.st.ammo < o.price) return 'Банок не хватает'; W.st.ammo -= o.price; o.done = 1; W.flags.peace = 1; W.flags.paid = 1; setTimeout(() => o.win('paid'), 700); return 'Потапыч: «Договор! Медведи — друзья»'; } }] },
+    () => A.adv(), () => W.talk([['potap', 'Профсоюз ушёл на перерыв! …Вернулся. Начнём сначала.']], () => run())); }
+  gy.onArrive = function () { W.talk([['pip', 'Под льдом — газ. Весной он бьёт гейзерами и подбрасывает всё, что сверху. Перекрой заслонки так, чтобы всё давление ушло под «Буханку»!'], ['ded', 'Таня, это водопровод. Я в нём сорок лет. Только трубы тут живые.']], () => run2()); };
+  function run2() { W.dampers4({ title: '🌋 Заслонки гейзеров', rules: 'Закрытая заслонка гонит своё давление по трубе дальше — если там <b>открыто</b>. Если закрыто — «пшик», давление пропало. Собери всё под «Буханкой».', names: ['А', 'Б', 'В', 'Г'], hint: 'Пип: «Начинай с той, в которую ничего не ведёт»' },
+    () => { burst(W.scene, R.x, R.y + 2, R.z, 'smoke', '#ffffff', 10, 1.5); R.vy = 26; R.air = 1; W.give('money', 800); W.give('food', 2); W.toast('❄ Подлетели к облакам — снег в тазу!');
+      setTimeout(() => W.talk([['tanya', 'Ваня, мы летали! И снега полный таз. Это вода для огорода.'], ['pip', 'Дальше — перевал. Там медведи-хулиганы, которые не из профсоюза.']], () => A.adv()), 2500); },
+    () => run2()); }
+  gy.tick = () => {};
+  au.onArrive = function () { const pts = []; for (let k = 0; k < 10; k++) { const t = 0.1 + (k / 10) * 0.8, x = 9 + (200 - 9) * t, z = -256 + (-300 + 256) * t, o = (k % 2 ? 1 : -1) * rnd(4, 12); pts.push([x + 0.219 * o, z + 0.976 * o]); }
+    W.ram5 = { list: pts.map(([x, z]) => W.spawn('yeti', x, z, { keep: 1, hpK: 4 })).filter(Boolean), poem: 0, t: 0 }; W.calm = 1;
+    W.talk([['potap', '<i>(по рации)</i> Это не наши! Хулиганы с перевала. Растолкайте их, пока спят!'], ['ded', 'Я буду читать стихи — они засыпают. Ты тарань. Между стихами у меня перерыв на вдох — они просыпаются!'], ['ded', '<i>«Над шапкой ледяной — сиянье…»</i>']], () => { W.sleepT = 14; W.ram5.t = 14; W.toast('💤 Уснули! Тарань с разгона!'); A.setObj('Растолкай 10 медведей-хулиганов тараном', { x: 100, z: -280 }); }); };
+  au.tick = function (dt) { const Rm = W.ram5; if (!Rm) return; Rm.t -= dt; if (Rm.t <= 0) { if (W.sleepT > 0) return; Rm.poem++; Rm.t = 6 + 14; setTimeout(() => { if (!W.ram5) return; W.sleepT = 14; W.say('<b>Дед:</b> <i>' + pick(['«…Внизу — огород без воды…»', '«…Но если ты рядом, Танюша…»', '«…Мне не страшны никакие льды…»', '«…Медведь, усни, не буди Гошу…»']) + '</i>'); }, 6000); W.toast('⚠ Дед вдыхает — медведи просыпаются!'); }
+    const left = Rm.list.filter((e) => !e.dead), n = left.length; const tg = left.sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0]; if (tg && W.obj) { W.obj.x = tg.x; W.obj.z = tg.z; }
+    $('wdObj').innerHTML = '🐻 Медведи: <b>' + (10 - n) + ' из 10</b> · ' + (W.sleepT > 0 ? '💤 спят ещё <b>' + Math.ceil(W.sleepT) + ' с</b> — тарань!' : '⚠ <b>проснулись!</b> отъезжай, дед вдыхает');
+    if (!n) { W.ram5 = null; W.calm = 0; W.give('money', 600); W.talk([['ded', 'Все растолканы! Спят в сугробе, как дети.'], ['pip', 'Вершина купола свободна. Оттуда — спуск по спирали.']], () => A.adv()); } };
+  clear4.push(() => { if (W.ram5) { W.ram5.list.forEach((e) => (e.dead = true)); W.ram5 = null; } });
+})();
 
 /* =====================================================================
    ГЛАВА 6 — по плану: очередь справок (правила меняются) → фотосессия космотуриста → хвост кометы → воздушный бой на тарелке → флагман
