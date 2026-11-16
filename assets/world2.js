@@ -39,6 +39,9 @@ const T = W.TYPES = {
   yeti: { m: 'p_animal-polar', name: 'медведь-йети', h: 3, hp: 40, sp: 9, dmg: 12, xp: 12, r: 2, ground: 1 },
   hbear: { m: 'p_animal-polar', name: 'медведь-хоккеист', h: 3.2, hp: 9999, sp: 0, dmg: 0, xp: 0, r: 2, ground: 1 },
   idragon: { m: 'm_dragon', name: 'Ледяной дракон', h: 8, hp: 700, sp: 0, dmg: 16, xp: 400, r: 4.5, fly: 12, boss: 1, tint: '#a8e0ff' },
+  fighter: { m: 'r_craft_racer', name: 'пиратский истребитель', h: 2, hp: 20, sp: 20, dmg: 8, xp: 8, r: 2, fly: 13, rot: Math.PI },
+  deng: { m: 'r_turret_double', name: 'двигатель флагмана', h: 3.4, hp: 150, sp: 0, dmg: 0, xp: 30, r: 2.6, ground: 1, still: 1 },
+  admiral: { m: 'm_orc_skull', name: 'Адмирал Галина', h: 6.5, hp: 700, sp: 0, dmg: 16, xp: 450, r: 3.5, ground: 1, boss: 1, tint: '#ffb0e0' },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
