@@ -32,7 +32,8 @@ function next() { if (!dq.length) { dl.classList.remove('on'); W.paused = !!W.st
   dl.classList.add('on'); }
 W.say = (line) => radio(line);
 W.toast = function (t) { const d = document.createElement('div'); d.innerHTML = t; toastB.appendChild(d); setTimeout(() => d.remove(), 2600); };
-function titleCard(sm, h, p, btn, cb) { tt.innerHTML = `<small>${sm}</small><h1>${h}</h1><p>${p}</p><button>${btn}</button>`; tt.classList.add('on'); W.paused = true; sfx('j_start');
+function titleCard(sm, h, p, btn, cb) { if (W.again && /^ГЛАВА \d$/.test(sm)) { W.again = false; return cb && cb(); } // после гибели заставку главы не повторяем
+  tt.innerHTML = `<small>${sm}</small><h1>${h}</h1><p>${p}</p><button>${btn}</button>`; tt.classList.add('on'); W.paused = true; sfx('j_start');
   tt.querySelector('button').onclick = (e) => { e.stopPropagation(); tt.classList.remove('on'); W.paused = false; sfx('click'); cb && cb(); }; }
 
 /* ---------- цели (миссии главы 1) ---------- */
@@ -628,7 +629,7 @@ W.onGameOver = function (why) { const s = st(); const stars = Math.floor((s.kill
 function restart() { const sv = W.ckpt || load(), c0 = W.st, keep = { lvl: c0.lvl, xp: c0.xp, need: c0.need, hullMax: c0.hullMax, kills: c0.kills, money: c0.money, parts: c0.parts, armor: c0.armor }, cw = {}, cp = {};
   for (const [k, v] of Object.entries(W.WEAP)) cw[k] = v.lv; for (const [k, v] of Object.entries(W.PERK)) cp[k] = v.lv; // прогресс деда не теряется: откатывается только задание
   W.resetCombat(); W.EN.forEach((e) => (e.dead = true)); W.st = Object.assign(fresh(), sv ? sv.st : {}, keep); W.st.dead = false; W.st.hull = W.st.hullMax; W.st.nerves = Math.max(60, W.st.nerves); if (sv) { stepI = sv.step; Object.assign(W.flags, sv.flags); } applyWeapons(cw, cp);
-  const c = W.lastSafe || POI[0]; R.x = c.x + 6; R.z = c.z + c.r * 0.6; R.v = 0; R.h = Math.PI; W.st.fuel = Math.max(60, W.st.fuel); W.st.ammo = Math.max(60, W.st.ammo || 0); W.paused = false; W.boss = null; W.queen = null; W.mwave = null; bossBar(null); clearMission(); STEPSC.forEach((s) => (s.arrived = 0)); if (STEPSC[stepI]) STEPSC[stepI].start(); }
+  const c = W.lastSafe || POI[0]; R.x = c.x + 6; R.z = c.z + c.r * 0.6; R.v = 0; R.h = Math.PI; W.st.fuel = Math.max(60, W.st.fuel); W.st.ammo = Math.max(60, W.st.ammo || 0); W.paused = false; W.boss = null; W.queen = null; W.mwave = null; bossBar(null); clearMission(); STEPSC.forEach((s) => (s.arrived = 0)); W.again = true; if (STEPSC[stepI]) STEPSC[stepI].start(); W.again = false; }
 const fresh = () => ({ hull: 120, hullMax: 120, nerves: 100, fuel: 100, food: 6, ammo: 160, parts: 0, money: 150, xp: 0, need: 8, lvl: 1, kills: 0 });
 function save() { try { const w = {}, p = {}; for (const [k, v] of Object.entries(W.WEAP)) w[k] = v.lv; for (const [k, v] of Object.entries(W.PERK)) p[k] = v.lv; localStorage.setItem('bm_world', JSON.stringify({ ch: W.ch, step: stepI, flags: W.flags, st: Object.assign({}, W.st, { dead: false }), w, p, x: R.x, z: R.z })); } catch (e) {} }
 function load() { try { return JSON.parse(localStorage.getItem('bm_world') || 'null'); } catch (e) { return null; } }
