@@ -72,7 +72,7 @@ W.simon4 = function (cfg, onWin, onFail) {
     o.round = () => { if (o.lv >= cfg.rounds) return o.win(); o.seq = Array.from({ length: cfg.len0 + o.lv }, () => Math.floor(Math.random() * cfg.keys.length)); o.pi = 0; o.show = true; const step = Math.max(cfg.minMs, cfg.ms - o.lv * cfg.dms);
       o.say(cfg.who + ' диктует… смотри!'); o.st.textContent = 'Раунд ' + (o.lv + 1) + ' из ' + cfg.rounds + ' · ошибок ' + o.err + ' из ' + cfg.maxErr;
       o.seq.forEach((k, i) => setTimeout(() => cur === o && o.lit(k, step * 0.7), 700 + i * step)); setTimeout(() => { if (cur === o) { o.show = false; o.say('Твоя очередь!'); } }, 800 + o.seq.length * step); };
-    o.tap = (i) => { if (o.show) return; o.lit(i, 160); if (i === o.seq[o.pi]) { o.pi++; if (o.pi >= o.seq.length) { sfx('coin'); o.lv++; o.show = true; setTimeout(() => cur === o && o.round(), 800); } }
+    o.tap = (i) => { if (o.show) return; o.lit(i, 160); if (i === o.seq[o.pi] && cfg.gust && o.pi > 0 && Math.random() < cfg.gust) { o.show = true; sfx('dry'); o.say('💨 Порыв ветра! Заплатку сорвало — этот шар заново'); setTimeout(() => cur === o && o.round(), 1300); return; } if (i === o.seq[o.pi]) { o.pi++; if (o.pi >= o.seq.length) { sfx('coin'); o.lv++; o.show = true; setTimeout(() => cur === o && o.round(), 800); } }
       else { o.err++; sfx('caught'); o.show = true; if (o.err >= cfg.maxErr) { o.say('🚨 ' + cfg.alarm); setTimeout(() => o.fail(), 1200); return; } o.say('❌ Не тот! ' + cfg.who + ' повторяет'); setTimeout(() => cur === o && o.round(), 1200); } };
     o.round(); } }); };
 
@@ -190,6 +190,22 @@ W.tune4 = function (cfg, onWin, onFail) {
       if (o.hold > 0.8) { o.i++; sfx('j_found'); o.say(pick(cfg.okSay)); o.t = Math.min(cfg.time, o.t + cfg.bonus); o.next(); }
       if (o.t <= 0) o.fail(); } }); };
 
+/* ---------- слежка: едь за целью, не отставай; когда она оглядывается (👀) — замри или будь далеко ---------- */
+W.tail4 = function (o) { W.tailEnd4(); const T = W.tl4 = Object.assign({ s: 0, seg: [], sus: 0, lost: 0, chk: rnd(8, 12), look: 0, warn: 0 }, o); let L = 0; for (let i = 0; i < o.path.length - 1; i++) { const l = Math.hypot(o.path[i + 1][0] - o.path[i][0], o.path[i + 1][1] - o.path[i][1]); T.seg.push(l); L += l; } T.L = L;
+  T.m = o.mesh(); W.scene.add(T.m); T.eye = emojiSprite('👀', 3); T.eye.visible = false; W.scene.add(T.eye); T.cone = coneMesh(T.see, 0.45); T.cone.visible = false; W.scene.add(T.cone); return T; };
+W.tailEnd4 = function () { const T = W.tl4; if (!T) return; [T.m, T.eye, T.cone].forEach((m) => W.scene.remove(m)); W.tl4 = null; };
+clear4.push(() => W.tailEnd4());
+W.tailStep4 = function (dt) { const T = W.tl4; if (!T) return; T.chk -= dt;
+  if (T.chk <= 1.2 && T.chk > 0 && !T.warn) { T.warn = 1; sfx('warn', { vol: 0.5 }); W.toast('👀 Курьер сейчас оглянется — замри!'); }
+  if (T.chk <= 0 && !T.look) { T.look = 2.6; } if (T.look > 0) { T.look -= dt; if (T.look <= 0) { T.look = 0; T.warn = 0; T.chk = rnd(8, 13); } } else T.s = Math.min(T.L, T.s + T.sp * dt);
+  let s = T.s, i = 0; while (i < T.seg.length - 1 && s > T.seg[i]) { s -= T.seg[i]; i++; } const k = Math.min(1, s / T.seg[i]), a = T.path[i], b = T.path[i + 1]; T.x = a[0] + (b[0] - a[0]) * k; T.z = a[1] + (b[1] - a[1]) * k; const fh = Math.atan2(b[0] - a[0], b[1] - a[1]), h = T.look > 0 ? fh + Math.PI : fh;
+  const y = W.H(T.x, T.z); T.m.position.set(T.x, y, T.z); T.m.rotation.y = h; T.eye.visible = T.look > 0 || T.warn; T.eye.position.set(T.x, y + 7, T.z); T.cone.visible = T.look > 0; T.cone.position.set(T.x, y + 1, T.z); T.cone.rotation.y = h;
+  const dx = R.x - T.x, dz = R.z - T.z, d = Math.hypot(dx, dz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - h), Math.cos(Math.atan2(dx, dz) - h)));
+  const seen = T.look > 0 && d < T.see && da < 0.5 && Math.abs(R.v) > 2, close = d < T.near; T.sus = Math.max(0, Math.min(100, T.sus + (seen ? 70 : close ? 25 : -8) * dt)); T.lost = d > T.far ? T.lost + dt : 0;
+  if (W.obj) { W.obj.x = T.x; W.obj.z = T.z; }
+  $('wdObj').innerHTML = '🕵 ' + T.label + ': <b>' + Math.round(d) + ' м</b> (держи ' + T.near + '–' + T.far + ') · 👁 <b style="color:' + (T.sus > 60 ? '#ff6a4a' : T.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(T.sus) + '%</b>' + (T.look > 0 ? ' · <b style="color:#ffd24a">👀 оглядывается — стой!</b>' : '') + (T.lost > 0 ? ' · <b style="color:#7fc8ff">отстаёшь! ' + Math.ceil(T.lostMax - T.lost) + ' с</b>' : '');
+  if (T.sus >= 100) { const f = T.onFail; W.tailEnd4(); f('seen'); } else if (T.lost > T.lostMax) { const f = T.onFail; W.tailEnd4(); f('lost'); } else if (T.s >= T.L) { const f = T.onWin; W.tailEnd4(); f(); } };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -223,6 +239,32 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 9 — по плану: заплатки на ветру (повтори) → песня для семян (ритм) → слежка за курьером → погоня за газовозом → Зина
+   ===================================================================== */
+(function ch9() { const S = A.CHAPTERS[9]; if (!S) return; const si = S.findIndex((s) => s.id === 'seeds'), ci = S.findIndex((s) => s.id === 'chase'); if (si < 0 || ci < 0) return;
+  W.patch9 = function (q) { if (q.busy || W.mini.cur()) return; q.busy = 1; R.v = 0; const n = W.leak9.filter((x) => x.done).length;
+    W.simon4({ title: '🩹 Заплатка на шар ' + (n + 1) + ' из 5', rules: 'Дед клеит заплатку слоями: повтори порядок цветов. <b>Порыв ветра</b> может сорвать заплатку — тогда этот шар заново.', keys: ['🟥', '🟨', '🟩', '🟦', '⬜', '🟪'], len0: 3 + Math.min(2, n), rounds: 1, ms: 650, dms: 0, minMs: 400, maxErr: 3, gust: 0.12, who: 'Дед', alarm: 'Заплатка не держится! Подлети ещё раз' },
+      () => { q.done = true; W.scene.remove(q.sp); sfx('j_found'); W.toast('🩹 Шар залатан!'); },
+      () => { q.busy = 0; const a = Math.atan2(R.x - q.x, R.z - q.z); R.x = q.x + Math.sin(a) * 14; R.z = q.z + Math.cos(a) * 14; }); };
+  const seeds = S[si]; seeds.onArrive = function () { W.talk([['varya', 'Я садовница Варя. Мамаша Зина украла газ из садов — семена завяли в облачных грядках.'], ['varya', 'Венерианские семена растут под песню. Пою я — а вы поливайте в такт! Мимо такта — семечко обижается.'], ['tanya', 'Петь и поливать — это я с молодости умею.']], () => run()); };
+  function run() { W.rhythm4({ title: '🌱 Песня для семян', icon: '🌱', btn: '💧 Полить', rules: 'Варя поёт, бегунок ходит в такт. Жми «💧 Полить», когда он в <b>зелёной</b> зоне. 10 поливов — и сад взойдёт.', need: 10, maxMiss: 4, z0: 0.26, zMin: 0.13, dz: 0.012, sp: 0.75, dsp: 0.05, okSay: ['Росток!', 'Варя: «Ля-ля-ля!»', 'Листик развернулся', 'Гоша нюхает цветок'], missSay: '❌ Мимо такта — семечко надулось' },
+    () => { W.give('food', 4); W.give('ammo', 60); W.nerve(30); W.talk([['varya', 'Взошло! Картошка в облаках! Спасибо, бабушка!'], ['pip', 'А на Причале дирижаблей замечен курьер Зины. Проследим — найдём, где она прячет газ. Только не спугни!']], () => A.adv()); },
+    () => W.talk([['varya', 'Семена обиделись… Ничего, начнём песню сначала.']], () => run())); }
+  seeds.tick = () => {};
+  const tail = { id: 'tail9', start() { A.setObj('Причал дирижаблей: курьер Зины', byId('port')); }, arrive: 'port',
+    onArrive() { W.talk([['pip', 'Вон курьер с баллонами. Едь следом, но не близко. Когда он оглядывается 👀 — замри: на мосту не спрячешься.'], ['ded', 'Таня, как в кино про шпионов. Я — в шляпе.']], () => run2()); } };
+  function courier() { let mesh; if (MODELS.k_rover) { const b = new Builder([]); b.add(MODELS.k_rover, mat(0, 0, 0, 4.5, 4.5, 4.5), null, { vcol: true, vk: 0.8 }); mesh = new THREE.Mesh(b.build(), bakedMat); } else mesh = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 5), new THREE.MeshLambertMaterial({ color: '#6a4a8a' })); const g = new THREE.Group(); g.add(mesh); const sp = emojiSprite('🎈', 2.4); sp.position.y = 5; g.add(sp); return g; }
+  function run2() { const pt = byId('port'), m = byId('meteo'); R.x = pt.x - 10; R.z = pt.z - 10; R.y = W.H(R.x, R.z); R.v = 0;
+    W.tail4({ label: 'Курьер Зины', path: [[pt.x - 30, pt.z - 25], [0, 0], [m.x, m.z]], sp: 8.5, see: 60, near: 22, far: 110, lostMax: 6, mesh: courier,
+      onWin() { W.give('money', 1200); W.give('parts', 4); W.talk([['pip', 'Курьер привёл на метеостанцию! Там газовоз пиратов — он перекачивает газ Аэрограда.'], ['ded', 'Таня, мы его выследили. Теперь — догнать.']], () => A.adv()); },
+      onFail(why) { W.talk([['pip', why === 'seen' ? 'Он нас заметил и удрал обратно на причал! Подождём, пока выедет снова.' : 'Потеряли! Он вернулся на причал. Ещё раз, ближе держись.']], () => run2()); } });
+    A.setObj('Следи за курьером', { x: pt.x, z: pt.z }); }
+  tail.tick = (dt) => W.tl4 && W.tailStep4(dt);
+  S.splice(ci, 0, tail);
+  // погоня начинается там, где закончилась слежка — метеостанция; переписываем «прибытие», чтобы не ждать
+})();
 
 /* =====================================================================
    ГЛАВА 10 — по плану: выбор с Аркадием → настройка антенн → рыбалка → охота на удильщика → бегство от трещины (от развилки) → Царь-рыба
