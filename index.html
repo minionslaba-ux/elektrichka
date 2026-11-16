@@ -148,6 +148,13 @@ body.farm.seedson #inv{display:none}#seeds.on{display:block;animation:pop .3s cu
 .pin .bdg{position:absolute;top:-6px;right:-10px;background:#ff5a4a;color:#fff;border-radius:10px;padding:1px 6px;font-size:11px}
 .pin span{max-width:110px;text-align:center;line-height:1.15}
 @keyframes pinp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#mapTabs{position:absolute;left:50%;transform:translateX(-50%);top:calc(84px + env(safe-area-inset-top));z-index:3;display:flex;gap:6px;background:rgba(20,8,16,.7);border:1px solid var(--line);border-radius:14px;padding:4px}#mapTabs button{border:0;border-radius:10px;padding:7px 12px;font:800 13px system-ui,sans-serif;color:var(--ink);background:none;cursor:pointer;white-space:nowrap}#mapTabs button.on{background:linear-gradient(90deg,#ffd24a,#ff7a3a);color:#2a1406}
+#expMap{position:absolute;inset:0;z-index:1;display:none;background:radial-gradient(ellipse 75% 28% at 42% 76%,#b8603e 0%,#7a3428 45%,rgba(40,14,30,0) 75%),radial-gradient(circle at 82% 20%,rgba(90,160,255,.35),rgba(0,0,0,0) 18%),linear-gradient(180deg,#05060f,#120a1e 60%,#2a1220)}#map.exp #expMap{display:block}#map.exp #pins,#map.exp #mapSvg,#wdGo{display:none}
+#expMap svg{position:absolute;inset:0;width:100%;height:100%}
+.cpin{position:absolute;transform:translate(-50%,-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--ink);font:800 11px system-ui,sans-serif;text-shadow:0 1px 4px #000;padding:0;cursor:pointer}.cpin i{font-style:normal;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;background:rgba(30,14,22,.8);border:2px solid #7aff8a;position:relative}.cpin span{max-width:96px;text-align:center;line-height:1.1}.cpin em{position:absolute;top:-6px;right:-8px;font-style:normal;font-size:10px;border-radius:9px;padding:1px 5px;background:#3a8a5a;color:#fff}
+.cpin.cur i{border-color:#ffd24a;box-shadow:0 0 20px rgba(255,210,74,.7);animation:pinp 1.8s ease-in-out infinite}.cpin.cur em{background:#ff7a3a}.cpin.lock i{border-color:rgba(255,255,255,.25);filter:grayscale(.9);opacity:.6}.cpin.lock span{opacity:.6}.cpin.earth i{border-color:#7fc8ff;width:56px;height:56px;font-size:30px;box-shadow:0 0 24px rgba(90,160,255,.6)}
+#expGo{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:3;border:0;border-radius:16px;padding:11px 20px;font:900 16px system-ui,sans-serif;color:#2a1406;background:linear-gradient(90deg,#ffd24a,#ff7a3a);box-shadow:0 6px 24px rgba(255,120,60,.5);cursor:pointer;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#expGo small{display:block;font-size:11px;font-weight:700;opacity:.8}
+#map.exp #stBtn{display:none}#mapSheet .row{padding:4px 2px;font-size:13px;color:var(--ink)}#mapSheet .row.dn{opacity:.6}#mapSheet .row.lk{opacity:.45}#mapSheet h4{margin:8px 0 2px;font-size:13px;color:var(--hot)}#mapSheet{max-height:70vh;overflow:auto}
 #mapSheet{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));margin:0 auto;max-width:460px;z-index:3;border-radius:18px;padding:14px;display:none}
 #mapSheet.on{display:block;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
 #mapSheet h3{margin:0 0 4px;font-size:18px}#mapSheet p{margin:0 0 10px;color:var(--dim);font-size:13px}
@@ -183,7 +190,7 @@ button .ic{width:18px;height:18px;vertical-align:-3px;margin-right:6px}#again .i
 #haggle .hw{font-weight:800;font-size:15px;color:var(--dim)}#haggle .hp{font-size:28px;font-weight:900;margin:4px 0 10px}#haggle .hp small{display:block;font-size:14px;color:var(--dim);font-weight:600;margin-top:2px}#haggle .btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}#haggle .hs{min-height:20px;margin:8px 0;font-size:14px;color:#ffd27a}
 #haggle .hb{position:relative;height:22px;border-radius:11px;background:linear-gradient(90deg,#ff5a4a,#ffb04a 50%,#ff5a4a)}#hgOk{position:absolute;top:0;bottom:0;border-radius:11px;background:#4ad86a;box-shadow:0 0 12px #4ad86a}#hgNd{position:absolute;top:-5px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 8px #000}
 #haggle button{border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:var(--hot);color:#2a1406}#haggle button.alt{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--line)}
-#wdGo{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%);z-index:3;border:0;border-radius:18px;padding:12px 22px;font:900 19px system-ui,sans-serif;color:#2a1406;background:linear-gradient(90deg,#ffd24a,#ff7a3a);box-shadow:0 6px 24px rgba(255,120,60,.5),0 0 0 2px rgba(255,255,255,.3) inset;cursor:pointer;animation:pop .5s both}#wdGo small{display:block;font-size:11px;font-weight:700;opacity:.8}
+#wdGo{position:absolute;left:50%;top:calc(132px + env(safe-area-inset-top));transform:translateX(-50%);z-index:3;border:0;border-radius:18px;padding:12px 22px;font:900 19px system-ui,sans-serif;color:#2a1406;background:linear-gradient(90deg,#ffd24a,#ff7a3a);box-shadow:0 6px 24px rgba(255,120,60,.5),0 0 0 2px rgba(255,255,255,.3) inset;cursor:pointer;animation:pop .5s both}#wdGo small{display:block;font-size:11px;font-weight:700;opacity:.8}
 #stBtn{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:2;border:1px solid var(--line);border-radius:16px;padding:10px 14px;color:var(--ink);font:800 15px system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px}#stBtn small{color:var(--hot);font-weight:900}
 #stNext{display:none;width:100%;margin:10px 0 8px;border:0;border-radius:14px;padding:13px;font:900 16px system-ui,sans-serif;background:linear-gradient(90deg,#ffb04a,#ff7a5a);color:#2a1406;cursor:pointer}body.storyon #stNext{display:block}
 #story{position:fixed;inset:0;z-index:20;display:none;background:linear-gradient(180deg,#3a1a2a,#1a0c16);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px calc(20px + env(safe-area-inset-bottom))}#story.on{display:block}
@@ -242,7 +249,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
   <button id="stNext">📖 Следующая история ▶</button><div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
 <div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
   <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
-  <div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
+  <div id="mapTabs"><button data-v="home">🏡 Колония</button><button data-v="exp">🚀 Экспедиция · 12 глав</button></div><div id="expMap"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="expSvg"></svg><div id="expPins"></div><button id="expGo"></button></div><div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <button id="snd" aria-label="Звук"></button><button id="menuB" aria-label="В меню">☰<span>Меню</span></button>
@@ -1393,7 +1400,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 38); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 39); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : loadJS('assets/world.js').then(() => loadJS('assets/world2.js')).then(() => { WD_PART2(); return loadJS('assets/world3.js'); }).then(() => WD_PART3());
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
@@ -1461,8 +1468,8 @@ $('toMap').onclick = () => showMap();
 // ☰ в меню из любого режима: первое нажатие — спросить, второе — выйти
 { let askT = 0; $('menuB').onclick = (e) => { e.stopPropagation(); const b = $('menuB');
   if (!b.classList.contains('ask')) { b.classList.add('ask'); b.innerHTML = '☰<span>Выйти в меню?</span>'; sfx('click'); clearTimeout(askT); askT = setTimeout(() => { b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; }, 4000); return; }
-  clearTimeout(askT); b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; if (window.WD && WD.active && WD.saveNow) WD.saveNow(); if (car.state === 'go') car.state = 'menu'; ST.cur = 0; document.body.classList.remove('storyon'); $('story').classList.remove('on'); showMap(); }; }
-$('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin')) $('mapSheet').classList.remove('on'); });
+  clearTimeout(askT); b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; if (window.WD && WD.active && WD.saveNow) { WD.saveNow(); try { localStorage.setItem('bm_tab', 'exp'); } catch (e) {} } if (car.state === 'go') car.state = 'menu'; ST.cur = 0; document.body.classList.remove('storyon'); $('story').classList.remove('on'); showMap(); }; }
+$('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin') && !e.target.closest('.cpin')) $('mapSheet').classList.remove('on'); });
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 
 /* ---------- управление: плавающий джойстик, как в «Ночном тарифе» ---------- */
@@ -1895,6 +1902,37 @@ function drawMapSvg() {
   h += road('44,42 30,40 18,38', '#2a1a22', 4) + road('72,74 84,54', '#2a1a22', 4) + road('18,38 22,22', '#2a1a22', 3) + road('24,70 34,80 46,86', '#2a1a22', 4) + road('24,70 34,80 46,86', '#ffcf6a', 1, '2 3');
   $('mapSvg').innerHTML = h;
 }
+const EXPED = [{"n": 1, "t": "Пенсия на Марсе", "pl": "Колония «Заречная»", "e": "🏘", "w": "Марс", "m": ["🛸 Дроны над колонией", "🌱 Теплицы колонии", "⛽ Заправка «У Петровича»", "🛸 Лайнер «Комсомолец-7»", "🏭 Ржавобург", "⚔ Босс: Логово Бешеного Коляна"]}, {"n": 2, "t": "Каньон", "pl": "Долины Маринер", "e": "🏜", "w": "Марс", "m": ["🚀 Кладбище кораблей", "🛸 Сбитый корабль марсианина", "🪨 Ущелье «Глотка»", "⚔ Босс: Пиратская пристань"]}, {"n": 3, "t": "Ксар-Тала", "pl": "Кидония и Ксар-Тала", "e": "👽", "w": "Марс", "m": ["🛃 Таможня Ксар-Талы", "🏙 Ксар-Тала, столица марсиан", "🏛 Музей землян", "🗿 Лицо Кидонии", "📡 Антенны марсиан", "⚔ Босс: Дворец тёщи Зурги"]}, {"n": 4, "t": "Пещеры", "pl": "Кристальные пещеры", "e": "💎", "w": "Марс", "m": ["🍄 Грибоград, город гномов", "⛏ Штреки «Глубинной-3»", "🗼 Маяк на острове", "🐱 Гоша пропал", "⚔ Босс: Логово червя"]}, {"n": 5, "t": "Полюс", "pl": "Полярная шапка", "e": "❄️", "w": "Марс", "m": ["🏕 Станция «Льдинск»", "🏒 Кратер Королёв", "⛲ Поле гейзеров", "⛰ Перевал Йети", "🏔 Вершина купола", "⚔ Босс: Каньон Северный"]}, {"n": 6, "t": "Фобос", "pl": "Фобос", "e": "🌑", "w": "Фобос", "m": ["🛰 Космопорт «Фобос-Узловая»", "📦 Склад порта", "☄️ Под хвостом кометы", "🛸 Ангар тарелок", "⚔ Босс: Кратер Стикни"]}, {"n": 7, "t": "Олимп", "pl": "Олимп", "e": "🌋", "w": "Марс", "m": ["🌋 Гора Арсия", "🌋 Гора Павлина", "🌋 Аскрийская гора", "🏘 Посёлок «Подножье»", "🚀 Стартовая площадка у обрыва", "⚔ Босс: Кальдера Олимпа"]}, {"n": 8, "t": "Пояс астероидов", "pl": "Церера", "e": "🪨", "w": "Пояс астероидов", "m": ["🛰 Станция «Церера-Транзит»", "⚪ Соль Оккатора", "🛸 Гонка на тарелке", "🗻 Гора Ахуна", "⛏ Шахта гномов «Ледяная»", "⚔ Босс: Камнедробилка Толяна"]}, {"n": 9, "t": "Венера", "pl": "Венера", "e": "☁️", "w": "Венера", "m": ["☕ Кафе «Облачко»", "🩹 Заплатки на шарах", "🌱 Висячие сады", "⚡ Метеостанция «Ветер»", "⚔ Босс: Пиратская платформа мамаши Зины"]}, {"n": 10, "t": "Юпитер", "pl": "Европа", "e": "🧊", "w": "Юпитер", "m": ["🚉 Станция «Европа-Пересадочная»", "📡 Антенное поле", "🎣 Трещина «Рыбное место»", "🐟 Логово Царь-рыбы", "⚔ Босс: Царь-рыба"]}, {"n": 11, "t": "Сатурн", "pl": "Титан", "e": "🪐", "w": "Сатурн", "m": ["🪐 Космопорт «Титан-Кольцевой»", "🏜 Дюны Шангри-Ла", "🛰 Равнина «Гюйгенса»", "⛵ Берег моря Кракена", "🦑 Причал лайнера «Сатурн — Земля»", "⚔ Босс: Метановый Кракен"]}, {"n": 12, "t": "Луна", "pl": "Луна", "e": "🌙", "w": "Луна", "m": ["🌙 Станция «Последняя пересадка»", "👣 Море Спокойствия", "🚙 Море Дождей", "🛝 Прыжок через борозду", "🚀 Космодром «Луна — Земля»", "⚔ Босс: Взыскатель-3000"]}];
+// 🚀 карта экспедиции: 12 глав от Марса до Земли, сюжетные миссии по порядку и 4 открытые миссии в каждой
+const EXP_POS = { 1: [14, 80], 2: [38, 82], 3: [62, 79], 4: [14, 63], 5: [38, 69], 6: [86, 70], 7: [62, 59], 8: [86, 52], 9: [66, 42], 10: [36, 46], 11: [14, 34], 12: [48, 27] }, EXP_EARTH = [82, 19];
+const SIDE_NAMES = ['🏴 Гнездо у дороги', '🧺 Сбор на время', '📦 Посылка', '🚩 Заезд по флажкам'];
+function expState() { let sv = null; try { sv = JSON.parse(localStorage.getItem('bm_world') || 'null'); } catch (e) {} const f = (sv && sv.flags) || {}, cur = (sv && sv.ch) || 1, step = (sv && sv.step) || 0;
+  const fin = (n) => n < cur || (n === cur && (n <= 7 ? (n === 7 ? !!f.done : !!f['ch' + n]) : !!f['ch' + n])) || (n <= 7 && f.done);
+  const next = fin(cur) && cur < 12 ? cur + 1 : 0; return { sv, f, cur, step, fin, next }; }
+function drawExp() { const S = expState(); let h = '', pts = [];
+  for (const c of EXPED) { const [x, y] = EXP_POS[c.n]; pts.push(x + ',' + y); const done = S.fin(c.n), cur = c.n === S.cur && !done, nx = c.n === S.next, lock = !done && !cur && !nx;
+    h += `<button class="cpin${cur || nx ? ' cur' : ''}${lock ? ' lock' : ''}" data-c="${c.n}" style="left:${x}%;top:${y}%"><i>${lock ? '🔒' : c.e}${done ? '<em>✓</em>' : cur ? '<em>' + Math.min(S.step + 1, c.m.length) + '/' + c.m.length + '</em>' : nx ? '<em>новая</em>' : ''}</i><span>${c.n} · ${c.t}</span></button>`; }
+  pts.push(EXP_EARTH.join(',')); h += `<button class="cpin earth${S.fin(12) ? '' : ' lock'}" data-c="earth" style="left:${EXP_EARTH[0]}%;top:${EXP_EARTH[1]}%"><i>🌍</i><span>Земля — дом</span></button>`;
+  $('expPins').innerHTML = h; $('expSvg').innerHTML = `<polyline points="${pts.join(' ')}" fill="none" stroke="rgba(255,210,120,.55)" stroke-width="2" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>` + Array.from({ length: 40 }, (_, k) => `<circle cx="${(k * 37) % 100}" cy="${(k * 53) % 62}" r="${0.15 + (k % 3) * 0.12}" fill="#fff" opacity=".6"/>`).join('');
+  $('expPins').querySelectorAll('.cpin').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openChap(b.dataset.c); }));
+  const c = EXPED[(S.next || S.cur) - 1]; $('expGo').innerHTML = S.fin(12) ? '🌍 Сезон 2 пройден — кататься<small>открытые миссии — в каждой главе</small>' : '▶ ' + (S.next ? 'Глава ' + S.next + ': ' + EXPED[S.next - 1].t : 'Глава ' + c.n + ': ' + (c.m[Math.min(S.step, c.m.length - 1)] || c.t)) + '<small>продолжить экспедицию</small>'; }
+function goExp(pick, visit) { try { if (pick) localStorage.setItem('bm_pick', pick); else localStorage.removeItem('bm_pick'); if (visit) localStorage.setItem('bm_visit', String(visit)); else localStorage.removeItem('bm_visit'); } catch (e) {} sfx('open'); ST.cur = 0; document.body.classList.remove('storyon'); ORDER = 'world'; $('mapSheet').classList.remove('on'); hideMap(); newRun(false); }
+function openChap(id) { sfx('open'); const S = expState();
+  if (id === 'earth') { $('msT').textContent = '🌍 Земля'; $('msD').textContent = S.fin(12) ? 'Дом! Бабуля, дед, внуки и Гоша вернулись. Сезон 3 — скоро.' : 'Конечная остановка. Пройди все 12 глав — и семья дома.'; $('msL').innerHTML = ''; $('mapSheet').classList.add('on'); return; }
+  const c = EXPED[+id - 1], done = S.fin(c.n), cur = c.n === S.cur && !done, nx = c.n === S.next, lock = !done && !cur && !nx, sd = ((S.f.side || {})['c' + c.n]) || [];
+  $('msT').textContent = c.e + ' Глава ' + c.n + ' · ' + c.t; $('msD').textContent = c.pl + (c.w !== c.pl ? ' · ' + c.w : '') + (done ? ' · пройдена ✓' : cur ? ' · идёт сейчас' : nx ? ' · открыта' : ' · закрыта');
+  let h = '';
+  if (cur || nx) h += `<button class="m story" data-go="1">▶ ${nx ? 'Начать главу ' + c.n : 'Продолжить: ' + c.m[Math.min(S.step, c.m.length - 1)]}<small>сюжет ведёт по порядку</small></button>`;
+  h += '<h4>Сюжет — по порядку</h4>' + c.m.map((m, i) => { const st = done ? 'dn' : cur ? (i < S.step ? 'dn' : i === S.step ? '' : 'lk') : 'lk'; return `<div class="row ${st}">${st === 'dn' ? '✓' : st === 'lk' ? '🔒' : '▶'} ${i + 1}. ${m}</div>`; }).join('');
+  h += '<h4>Открытые миссии — на выбор, в любом порядке</h4>';
+  if (lock) h += `<div class="row lk">🔒 Откроются, когда дойдёшь до главы ${c.n}</div>`;
+  else h += SIDE_NAMES.map((m, k) => `<button class="m" data-side="${k}">${sd.includes(k) ? '✓' : '⭐'} ${m}<small>${sd.includes(k) ? 'пройдена · можно повторить за половину награды' : 'награда: ' + (250 + c.n * 60) + ' ₽ и 2 ⚙'}${done && c.n !== S.cur ? ' · глава пройдена — заедешь в гости и вернёшься' : ''}</small></button>`).join('');
+  $('msL').innerHTML = h; $('mapSheet').classList.add('on');
+  $('msL').querySelectorAll('[data-go]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); goExp(null, 0); }));
+  $('msL').querySelectorAll('[data-side]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const visit = c.n !== S.cur ? c.n : 0; goExp('s' + b.dataset.side, visit); })); }
+function setMapTab(v) { $('map').classList.toggle('exp', v === 'exp'); $('mapTabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v)); $('mapSheet').classList.remove('on'); try { localStorage.setItem('bm_tab', v); } catch (e) {} if (v === 'exp') drawExp(); }
+$('mapTabs').querySelectorAll('button').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); sfx('click'); setMapTab(b.dataset.v); }));
+$('expGo').onclick = (e) => { e.stopPropagation(); goExp(null, 0); };
 function showMap() {
   stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); stxClear(); if (window.WD) WD.stop(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
@@ -1904,6 +1942,7 @@ function showMap() {
     return `<button class="pin${p.lock ? ' lock' : ''}" data-p="${p.id}" style="left:${p.x}%;top:${p.y}%"><i>${p.e}</i>${bdg}<span>${p.name}</span></button>`; }).join('');
   $('pins').querySelectorAll('.pin').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openPlace(b.dataset.p); }));
   $('mapSheet').classList.remove('on'); $('map').classList.add('on'); document.body.classList.add('mapon'); stBtn();
+  let tab = 'home'; try { tab = localStorage.getItem('bm_tab') || (localStorage.getItem('bm_world') ? 'exp' : 'home'); } catch (e) {} setMapTab(tab);
 }
 function openPlace(id) {
   sfx('open');
@@ -1953,7 +1992,7 @@ new MutationObserver(() => { const on = $('end').classList.contains('on'); if (!
   $('etitle').innerHTML = letters(st >= 2 ? m.win : m.lose, 0.025); $('esub').textContent = '📖 История №' + m.n + ' · ' + m.t;
   ST.done[m.n] = Math.max(ST.done[m.n] || 0, st || 1); try { localStorage.setItem('bm_story', JSON.stringify(ST.done)); } catch (e) {} stBtn(); $('stNext').style.display = m.n < 150 ? '' : 'none'; }).observe($('end'), { attributes: true, attributeFilter: ['class'] });
 $('stNext').onclick = () => { const n = Math.min(150, (SM() ? SM().n : 0) + 1); $('end').classList.remove('on'); startStory(n); };
-$('wdGo').onclick = (e) => { e.stopPropagation(); sfx('open'); ST.cur = 0; document.body.classList.remove('storyon'); ORDER = 'world'; hideMap(); newRun(false); };
+$('wdGo').onclick = (e) => { e.stopPropagation(); try { localStorage.removeItem('bm_pick'); localStorage.removeItem('bm_visit'); } catch (er) {} sfx('open'); ST.cur = 0; document.body.classList.remove('storyon'); ORDER = 'world'; hideMap(); newRun(false); };
 $('stBtn').onclick = (e) => { e.stopPropagation(); sfx('open'); showStory(); };
 $('stClose').onclick = () => $('story').classList.remove('on');
 setInterval(() => { const m = SM(); if (!m || !m.radio || $('end').classList.contains('on') || document.body.classList.contains('mapon') || document.hidden) return; if (Math.random() < 0.55) radio(pick(m.radio)); }, 14000); // радио по теме истории

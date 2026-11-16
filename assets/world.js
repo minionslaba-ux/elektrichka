@@ -102,6 +102,13 @@ W.line10 = line10;
 const SEA11 = { x: 0, z: -440, r: 170 }, ISLE11 = { x: 0, z: -440, r: 44 }; W.SEA11 = SEA11; W.ISLE11 = ISLE11;
 const dune11 = (x, z) => Math.pow(Math.max(0, Math.sin(z / 16 + Math.sin(x / 90) * 1.6 + fbm(x / 70, z / 70) * 2)), 2) * (0.45 + 0.55 * sstep(-40, -260, x)); W.dune11 = dune11;
 const sea11 = (x, z) => Math.hypot(x - SEA11.x, (z - SEA11.z) * 0.85); W.sea11 = sea11;
+// глава 12: Луна — серый реголит, тёмные «моря», кратеры, борозда Хэдли поперёк карты (перепрыгнуть с трамплина); в небе — Земля
+const rille12 = (x) => -250 + Math.sin(x / 90) * 18 + Math.sin(x / 37) * 5, RAMP12 = { x: 0, z0: -196, z1: -224, h: 4.2 }; W.rille12 = rille12; W.RAMP12 = RAMP12;
+const rilleK12 = (x, z) => { const d = Math.abs(z - rille12(x)); return (1 - sstep(16, 24, d)) * (1 - sstep(430, 520, Math.abs(x))); }; W.rilleK12 = rilleK12;
+function raw12(x, z) { let h = (fbm(x / 160 + 2, z / 160 + 7) - 0.5) * 12 + (fbm(x / 22, z / 22) - 0.5) * 1.2 + craterH(x, z); const cd = Math.hypot(x + 340, z + 80); if (cd < 110) h += -12 * (1 - (cd / 70) ** 2) * (cd < 70 ? 1 : 0) + 7 * Math.exp(-(((cd - 74) / 12) ** 2)); return h; }
+// после дорог: трамплин и борозда (дорога их не сглаживает)
+function post12(x, z, h) { const k = rilleK12(x, z); return k > 0 ? h - 20 * k : h; }
+function solid12(x, z) { const R = RAMP12, u = (R.z0 - z) / (R.z0 - R.z1); return Math.abs(x - R.x) < 6.5 && u > 0 && u < 1.12 ? (u <= 1 ? R.h * u : R.h * (1 - (u - 1) / 0.12)) : 0; }
 function raw11(x, z) { let h = (fbm(x / 170 + 9, z / 170 - 4) - 0.5) * 10 + (fbm(x / 26, z / 26) - 0.5) * 1.1 + dune11(x, z) * 4.5; const d = sea11(x, z); if (d < SEA11.r + 50) { const k = sstep(SEA11.r - 30, SEA11.r + 50, d); h = h * k - 14 * (1 - k); }
   const di = Math.hypot(x - ISLE11.x, z - ISLE11.z); if (di < ISLE11.r + 26) { const k = sstep(ISLE11.r, ISLE11.r + 26, di); h = h * k + 1.5 * (1 - k); } return h; }
 function raw10(x, z) { let h = (fbm(x / 180 + 5, z / 180 - 11) - 0.5) * 9 + (fbm(x / 30, z / 30) - 0.5) * 1.2; const d = line10(x, z); if (d < 12) h += 2.2 * (Math.exp(-(((d - 3.5) / 1.6) ** 2)) + Math.exp(-(((d + 3.5) / 1.6) ** 2))) - (d < 1.5 ? 0.6 : 0);
@@ -262,6 +269,18 @@ const CH = W.CH = {
     raw: raw11,
     road(x, z, h, k, y) { return h * (1 - k * 0.85) + y * k * 0.85; },
     poiH: (p) => raw11(p.x, p.z) * 0.6, craters: 3 },
+  12: { name: 'Луна', fog: '#05060c', fogNear: 320, fogFar: 1100, far: 1800, space: 1, mars: 0, earth: 1, g: 4, pal: ['#8a8a8e', '#b4b4b8', '#6a6a70', '#3a3a40', '#5a5a60'],
+    pois: [
+      { id: 'station', name: 'Станция «Последняя пересадка»', e: '🌙', x: 0, z: 60, r: 70, col: '#7aff8a', kind: 'city' },
+      { id: 'apollo', name: 'Море Спокойствия — «Аполлон-11»', e: '👣', x: -330, z: 230, r: 80, col: '#ffd24a', kind: 'view' },
+      { id: 'luno', name: 'Море Дождей — «Луноход-1»', e: '🚙', x: 340, z: 240, r: 70, col: '#7fe8ff', kind: 'view' },
+      { id: 'copern', name: 'Кратер Коперник', e: '🕳', x: -340, z: -80, r: 70, col: '#c8c8d0', kind: 'view', flat: 0 },
+      { id: 'port', name: 'Космодром «Луна — Земля»', e: '🚀', x: 0, z: -470, r: 90, col: '#ff4a3a', kind: 'boss' }],
+    roads: [[[0, 60], [-170, 150], [-330, 230]], [[0, 60], [170, 150], [340, 240]], [[0, 60], [0, -100], [0, -170], [0, -330], [0, -470]], [[-330, 230], [-400, 70], [-420, -80]], [[-420, -80], [-250, -110], [0, -100]], [[340, 240], [380, 40], [160, -90], [0, -100]]],
+    start: [10, 110, Math.PI],
+    raw: raw12, post: post12, solid: solid12,
+    road(x, z, h, k, y) { return h * (1 - k * 0.85) + y * k * 0.85; },
+    poiH: (p) => raw12(p.x, p.z) * 0.6, craters: 40 },
 };
 // расставить места по каньону и проложить дороги главы 2
 (function () { const C = CH[2]; for (const p of C.pois) { const zc = zc2(p.x), hw = hw2(p.x); p.z = p.side === 'n' ? zc - hw * 1.25 - p.r - 20 : p.side === 's' ? zc + hw * 1.25 + p.r + 30 : zc + (p.dz || 0); }
@@ -274,8 +293,8 @@ const CH = W.CH = {
 })();
 (function () { const C = CH[3]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, base3(x, z) + 0.5]); } } const l = r[r.length - 1]; out.push([l[0], l[1], base3(l[0], l[1]) + 0.5]); return out; }); })();
 (function () { const C = CH[4]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, floor4(x, z) + 0.3]); } } const l = r[r.length - 1]; out.push([l[0], l[1], floor4(l[0], l[1]) + 0.3]); if (r.hw) out.hw = r.hw; return out; }); })();
-(function () { for (const C of [CH[5], CH[6], CH[7], CH[8], CH[10], CH[11]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
-function setChapter(n) { CHC = CH[n]; W.ch = n; W.deckOn = n === 6; POI.length = 0; CHC.pois.forEach((p) => POI.push(Object.assign({}, p))); ROADS.length = 0; CHC.roads.forEach((r) => { const c = r.map((q) => q.slice()); if (r.hw) c.hw = r.hw; ROADS.push(c); });
+(function () { for (const C of [CH[5], CH[6], CH[7], CH[8], CH[10], CH[11], CH[12]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
+function setChapter(n) { MG = null; CHC = CH[n]; W.ch = n; W.deckOn = n === 6; POI.length = 0; CHC.pois.forEach((p) => POI.push(Object.assign({}, p))); ROADS.length = 0; CHC.roads.forEach((r) => { const c = r.map((q) => q.slice()); if (r.hw) c.hw = r.hw; ROADS.push(c); });
   CRATERS = []; CRATERS = genCraters(CHC.craters, n === 2 ? (x, z) => Math.abs(z - zc2(x)) < hw2(x) * 1.3 : null);
   for (const r of ROADS) for (const q of r) { if (q[2] === 'raw') q[2] = CHC.raw(q[0], q[1]); else if (q[2] === undefined) q[2] = 0; }
   POI.forEach((p) => { p.h = CHC.poiH(p); }); W.mapImg = null; }
@@ -284,15 +303,21 @@ function roadInfo(x, z) { let d = 1e9, y = 0; for (const r of ROADS) for (let i 
 function roadDist(x, z) { return roadInfo(x, z)[0]; }
 W.roadDist = roadDist;
 function rawH(x, z) { return CHC.raw(x, z); }
-function H(x, z) {
+// высота для езды и расстановки: по нарисованной сетке земли (марсоход стоит ровно на видимой поверхности) + твёрдые постройки (трамплины)
+let MG = null; const CELL = SIZE / GRID;
+function meshH(x, z) { const fx = Math.max(0, Math.min(GRID - 1e-4, (x + HALF) / CELL)), fz = Math.max(0, Math.min(GRID - 1e-4, (z + HALF) / CELL)), i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, N = GRID + 1;
+  const h00 = MG[j * N + i], h10 = MG[j * N + i + 1], h01 = MG[(j + 1) * N + i], h11 = MG[(j + 1) * N + i + 1]; return u + v <= 1 ? h00 + (h10 - h00) * u + (h01 - h00) * v : h11 + (h01 - h11) * (1 - u) + (h10 - h11) * (1 - v); }
+function H(x, z) { if (!MG || (W.ch === 6 && W.deckOn && Math.abs(x - DECK6.x) <= DECK6.hl + 3 && Math.abs(z - DECK6.z) <= DECK6.hw + 3)) return Hx(x, z) + (CHC.solid ? CHC.solid(x, z) : 0); return meshH(x, z) + (CHC.solid ? CHC.solid(x, z) : 0); }
+function Hx(x, z) {
   let h = deck6(x, z, rawH(x, z));
   const [rd, ry] = roadInfo(x, z); if (rd < 16) { const k = 1 - sstep(5, 16, rd); h = CHC.road(x, z, h, k, ry); }
   for (const p of POI) { if (p.flat === 0 || CHC.dark) continue; const d = Math.hypot(x - p.x, z - p.z); if (d < p.r * 1.8) { const k = 1 - sstep(p.r, p.r * 1.8, d); h = h * (1 - k) + p.h * k; } }
+  if (CHC.post) h = CHC.post(x, z, h);
   return h;
 }
 setChapter(1);
 W.H = H;
-function normalAt(x, z) { const e = 1.5, hx = H(x + e, z) - H(x - e, z), hz = H(x, z + e) - H(x, z - e); const n = new THREE.Vector3(-hx, 2 * e, -hz); return n.normalize(); }
+function normalAt(x, z) { const e = 2.5, hx = H(x + e, z) - H(x - e, z), hz = H(x, z + e) - H(x, z - e); const n = new THREE.Vector3(-hx, 2 * e, -hz); return n.normalize(); }
 W.normalAt = normalAt;
 
 /* ---------- сцена ---------- */
@@ -300,17 +325,18 @@ let S, sun, hemi, terrain, roadsM, beams = [];
 function buildTerrain() {
   const g = new THREE.PlaneGeometry(SIZE, SIZE, GRID, GRID); g.rotateX(-Math.PI / 2); const P = g.attributes.position, C = [];
   const [cRust, cDust, cRock, cDark, cRoad] = CHC.pal.map((c) => new THREE.Color(c)), t = new THREE.Color(); const cRiver = new THREE.Color('#d8b088');
-  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); P.setY(i, CHC.cloud ? CHC.cloud(x, z) : H(x, z)); }
+  MG = null; const MGn = new Float32Array((GRID + 1) * (GRID + 1)); for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = CHC.cloud ? CHC.cloud(x, z) : Hx(x, z); P.setY(i, y); MGn[Math.round((z + HALF) / CELL) * (GRID + 1) + Math.round((x + HALF) / CELL)] = y; }
   g.computeVertexNormals(); const N = g.attributes.normal;
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), ny = N.getY(i), slope = 1 - ny;
     t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 10) { t.set('#aebccc').lerp(new THREE.Color('#8a9cb2'), fbm(x / 60, z / 60) * 0.9).lerp(new THREE.Color('#8a4a2e'), (1 - sstep(2, 9, line10(x, z))) * 0.85); const cd = Math.hypot(x - CHAOS10.x, z - CHAOS10.z); if (cd < CHAOS10.r) t.lerp(new THREE.Color('#b88a74'), (1 - sstep(CHAOS10.r * 0.6, CHAOS10.r, cd)) * 0.35 * hash(Math.floor(x / 14), Math.floor(z / 14))); t.lerp(new THREE.Color('#5a6878'), sstep(0.25, 0.55, slope) * 0.6); }
     if (W.ch === 8) { if (W.salt8(x, z)) t.set('#f4f6ff'); const ad = Math.hypot(x - AHU8.x, z - AHU8.z); if (ad < 72) t.lerp(new THREE.Color('#c8dcf0'), 0.35 + 0.3 * Math.max(0, Math.sin(Math.atan2(z - AHU8.z, x - AHU8.x) * 9))); } if (W.ch === 7) { const lv = lava7(x, z); if (lv < 6) t.set('#ff6a1a').lerp(new THREE.Color('#ffd24a'), (1 - lv / 6) * 0.6 * (0.5 + 0.5 * Math.sin(x * 0.3 + z * 0.2))); const r7 = Math.hypot(x - OLY7.x, z - OLY7.z); if (r7 < 340 && lv >= 6) t.lerp(new THREE.Color('#4a2420'), 0.45 * (1 - sstep(320, 340, r7))); if (r7 < 80 && lv >= 6) t.lerp(new THREE.Color('#2a1210'), 0.5); } if (W.ch === 5) { const kd = Math.hypot(x - KOR5.x, z - KOR5.z); if (kd < 90) t.lerp(new THREE.Color('#9ccff5'), (1 - sstep(70, 90, kd)) * 0.7); if (W.spiralD(x, z) < 12) t.lerp(new THREE.Color('#a8c8f0'), 0.45); } if (W.ch === 3) { const fx = (x - FACE.x) / 130, fz = (z - FACE.z) / 169, fe = Math.hypot(fx, fz); if (fe < 1) t.lerp(new THREE.Color('#8a6e64'), (1 - sstep(0.7, 1, fe)) * 0.55); } if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
+    if (W.ch === 12) { t.set('#9a9a9e').lerp(new THREE.Color('#5c5c64'), sstep(0.5, 0.62, fbm(x / 210 + 11, z / 210 - 3)) * 0.75).lerp(new THREE.Color('#c8c8cc'), sstep(0.15, 0.4, slope) * 0.5).multiplyScalar(0.92 + (hash(Math.floor(x / 4), Math.floor(z / 4)) - 0.5) * 0.12); if (rilleK12(x, z) > 0.3) t.lerp(new THREE.Color('#3a3a42'), 0.6); }
     if (W.ch === 11) { t.lerp(new THREE.Color('#3a2214'), Math.min(1, dune11(x, z) * 0.9)).lerp(new THREE.Color('#c09060'), (fbm(x / 40 + 3, z / 40) - 0.45) * 0.6); if (y < 0) t.lerp(new THREE.Color('#2e1a10'), sstep(0, -6, y)); if (Math.hypot(x - CHC.pois[3].x, z - CHC.pois[3].z) < 70) t.lerp(new THREE.Color('#d8e4ee'), 0.5 * (1 - sstep(30, 70, Math.hypot(x - CHC.pois[3].x, z - CHC.pois[3].z)))); }
     if (CHC.clouds) { t.set('#f2d48e').lerp(new THREE.Color('#a8763a'), sstep(-36, -58, y) * 0.8).lerp(new THREE.Color('#fff0c8'), sstep(-34, -24, y) * 0.6); C.push(t.r, t.g, t.b); continue; }
     const rd = roadDist(x, z); if (rd < 7) t.lerp(cRoad, (1 - sstep(3, 7, rd)) * 0.75);
-    for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color(W.ch === 8 ? '#5a5a62' : W.ch === 10 ? '#8a9aac' : W.ch === 11 ? '#6a4a30' : '#8a5048'), 0.35 * (1 - d / p.r)); }
+    for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color(W.ch === 8 || W.ch === 12 ? '#5a5a62' : W.ch === 10 ? '#8a9aac' : W.ch === 11 ? '#6a4a30' : '#8a5048'), 0.35 * (1 - d / p.r)); }
     C.push(t.r, t.g, t.b); }
-  g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); if (!CHC.cloud) MG = MGn;
   terrain = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true })); S.add(terrain);
 }
 function place(B, m, x, z, s, ry = 0, dy = 0) { if (!MODELS || !MODELS[m]) return; B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
@@ -476,12 +502,21 @@ function buildPOIs() {
     const sh = byId('shore'); [['basemodule_D', -26, 10, 5, 0.3], ['k_barrels', 22, 14, 5, 0], ['r_platform_long', 0, -26, 6, 0], ['lights', 14, -8, 5, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, sh.x + x, sh.z + z, sc, ry)); addC(sh.x - 26, sh.z + 10, 5);
     const pr = byId('pier'); [['r_platform_long', -16, 30, 7, 0], ['r_platform_long', 16, -30, 7, Math.PI], ['lights', 0, 0, 6, 0], ['k_barrels', -20, -12, 5, 1]].forEach(([m, x, z, sc, ry]) => place(B, m, pr.x + x, pr.z + z, sc, ry)); place(B, 's_Spaceship3', pr.x + 34, pr.z + 4, 3.2, 1.2, 0.5);
   }
+  if (W.ch === 12) {
+    const st = byId('station'); [['basemodule_A', -24, -16, 7, 0], ['basemodule_B', 22, -22, 7, 1], ['basemodule_C', -8, 28, 7, 2], ['k_hangar_roundGlass', 36, 10, 9, 0], ['k_satelliteDish_large', -38, 12, 6, 0.6], ['landingpad_large', 32, 42, 6, 0], ['lights', 0, 0, 6, 0], ['roofmodule_solarpanels', -36, -36, 6, 0.4], ['solarpanel', 44, -40, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, st.x + x, st.z + z, sc, ry)); [[-24, -16, 6], [22, -22, 6], [-8, 28, 6], [36, 10, 8]].forEach(([x, z, r]) => addC(st.x + x, st.z + z, r));
+    for (let k = 0; k < 5; k++) place(B, k % 2 ? 'k_astronautA' : 'k_astronautB', st.x - 12 + k * 4, st.z + 14, 1.6, 2.8);
+    const ap = byId('apollo'); place(B, 'lander_A', ap.x, ap.z, 6, 0.3); addC(ap.x, ap.z, 5); place(B, 'k_satelliteDish', ap.x + 14, ap.z - 8, 3, 1);
+    const ln = byId('luno'); place(B, 'basemodule_E', ln.x + 30, ln.z - 26, 5, 1); place(B, 'k_crater', ln.x - 30, ln.z + 20, 6, 0);
+    const pt = byId('port'); [['landingpad_large', -30, 10, 8, 0], ['k_rocket_baseA', -30, 10, 8, 0], ['k_rocket_fuelA', -30, 10, 8, 0, 4.6], ['k_rocket_topA', -30, 10, 8, 0, 9.2], ['structure_tall', 36, -30, 8, 0], ['k_machine_generator', 40, 26, 6, 1], ['lights', 0, 30, 6, 0]].forEach(([m, x, z, sc, ry, dy]) => place(B, m, pt.x + x, pt.z + z, sc, ry, dy || 0)); addC(pt.x - 30, pt.z + 10, 8);
+    { const R12 = RAMP12, L = R12.z0 - R12.z1, a = Math.atan2(R12.h, L), hy = H(R12.x, (R12.z0 + R12.z1) / 2); B.add(BOX, mat(R12.x, hy - 0.25, (R12.z0 + R12.z1) / 2, 12, 0.5, Math.hypot(L, R12.h) + 0.4, 0, a), (cx, cy, cz, nx, ny) => TC.set(Math.abs(Math.round(cx / 2)) % 2 ? '#d8a43a' : '#3a3a42').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
+      for (const sd of [-1, 1]) place(B, 'lights', R12.x + sd * 8, R12.z1 + 2, 4, 0); }
+  }
   // разброс: камни, кристаллы, метеориты, кратеры-модели
-  if (!CHC.clouds) for (let k = 0; k < 220; k++) { const x = (hash(k, 21) - 0.5) * SIZE * 0.95, z = (hash(k, 23) - 0.5) * SIZE * 0.95; if ((W.ch === 10 && k % 3) || (W.ch === 11 && (k % 2 || H(x, z) < 0)) || roadDist(x, z) < 9 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r) || (CHC.dark && cave4(x, z) < 0.7)) continue; const r = hash(k, 29);
+  if (!CHC.clouds) for (let k = 0; k < 220; k++) { const x = (hash(k, 21) - 0.5) * SIZE * 0.95, z = (hash(k, 23) - 0.5) * SIZE * 0.95; if ((W.ch === 10 && k % 3) || (W.ch === 11 && (k % 2 || H(x, z) < 0)) || (W.ch === 12 && (k % 2 || rilleK12(x, z) > 0)) || roadDist(x, z) < 9 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r) || (CHC.dark && cave4(x, z) < 0.7)) continue; const r = hash(k, 29);
     place(B, W.ch === 10 ? (r < 0.6 ? 'k_rock_crystals' : 'k_rock_crystalsLargeA') : r < 0.45 ? 'rocks_A' : r < 0.7 ? 'rocks_B' : r < 0.85 ? 'k_rock_largeA' : r < 0.95 ? 'k_rocks_smallA' : 'k_meteor_detailed', x, z, 3 + hash(k, 31) * 6, hash(k, 37) * 6.28, -0.3); }
   if (B.p.length) S.add(new THREE.Mesh(B.build(), bakedMat));
   // россыпь камней (по одной сетке на вид камня — один вызов отрисовки)
-  [['rock_A', 600, 2, 7], ['rocks_A', 240, 2, 5]].forEach(([m, n, s0, s1], q) => { if (!MODELS || !MODELS[m] || CHC.clouds || W.ch === 10 || W.ch === 11) return; const b = new Builder([]); b.add(MODELS[m], null, null, { vcol: true, vk: CHC.dark ? 0.5 : 0.95 }); const im = new THREE.InstancedMesh(b.build(), bakedMat, CHC.dark ? n >> 2 : n); let c2 = 0;
+  [['rock_A', 600, 2, 7], ['rocks_A', 240, 2, 5]].forEach(([m, n, s0, s1], q) => { if (!MODELS || !MODELS[m] || CHC.clouds || W.ch >= 10) return; const b = new Builder([]); b.add(MODELS[m], null, null, { vcol: true, vk: CHC.dark ? 0.5 : 0.95 }); const im = new THREE.InstancedMesh(b.build(), bakedMat, CHC.dark ? n >> 2 : n); let c2 = 0;
     for (let k = 0; k < n * 2 && c2 < im.count; k++) { const x = (hash(k, 41 + q) - 0.5) * SIZE * 0.96, z = (hash(k, 43 + q) - 0.5) * SIZE * 0.96; if (roadDist(x, z) < 8 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r * 0.8) || (CHC.dark && cave4(x, z) < 0.6)) continue; const sc = s0 + hash(k, 47) * (s1 - s0); im.setMatrixAt(c2++, mat(x, H(x, z) - 0.15 * sc, z, sc, sc * (0.6 + hash(k, 53)), sc, hash(k, 59) * 6.28)); }
     im.count = c2; S.add(im); });
   // световые столбы над местами
@@ -506,7 +541,7 @@ function buildCity9(B, addC, byId) { const col = (h) => h;
   // облачные башни — один набор шаров
   const N = 46, im = new THREE.InstancedMesh(BALL, new THREE.MeshLambertMaterial({ color: '#f6dea4' }), N); for (let i = 0; i < N; i++) { let x, z, q = 0; do { x = (hash(i + q * 97, 61) - 0.5) * SIZE * 0.95; z = (hash(i + q * 97, 67) - 0.5) * SIZE * 0.95; q++; } while (q < 9 && (POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + 40) || roadDist(x, z) < 30)); const sc = 14 + hash(i, 71) * 26; im.setMatrixAt(i, mat(x, -30 + hash(i, 73) * 18, z, sc * 1.4, sc, sc * 1.2)); } S.add(im);
 }
-function buildSpace() { if (CHC.sat) return buildSaturn(); if (!CHC.space) return; if (CHC.belt) buildBelt(); if (CHC.jup) return buildJupiter(); if (CHC.mars === 0) return; const g = new THREE.SphereGeometry(330, 48, 32), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.6, 0.5, 0.6).normalize();
+function buildSpace() { if (CHC.sat) return buildSaturn(); if (CHC.earth) return buildEarth(); if (!CHC.space) return; if (CHC.belt) buildBelt(); if (CHC.jup) return buildJupiter(); if (CHC.mars === 0) return; const g = new THREE.SphereGeometry(330, 48, 32), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.6, 0.5, 0.6).normalize();
   for (let i = 0; i < P.count; i++) { const nx = P.getX(i) / 330, ny = P.getY(i) / 330, nz = P.getZ(i) / 330, n = fbm(nx * 3 + 7, nz * 3 + ny * 2), n2 = fbm(nx * 9 - 2, nz * 9 + ny * 5); const c = new THREE.Color('#c8643a').lerp(new THREE.Color('#e8a070'), n2 * 0.6).lerp(new THREE.Color('#5a2a22'), sstep(0.55, 0.7, n) * 0.8);
     if (Math.abs(ny) > 0.86) c.lerp(new THREE.Color('#f4f4ff'), sstep(0.86, 0.92, Math.abs(ny))); if (Math.abs(nz * 0.6 + nx * 0.8) < 0.05 && ny > -0.3 && ny < 0.3) c.multiplyScalar(0.6); const l = Math.max(0.08, nx * sd.x + ny * sd.y + nz * sd.z) * 0.9 + 0.1; c.multiplyScalar(l); C.push(c.r, c.g, c.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false })); m.renderOrder = -1; S.add(m); W.marsBall = m; }
@@ -526,6 +561,14 @@ function buildJupiter() { const g = new THREE.SphereGeometry(330, 56, 36), P = g
     const c = B[k].clone().lerp(B[(k + 1) % 6], sstep(0.75, 1, f)); const sx = (lon + 0.4) / 0.2, sy = (lat + 0.32) / 0.09, sp = sx * sx + sy * sy; if (sp < 1) c.lerp(new THREE.Color(sp < 0.4 ? '#c04a30' : '#d8784a'), 0.85); if (Math.abs(ny) > 0.88) c.lerp(new THREE.Color('#8a7a6a'), 0.4);
     const l = Math.max(0.05, nx * sd.x + ny * sd.y + nz * sd.z) * 0.95 + 0.05; c.multiplyScalar(l); C.push(c.r, c.g, c.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false })); m.renderOrder = -1; m.scale.setScalar(1.6); S.add(m); W.marsBall = m; W.jupBall = 1; }
+// Земля в чёрном небе Луны: океаны, материки, облака, ледяные шапки; свет запечён в цвет вершин
+function buildEarth() { const G = new THREE.Group(), g = new THREE.SphereGeometry(200, 56, 36), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.8, 0.3, 0.52).normalize(), c = new THREE.Color();
+  for (let i = 0; i < P.count; i++) { const nx = P.getX(i) / 200, ny = P.getY(i) / 200, nz = P.getZ(i) / 200, lon = Math.atan2(nx, nz), land = fbm(lon * 1.6 + 3, ny * 2.6 + 1) + (fbm(lon * 5, ny * 6) - 0.5) * 0.3, cl = fbm(lon * 3.4 + 9, ny * 7 - 2);
+    if (land > 0.55) c.set(Math.abs(ny) < 0.35 && land < 0.62 ? '#c8b07a' : '#4a8a3a').lerp(new THREE.Color('#3a6a2a'), (land - 0.55) * 3); else c.set('#1e4ea0').lerp(new THREE.Color('#3a7ad0'), sstep(0.4, 0.55, land));
+    if (Math.abs(ny) > 0.86) c.set('#f0f4ff'); if (cl > 0.58) c.lerp(new THREE.Color('#ffffff'), Math.min(0.9, (cl - 0.58) * 5)); const l = nx * sd.x + ny * sd.y + nz * sd.z; c.multiplyScalar(Math.max(0.03, l) * 1.05 + 0.03); if (l > -0.1 && l < 0.15) c.lerp(new THREE.Color('#ff9a5a'), 0.12); C.push(c.r, c.g, c.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const ball = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false })); ball.renderOrder = -2; G.add(ball);
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(212, 32, 20), new THREE.MeshBasicMaterial({ color: '#5aa0ff', transparent: true, opacity: 0.22, side: THREE.BackSide, fog: false, depthWrite: false, blending: THREE.AdditiveBlending })); halo.renderOrder = -1; G.add(halo);
+  G.rotation.z = 0.41; S.add(G); W.marsBall = G; W.earthBall = 1; }
 // Сатурн с кольцами сквозь оранжевую дымку Титана; свет запечён в цвет вершин
 function buildSaturn() { const G = new THREE.Group(), g = new THREE.SphereGeometry(250, 48, 32), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.7, 0.35, 0.62).normalize(), B = ['#f0dca8', '#d8b878', '#ead2a0', '#c8a468', '#f4e6c0'].map((c) => new THREE.Color(c));
   for (let i = 0; i < P.count; i++) { const nx = P.getX(i) / 250, ny = P.getY(i) / 250, nz = P.getZ(i) / 250, lat = Math.asin(Math.max(-1, Math.min(1, ny))), w = lat * 9 + (fbm(Math.atan2(nx, nz) * 2, lat * 5) - 0.5) * 0.6, k = ((Math.floor(w) % 5) + 5) % 5; const c = B[k].clone().lerp(B[(k + 1) % 5], sstep(0.7, 1, w - Math.floor(w))); if (ny > 0.9) c.lerp(new THREE.Color('#8aa0a8'), 0.4); c.multiplyScalar(Math.max(0.06, nx * sd.x + ny * sd.y + nz * sd.z) * 0.95 + 0.05); C.push(c.r, c.g, c.b); }
@@ -536,7 +579,7 @@ function buildSaturn() { const G = new THREE.Group(), g = new THREE.SphereGeomet
   G.rotation.z = 0.35; ball.renderOrder = -2; ring.renderOrder = -1; G.scale.setScalar(0.9); S.add(G); W.marsBall = G; W.satBall = 1;
   const N = 420, sg = new THREE.BufferGeometry(), sp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { sp[i * 3] = (Math.random() - 0.5) * 140; sp[i * 3 + 1] = Math.random() * 60; sp[i * 3 + 2] = (Math.random() - 0.5) * 140; } // метановая морось: капли падают медленно
   sg.setAttribute('position', new THREE.BufferAttribute(sp, 3)); const pts = new THREE.Points(sg, new THREE.PointsMaterial({ color: '#ffd090', size: 0.3, transparent: true, opacity: 0.7, depthWrite: false })); pts.frustumCulled = false; S.add(pts); W.snowP = pts; }
-W.snowStep = function (dt) { if (W.beltM) { W.beltM.position.set(camera.position.x, 0, camera.position.z); W.beltM.rotation.y += dt * 0.01; } if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); if (!CHC.jup && !CHC.sat) W.marsBall.rotation.y += dt * 0.004; } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
+W.snowStep = function (dt) { if (W.beltM) { W.beltM.position.set(camera.position.x, 0, camera.position.z); W.beltM.rotation.y += dt * 0.01; } if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); if (!CHC.jup && !CHC.sat) W.marsBall.rotation.y += dt * (CHC.earth ? 0.006 : 0.004); } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
   for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 4; a[i] += Math.sin(W.t + i) * dt * 0.6; let x = a[i], z = a[i + 2]; if (x - cx > 70) x -= 140; if (x - cx < -70) x += 140; if (z - cz > 70) z -= 140; if (z - cz < -70) z += 140; a[i] = x; a[i + 2] = z;
     if (a[i + 1] < H(x, z) + 9) { a[i + 1] = camera.position.y + 30 + Math.random() * 25; } } p.geometry.attributes.position.needsUpdate = true; if (W.aurora) W.aurora.position.set(cx, 0, cz); if (W.aurora) W.aurora.children.forEach((m, k) => (m.material.opacity = 0.6 + 0.3 * Math.sin(W.t * 0.5 + k * 1.3))); }
 function buildWater() { if (CHC.water === undefined) return; const SE = CHC.sea || SEA4, g = new THREE.CircleGeometry(SE.r * (CHC.sea ? 1.45 : 1.08), 48); g.rotateX(-Math.PI / 2); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: CHC.waterC || '#1a6a8a', transparent: true, opacity: CHC.sea ? 0.9 : 0.72, depthWrite: false })); m.position.set(SE.x, CHC.water, SE.z); m.renderOrder = 1; S.add(m); W.waterM = m; }
@@ -545,7 +588,7 @@ function buildScene() {
   const old = S, keep = old ? old.children.filter((o) => o.userData.keep) : [];
   if (old) old.traverse((o) => { if (o.geometry && !o.userData.keep && o.geometry !== MODELS[o.name]) { /* общие геометрии моделей не трогаем */ } });
   S = W.scene = new THREE.Scene(); const fogC = new THREE.Color(CHC.fog); S.fog = new THREE.Fog(fogC, CHC.fogNear || 120, CHC.fogFar || 520); S.background = fogC;
-  hemi = CHC.sat ? new THREE.HemisphereLight('#ffd8a0', '#3a2414', 0.7) : CHC.clouds ? new THREE.HemisphereLight('#fff0c8', '#a87a3a', 1.0) : CHC.dark ? new THREE.HemisphereLight('#c0a8f0', '#4a3050', 1.0) : CHC.ice ? new THREE.HemisphereLight('#dce8ff', '#3a4868', 0.8) : new THREE.HemisphereLight('#ffe0c8', '#5a2a28', 0.9); S.add(hemi); sun = new THREE.DirectionalLight(CHC.sat ? '#ffc890' : CHC.dark ? '#7a90ff' : CHC.ice ? '#cfe0ff' : '#ffd0a0', CHC.dark ? 0.35 : 0.8); sun.position.set(0.5, 1, 0.3); S.add(sun);
+  hemi = CHC.earth ? new THREE.HemisphereLight('#e4eaf4', '#2a2a32', 0.62) : CHC.sat ? new THREE.HemisphereLight('#ffd8a0', '#3a2414', 0.7) : CHC.clouds ? new THREE.HemisphereLight('#fff0c8', '#a87a3a', 1.0) : CHC.dark ? new THREE.HemisphereLight('#c0a8f0', '#4a3050', 1.0) : CHC.ice ? new THREE.HemisphereLight('#dce8ff', '#3a4868', 0.8) : new THREE.HemisphereLight('#ffe0c8', '#5a2a28', 0.9); S.add(hemi); sun = new THREE.DirectionalLight(CHC.earth ? '#ffffff' : CHC.sat ? '#ffc890' : CHC.dark ? '#7a90ff' : CHC.ice ? '#cfe0ff' : '#ffd0a0', CHC.dark ? 0.35 : 0.8); sun.position.set(0.5, 1, 0.3); S.add(sun);
   beams = []; W.snowP = null; W.aurora = null; W.marsBall = null; W.beltM = null; buildTerrain(); buildPOIs(); buildWater(); buildAurora(); buildSpace(); if (!roverG) buildRover(); else S.add(roverG); if (!W.saucer && MODELS.s_Spaceship5) { const b = new Builder([]); b.add(MODELS.s_Spaceship5, mat(0, -1.2, 0, 1.1, 1.1, 1.1), null, { vcol: true, vk: 1.1 }); W.saucer = new THREE.Mesh(b.build(), bakedMat); W.saucer.visible = false; roverG.add(W.saucer); }
   if (!W.head) { const L = new THREE.SpotLight('#ffe8c0', 0, 120, 0.62, 0.5, 1); L.position.set(0, 2.2, 2.6); L.target.position.set(0, -1, 30); roverG.add(L); roverG.add(L.target); W.head = L; } W.head.intensity = CHC.dark ? 2.6 : 0; keep.forEach((o) => S.add(o)); W.ready = true;
 }
@@ -574,7 +617,8 @@ function buildRover() {
   box(0.65, 2.62, 1.3, 0.9, 0.05, 0.7, '#2a3a6a');            // солнечная панель
   const bm = new THREE.Mesh(B.build(), new THREE.MeshBasicMaterial({ vertexColors: true })); body.add(bm); W.bodyMesh = bm;
   // колёса: одна сетка на 6 штук, у каждого своя подвеска и вращение
-  const wg = new THREE.CylinderGeometry(0.62, 0.62, 0.5, 14); wg.rotateZ(Math.PI / 2); const wb = new Builder(null); wb.add(wg, null, (cx, cy, cz, nx, ny, nz) => TC.set(Math.abs(nx) > 0.7 ? '#4a4448' : '#1e1a1c').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
+  const wg = new THREE.CylinderGeometry(0.62, 0.62, 0.5, 16); wg.rotateZ(Math.PI / 2); const wb = new Builder(null); wb.add(wg, null, (cx, cy, cz, nx, ny, nz) => TC.set(Math.abs(nx) > 0.7 ? '#3a3438' : Math.floor((Math.atan2(cy, cz) + 3.1416) / 0.3927) % 2 ? '#141012' : '#2e2a2c').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
+  for (const sx of [-0.26, 0.26]) { for (let k = 0; k < 3; k++) wb.add(BOX, mat(sx, 0, 0, 0.06, 0.9, 0.13, 0, k * Math.PI / 3), () => TC.set('#c8c0b0'), { emit: true }); wb.add(CYL, mat(sx, 0, 0, 0.3, 0.07, 0.3, 0, 0, Math.PI / 2), () => TC.set('#d8a43a'), { emit: true }); } // спицы и ступица — видно, как крутится
   wb.add(BOX, mat(0.26, 0, 0, 0.04, 0.5, 0.12), '#888', { emit: true });
   W.wheels = new THREE.InstancedMesh(wb.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), 6); W.wheels.frustumCulled = false; S.add(W.wheels);
   W.wpos = [[-1.42, -1.6], [1.42, -1.6], [-1.42, 0], [1.42, 0], [-1.42, 1.6], [1.42, 1.6]]; W.wsus = [0, 0, 0, 0, 0, 0]; W.wrot = 0;
@@ -598,7 +642,7 @@ function roverStep(dt) {
   if (W.view === 2 && W.auto) { const a = W.auto; thr = a.thr; st = a.st; } // в турели ведёт бабка
   if (W.lock > 0) { thr = 0; st = 0; }
   if (W.nobrake > 0 && thr < 0) thr = 0; // ракетный двигатель вместо тормозов
-  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? 0.62 : 1) * (W.flyMode ? 1.5 : 1), n = normalAt(R.x, R.z);
+  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? 0.62 : 1) * (W.flyMode ? 1.5 : 1) * (W.vmaxCap ? Math.min(1, W.vmaxCap / ((W.vmax || 17) * (onRoad ? 1.18 : 1))) : 1), n = normalAt(R.x, R.z);
   const fwd = new THREE.Vector3(Math.sin(R.h), 0, Math.cos(R.h)), slope = fwd.x * n.x + fwd.z * n.z; // спуск разгоняет, подъём тормозит
   if (R.air <= 0) { if (thr > 0) R.v += (thr * 9 - (R.v < 0 ? -6 : 0)) * dt; else if (thr < 0) R.v += thr * (R.v > 0 ? 14 : 6) * dt; else R.v -= Math.sign(R.v) * Math.min(Math.abs(R.v), (onRoad ? 2 : 4) * dt);
     R.v += slope * 9.8 * 0.55 * dt * (CHC.g ? 0.35 : 1); R.v = Math.max(-6, Math.min(vmax, R.v)); if (R.v > vmax) R.v += (vmax - R.v) * dt * 2; }
@@ -684,7 +728,7 @@ function buildUI() {
 }
 function drawMap() { const c = $('wdMapC'), x = c.getContext('2d'), N = 128, im = x.createImageData(N, N);
   if (!W.mapImg) { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const wx = (i / N - 0.5) * SIZE, wz = (j / N - 0.5) * SIZE, h = H(wx, wz), rd = roadDist(wx, wz), k = (j * N + i) * 4, sh = Math.max(0.3, Math.min(1.3, 0.85 + (H(wx + 6, wz) - h) * -0.08));
-      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (W.ch === 8) { r = 90 + h * 1.5; g = 90 + h * 1.5; b = 105 + h * 1.5; if (W.salt8(wx, wz)) { r = g = b = 250; } } if (W.ch === 10) { r = 200 + h * 3; g = 212 + h * 3; b = 228 + h * 2; if (line10(wx, wz) < 4) { r = 170; g = 100; b = 70; } } if (W.ch === 11) { r = 180 + h * 2; g = 128 + h * 1.6; b = 70 + h; const dd = dune11(wx, wz); r -= dd * 50; g -= dd * 40; b -= dd * 25; if (h < CHC.water) { r = 50; g = 34; b = 22; } } if (CHC.clouds) { const cy = cloud9(wx, wz); r = 230 + cy; g = 195 + cy; b = 120 + cy * 0.5; if (W.deck9(wx, wz)) { r = 150; g = 145; b = 160; } } if (CHC.lava) { r = 120 + h * 0.9; g = 60 + h * 0.6; b = 50 + h * 0.4; if (lava7(wx, wz) < 6) { r = 255; g = 120; b = 30; } } if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
+      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (W.ch === 8) { r = 90 + h * 1.5; g = 90 + h * 1.5; b = 105 + h * 1.5; if (W.salt8(wx, wz)) { r = g = b = 250; } } if (W.ch === 10) { r = 200 + h * 3; g = 212 + h * 3; b = 228 + h * 2; if (line10(wx, wz) < 4) { r = 170; g = 100; b = 70; } } if (W.ch === 12) { r = g = 150 + h * 2.5; b = 158 + h * 2.5; if (rilleK12(wx, wz) > 0.3) { r = g = 50; b = 60; } } if (W.ch === 11) { r = 180 + h * 2; g = 128 + h * 1.6; b = 70 + h; const dd = dune11(wx, wz); r -= dd * 50; g -= dd * 40; b -= dd * 25; if (h < CHC.water) { r = 50; g = 34; b = 22; } } if (CHC.clouds) { const cy = cloud9(wx, wz); r = 230 + cy; g = 195 + cy; b = 120 + cy * 0.5; if (W.deck9(wx, wz)) { r = 150; g = 145; b = 160; } } if (CHC.lava) { r = 120 + h * 0.9; g = 60 + h * 0.6; b = 50 + h * 0.4; if (lava7(wx, wz) < 6) { r = 255; g = 120; b = 30; } } if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
   const t = document.createElement('canvas'); t.width = t.height = N; t.getContext('2d').putImageData(W.mapImg, 0, 0); x.imageSmoothingEnabled = true; x.drawImage(t, 0, 0, 512, 512);
   const P = (wx, wz) => [(wx / SIZE + 0.5) * 512, (wz / SIZE + 0.5) * 512]; x.font = '22px system-ui'; x.textAlign = 'center';
   POI.forEach((p) => { const [a, b] = P(p.x, p.z); x.fillStyle = p.col; x.globalAlpha = 0.3; x.beginPath(); x.arc(a, b, 16, 0, 7); x.fill(); x.globalAlpha = 1; x.fillText(p.e, a, b + 8); x.fillStyle = '#fff'; x.font = '12px system-ui'; x.fillText(p.name, a, b + 24); x.font = '22px system-ui'; });
@@ -726,7 +770,7 @@ W.stop = function () { if (!W.active) return; W.active = false; document.body.cl
 W.frame = function (dt, now) {
   W.t += dt; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
-  if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
+  if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else if (CHC.earth) sun.position.set(-0.8, 0.5, 0.35); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
 };
 // касания: левая часть — джойстик, правая — прицел/выстрел

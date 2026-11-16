@@ -52,6 +52,8 @@ const T = W.TYPES = {
   methw: { m: 'f_Worm', name: 'метановый червь', h: 1.9, hp: 26, sp: 8, dmg: 8, xp: 7, r: 1.3, ground: 1, tint: '#ff9a4a' },
   kraken: { m: 'm_squidle', name: 'Метановый Кракен', h: 11, hp: 900, sp: 0, dmg: 18, xp: 700, r: 7, fly: 1, boss: 1, tint: '#c8603a' },
   tent: { m: 'p_tentacle', name: 'щупальце Кракена', h: 9, hp: 150, sp: 0, dmg: 0, xp: 40, r: 2.2, elite: 1 },
+  vzysk: { m: 'p_robot', name: 'Взыскатель-3000', h: 13, hp: 1000, sp: 0, dmg: 20, xp: 800, r: 5, ground: 1, boss: 1 },
+  bdrone: { m: 'r_craft_racer', name: 'дрон-коллектор', h: 1.8, hp: 26, sp: 18, dmg: 8, xp: 9, r: 1.8, fly: 9, rot: Math.PI, tint: '#9ad0ff' },
   tsar: { m: 'f_GoblinShark', name: 'Царь-рыба Европы', h: 8, hp: 700, sp: 0, dmg: 18, xp: 600, r: 6, boss: 1, tint: '#bfe6ff' },
   rival: { m: 'r_craft_racer', name: 'Колян на гоночном байке', h: 2.2, hp: 9999, sp: 0, dmg: 0, xp: 0, r: 2, fly: 13, rot: Math.PI, elite: 1 },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
