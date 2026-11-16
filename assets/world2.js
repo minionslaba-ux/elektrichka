@@ -121,7 +121,7 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
     if (p.home) { if (!p.tgt || p.tgt.dead) p.tgt = nearest(40, p.p); if (p.tgt && p.t > 0.3) { const d = new V3(p.tgt.x - p.p.x, p.tgt.y + p.tgt.t.h * 0.5 - p.p.y, p.tgt.z - p.p.z).normalize().multiplyScalar(30); p.v.lerp(d, Math.min(1, dt * 4)); } else p.v.y -= 6 * dt; }
     if (p.g) p.v.y -= p.g * dt; p.p.addScaledVector(p.v, dt);
     const gy = W.H(p.p.x, p.p.z);
-    if (p.k === 'spit' || p.k === 'bolt') { if (Math.hypot(p.p.x - R.x, p.p.z - R.z) < 2 && Math.abs(p.p.y - R.y - 1.5) < 2) { W.hurt(p.dmg, p.k === 'bolt' ? 'пиратский бластер' : 'Плевок стража!'); p.life = 0; } }
+    if (p.k === 'spit' || p.k === 'bolt') { if (Math.hypot(p.p.x - R.x, p.p.z - R.z) < 2 && Math.abs(p.p.y - R.y - 1.5) < 2) { W.hurt(p.dmg, p.k === 'bolt' ? (p.src || 'пиратский бластер') : 'Плевок стража!'); p.life = 0; } }
     else if (p.k === 'jam') { if (p.p.y <= gy + 0.2 || p.life <= 0) { for (const e of EN) if (!e.dead && dist2(e, p.p) < p.rad * p.rad) { W.hitEnemy(e, p.dmg); e.slow = 2.5; } burst(W.scene, p.p.x, gy + 0.6, p.p.z, 'smoke', '#e0304a', p.rad * 1.4, 0.7); sfx('glass', { vol: 0.5, rnd: 0.2 }); shake = Math.max(shake, 0.12); p.life = 0; } }
     else { for (const e of EN) { if (e.dead || e.st === 'buried') continue; const ey = e.y + e.t.h * 0.5, rr = e.t.r * (e.scl || 1) + 0.4; if (Math.abs(p.p.x - e.x) > rr || Math.abs(p.p.z - e.z) > rr || Math.abs(p.p.y - ey) > e.t.h * 0.7 + 0.5) continue;
         if (p.k === 'slip') { if (p.hitset.has(e)) continue; p.hitset.add(e); W.hitEnemy(e, p.dmg, p.v.x * 0.15, p.v.z * 0.15); continue; }
@@ -134,7 +134,7 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
   for (const k in PG) { PG[k].count = cnt[k] || 0; PG[k].instanceMatrix.needsUpdate = true; }
   if (W.waveT !== undefined && W.waveT < 0.5) { W.waveT += dt; W.wave.position.set(R.x, R.y + 0.6, R.z); W.wave.scale.setScalar(W.waveR * (W.waveT / 0.5)); W.wave.material.opacity = 0.8 * (1 - W.waveT / 0.5); } else if (W.wave) W.wave.material.opacity = 0; }
 
-W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
+W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg, src: e.t.name }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
 const reach0 = (e) => e.t.r * (e.scl || 1) + 1.7;
 /* ---------- твари: повадки ---------- */
 function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
