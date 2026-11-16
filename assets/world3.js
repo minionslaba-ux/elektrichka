@@ -574,7 +574,7 @@ W.director = function (dt) { const s = st(); if (s.dead) return;
   if (W.fuelOut && !W.fuelWarn) { W.fuelWarn = 1; W.say('<b>Дед:</b> Таня, бензин всё! Ползём на парах. До заправки или канистры!'); } if (!W.fuelOut) W.fuelWarn = 0;
   foodT -= dt; if (foodT <= 0) { foodT = 70; if (s.food > 0) { s.food--; W.nerve(4); W.toast('🥟 Обед в пути: бабуля и дед поели'); } else { W.nerve(-15, '<b>Баба Таня:</b> Ваня, у меня от голода нервы шалят! Где пирожки?!'); } }
   // окружающие твари
-  const danger = Math.min(1.6, Math.hypot(R.x, R.z) / 450) + (night ? 0.5 : 0) + 0; spawnT -= dt;
+  const danger = (Math.min(1.6, Math.hypot(R.x, R.z) / 450) + (night ? 0.5 : 0)) * (W.ch === 1 ? 0.75 : 1); /* первая глава — обучающая, тварей меньше */ spawnT -= dt;
   const alive = W.EN.filter((e) => !e.dead).length; if (spawnT <= 0 && alive < (W.mwave || W.boss || W.queen ? 6 : 22 + danger * 10) && !W.inCity) { spawnT = Math.max(0.6, 3.2 - danger * 1.4); const n = 2 + Math.floor(Math.random() * (3 + danger * 4));
     const a = R.h + rnd(-1.2, 1.2) + (Math.random() < 0.25 ? Math.PI : 0), r = rnd(55, 85); let cx = R.x + Math.sin(a) * r, cz = R.z + Math.cos(a) * r;
     if (W.ch === 4) { let ok = false; for (let q = 0; q < 10 && !ok; q++) { const a2 = rnd(0, 6.28), r2 = rnd(40, 85); cx = R.x + Math.sin(a2) * r2; cz = R.z + Math.cos(a2) * r2; ok = W.cave(cx, cz) > 0.85 && W.H(cx, cz) > -2; } if (!ok) cx = NaN; }
