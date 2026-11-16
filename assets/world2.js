@@ -23,7 +23,7 @@ const T = W.TYPES = {
   pirate: { m: 'r_craft_speederA', name: 'пират на ховербайке', h: 1.5, hp: 12, sp: 18, dmg: 7, xp: 6, r: 2, fly: 1.2, rot: Math.PI },
   mine: { m: 'r_barrel', name: 'пиратская мина', h: 1.2, hp: 2, sp: 0, dmg: 16, xp: 1, r: 1.2, ground: 1, mine: 1 },
   sniper: { m: 'r_turret_single', name: 'пиратская турель', h: 3.4, hp: 30, sp: 0, dmg: 0, xp: 10, r: 2, ground: 1, still: 1 },
-  dino: { m: 'm_dino', name: 'ящер-камнеед', h: 3.4, hp: 45, sp: 7, dmg: 14, xp: 14, r: 2.4, ground: 1, elite: 1 },
+  dino: { m: 'm_dino', name: 'ящер-камнеед', h: 3.4, hp: 45, sp: 7, dmg: 10, xp: 14, r: 2.4, ground: 1, elite: 1 },
   barge: { m: 'r_craft_cargoB', name: 'Баржа «ТрансГалактик»', h: 9, hp: 700, sp: 9, dmg: 20, xp: 250, r: 9, fly: 8, boss: 1, rot: Math.PI },
   bpart: { m: 'r_turret_double', name: 'двигатель баржи', h: 3, hp: 170, sp: 0, dmg: 0, xp: 30, r: 2.4, fly: 8, boss: 1 },
   police: { m: 'k_alien', name: 'марсианский полицейский', h: 2.6, hp: 14, sp: 9, dmg: 6, xp: 5, r: 1.3, ground: 1 },
