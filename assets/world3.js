@@ -69,7 +69,7 @@ const STEPS2 = [
     arrive: 'grave', onArrive() { W.talk([['tanya', 'Сколько кораблей… Как будто тут парковались без разметки.'], ['ded', 'Таня, в трюмах может быть что полезное. Обыщи, а я покараулю. Кстати, вон кости. Большие. Надеюсь, бывшие.']], () => {
       const g = byId('grave'); W.crates = []; [[-30, -20], [28, 18], [-8, 34]].forEach(([ox, oz], k) => { const x = g.x + ox + 8, z = g.z + oz + 8; W.crates.push({ x, z, real: k === 1, done: false }); W.dropBox(x, z, k); });
       W.spawn('dino', g.x + 40, g.z - 30); for (let k = 0; k < 6; k++) W.spawn('bug2', g.x + rnd(-40, 40), g.z + rnd(-40, 40)); setObj('Обыщи 3 трюма разбитых кораблей', g); }); },
-    tick() { if (W.crates && W.crates.every((c) => c.done)) { W.crates = null; W.give('parts', 4); W.give('ammo', 60);
+    tick() { if (W.crates && W.crates.every((c) => c.done)) { W.crates = null; W.give('parts', 4); W.give('ammo', 60); W.give('hull', 80); W.toast('🔧 В трюме — ремкомплект: +80 корпуса');
       W.talk([['tanya', 'Нашла бортовой журнал баржи! «Груз: огород, бабкин, 1 шт. Курс — Ксар-Тала». Ах вы, ворюги!'], ['ded', 'Таня… а что это там крутится?..'], ['gena', 'Пылевой вихрь в Долинах Маринер! Высота — как три пятиэтажки. Бабушки, держите шляпы!']], () => {
         W.lift = 14; sfx('warn'); W.toast('🌪 СМЕРЧ ПОДНЯЛ МАРСОХОД!'); for (let k = 0; k < 10; k++) W.spawn('glub', R.x + rnd(-25, 25), R.z + rnd(-25, 25)); setObj('Отстреливайся в воздухе!', null);
         setTimeout(() => { W.say('<b>Баба Таня:</b> Ваня, открывай зонтик! Мягкая посадка!'); }, 13000); setTimeout(() => adv(), 16000); }); } } },
