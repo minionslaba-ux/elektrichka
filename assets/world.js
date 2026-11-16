@@ -145,6 +145,7 @@ const CH = W.CH = {
       { id: 'rim', name: 'Лагерь на краю Маринер', e: '⛺', x: -560, z: 0, r: 55, col: '#7aff8a', kind: 'city', side: 'n' },
       { id: 'grave', name: 'Кладбище кораблей', e: '🚀', x: -300, z: 0, r: 75, col: '#7fe8ff', kind: 'wreck', side: 'f' },
       { id: 'pip', name: 'Сбитый корабль марсианина', e: '🛸', x: -40, z: 0, r: 40, col: '#9aff6a', kind: 'wreck', side: 'f', dz: -40 },
+      { id: 'tw2', name: 'Пыльная равнина', e: '🌪', x: 60, z: 0, r: 40, col: '#d8a878', kind: 'view', side: 'f' },
       { id: 'noctis', name: 'Колодцы Лабиринта Ночи', e: '🕳', x: 40, z: 0, r: 60, col: '#b07aff', kind: 'lair', side: 's' },
       { id: 'gorge', name: 'Ущелье «Глотка»', e: '🪨', x: 250, z: 0, r: 26, col: '#ffb04a', kind: 'pass', side: 'f' },
       { id: 'tower', name: 'Пиратская вышка', e: '📡', x: 240, z: 0, r: 30, col: '#ff6a4a', kind: 'outpost', side: 'n' },
@@ -340,7 +341,7 @@ function setChapter(n) { MG = null; CHC = CH[n]; W.ch = n; W.deckOn = n === 6; P
 function segDist(px, pz, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l)); return [Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t), t]; }
 function roadInfo(x, z) { let d = 1e9, y = 0; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) { const [dd, t] = segDist(x, z, r[i], r[i + 1]); if (dd < d) { d = dd; y = r[i][2] + (r[i + 1][2] - r[i][2]) * t; } } return [d, y]; }
 function roadDist(x, z) { return roadInfo(x, z)[0]; }
-W.roadDist = roadDist;
+W.roadDist = roadDist; W.roadInfo = roadInfo;
 function rawH(x, z) { return CHC.raw(x, z); }
 // следы колёс: две колеи за задними колёсами, одним набором на всю карту (старые перезаписываются новыми)
 const TRK_N = 700; let TRK = null, trkI = 0, trkX = 0, trkZ = 0; const trkQ = new THREE.Quaternion(), trkQ2 = new THREE.Quaternion(), trkUp = new THREE.Vector3(0, 1, 0);

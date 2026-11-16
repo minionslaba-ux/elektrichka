@@ -218,7 +218,7 @@ W.valves4 = function (cfg, onWin, onFail) {
 /* ---------- торг: цена, терпение, хитрости ---------- */
 W.trade4 = function (cfg, onWin, onFail) {
   return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.price = cfg.price; o.pat = cfg.patience; o.card = document.createElement('div'); o.card.className = 'card'; o.body.appendChild(o.card);
-    o.draw = () => (o.card.innerHTML = '<div class="big">' + cfg.icon + '</div><div>Цена: <b>' + o.price + ' ₽</b></div><div>Терпение: <b>' + '❤'.repeat(Math.max(0, o.pat)) + '🖤'.repeat(Math.max(0, cfg.patience - o.pat)) + '</b></div><div style="font-size:13px;opacity:.8">у вас ' + W.st.money + ' ₽ · 🥟 ' + W.st.food + '</div>');
+    o.draw = () => (o.card.innerHTML = '<div class="big">' + cfg.icon + '</div><div>Цена: <b>' + o.price + (cfg.unit || ' ₽') + '</b></div><div>Терпение: <b>' + '❤'.repeat(Math.max(0, o.pat)) + '🖤'.repeat(Math.max(0, cfg.patience - o.pat)) + '</b></div><div style="font-size:13px;opacity:.8">у вас ' + (cfg.have ? cfg.have() : W.st.money + ' ₽') + ' · 🥟 ' + W.st.food + '</div>');
     const acts = cfg.acts(o); o.acts = acts; btns(o, acts.map((a) => a.t), (i) => { if (o.done) return; const r = acts[i].fn(); sfx('click'); if (r) o.say(r); o.draw(); if (o.pat <= 0 && !o.done) { o.done = 1; setTimeout(() => o.fail(), 1300); } });
     o.draw(); o.say(cfg.hello); } }); };
 
@@ -314,6 +314,44 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
 
 /* =====================================================================
+   ГЛАВА 2 — по плану: серпантин без бортов (точность, ветер) → торг с мародёрами → смерч (бой в воздухе) → шлюзы Лабиринта Ночи → баржа
+   ===================================================================== */
+(function ch2() { const S = A.CHAPTERS[2]; if (!S) return; const de = S.find((s) => s.id === 'descent'), gi = S.findIndex((s) => s.id === 'gorge'), pi = S.findIndex((s) => s.id === 'pip'); if (!de || gi < 0 || pi < 0) return;
+  // серпантин: порывы ветра сбоку; съехал с дороги — сорвался, возвращаемся на последнюю точку
+  de.tick = function (dt) { if (this.arrived || W.paused || !W.obj || W.mini.cur()) return; const G = W.ser2 = W.ser2 || { t: 5, on: 0, off: 0, last: { x: R.x, z: R.z, h: R.h }, lt: 0, falls: 0 };
+    const ri = W.roadInfo(R.x, R.z), rd = ri[0], drop = ri[1] - R.y; if (rd < 5) { G.seen = 1; G.lt -= dt; if (G.lt <= 0) { G.lt = 1; G.last = { x: R.x, z: R.z, h: R.h }; } G.off = 0; } else if (G.seen && rd > 7 && drop > 4) G.off += dt; else G.off = Math.max(0, G.off - dt);
+    G.t -= dt; if (G.t <= 1.5 && !G.warn) { G.warn = 1; W.toast('💨 Сейчас дунет ветер — держи руль!'); sfx('warn', { vol: 0.4 }); } if (G.t <= 0) { G.on = 2.2; G.t = rnd(6, 9); G.warn = 0; G.dir = Math.random() < 0.5 ? -1 : 1; }
+    if (G.on > 0) { G.on -= dt; const f = 7 * G.dir; W.windX = Math.cos(R.h) * f; W.windZ = -Math.sin(R.h) * f; } else W.windX = W.windZ = 0;
+    if (G.off > 1.6) { G.off = 0; G.falls++; W.windX = W.windZ = 0; R.x = G.last.x; R.z = G.last.z; R.h = G.last.h; R.v = 0; R.y = W.H(R.x, R.z); W.hurt(8, 'сорвался с серпантина'); flash('#ffffff', 0.3); W.toast('😱 Сорвались! Кран поднял обратно на дорогу'); }
+    $('wdObj').innerHTML = '🛣 Серпантин без бортов: держись дороги' + (G.on > 0 ? ' · <b style="color:#ffd24a">💨 ВЕТЕР!</b>' : '') + (G.falls ? ' · срывов ' + G.falls : ''); };
+  clear4.push(() => { W.ser2 = null; });
+  de.onArrive = function () { W.windX = W.windZ = 0; W.ser2 = null; W.talk([['tanya', 'Сколько кораблей… Как будто тут парковались без разметки.'], ['ded', 'Таня, тут мародёры. У них что-то с баржи — бумажки какие-то.'], ['marod', 'Бортовой журнал баржи «ТрансГалактик»! Там написано, куда везут ваш огород. Продаём. За соль.']], () => run()); };
+  function run() { W.trade4({ title: '🦴 Торг с мародёрами', icon: '📜🦴', price: 50, unit: ' 🧂', have: () => '🧂 ' + W.st.ammo, patience: 3, hello: 'Мародёр: «Полсотни соли — и журнал ваш»', rules: 'Цена — в соли деда 🧂. Сбивай, но не зли их. Можно подсунуть «журнал-фальшивку» — но пираты у пристани узнают.',
+      acts: (o) => [
+        { t: '📉 Это же макулатура!', fn() { o.pat--; if (Math.random() < 0.7) { o.price = Math.max(10, o.price - 12); return 'Мародёр: «Ладно, ' + o.price + '»'; } return 'Мародёр: «Сама ты макулатура»'; } },
+        { t: '🥟 Пирожок в придачу', fn() { if (W.st.food < 1) return 'Пирожков нет'; W.st.food--; o.price = Math.max(10, o.price - 8); o.pat = Math.min(3, o.pat + 1); return 'Мародёр жуёт: «−8. Вкусно, бабка»'; } },
+        { t: '💬 «Пип вам привет передавал»', fn() { if (o.pip) { o.pat--; return 'Мародёр: «Какой ещё Пип?»'; } o.pip = 1; o.price = Math.max(10, o.price - 10); return 'Мародёр: «Пип?! Кактус? Он мне должен… ну ладно, −10»'; } },
+        { t: '🧾 Обменять на «журнал» деда', fn() { o.done = 1; W.flags.cheat2 = 1; setTimeout(() => o.win(), 900); return 'Мародёр: «Журнал на журнал? Беру!» (это был журнал «Огородник» 1987 года)'; } },
+        { t: '🤝 По рукам', fn() { if (W.st.ammo < o.price) return 'Соли не хватает'; W.st.ammo -= o.price; o.done = 1; W.flags.cheat2 = 0; setTimeout(() => o.win(), 700); return 'Мародёр: «Честная бабка!»'; } }] },
+    () => { W.give('parts', 3); W.give('hull', 60); W.talk([['tanya', 'Журнал баржи! «Груз: огород, бабкин, 1 шт. Курс — Ксар-Тала». Ах вы, ворюги!'], ['ded', 'Таня, в кустах кто-то стонет. Кажется, марсианин.']], () => A.adv()); },
+    () => W.talk([['marod', 'Всё, обиделись! …Ладно, вернулись. Торгуемся снова.']], () => run())); }
+  const tw = { id: 'twister2', start() { A.setObj('Пыльная равнина за кораблём Пипа', byId('tw2')); }, arrive: 'tw2',
+    onArrive() { W.talk([['gena', 'Пылевой вихрь в Долинах Маринер! Высота — как три пятиэтажки. Бабушки, держите шляпы!'], ['pip', 'Он нас поднимет! В воздухе вокруг — пузыри-летуны. Стреляй на лету!']], () => { W.lift = 14; W.liftEnd = W.t + 16; W.tw2 = { k: 0 }; sfx('warn'); W.toast('🌪 СМЕРЧ ПОДНЯЛ МАРСОХОД!'); for (let k = 0; k < 10; k++) W.spawn('glub', R.x + rnd(-25, 25), R.z + rnd(-25, 25), { tw2: 1 }); A.setObj('Отстреливайся в воздухе: сбей 8 летунов', null); }); },
+    tick() { if (!W.tw2) return; const k = W.EN.filter((e) => e.tw2 && e.dead && !e.cnt2).length; W.EN.forEach((e) => { if (e.tw2 && e.dead) e.cnt2 = 1; }); W.tw2.k += k; const al = W.EN.filter((e) => e.tw2 && !e.dead); if (al[0] && W.obj) { W.obj.x = al[0].x; W.obj.z = al[0].z; } $('wdObj').innerHTML = '🌪 Бой в воздухе: сбито <b>' + Math.min(8, W.tw2.k) + ' из 8</b>' + (W.liftEnd ? ' · смерч ещё ' + Math.max(0, Math.ceil(W.liftEnd - W.t)) + ' с' : '');
+      if (W.liftEnd && W.t > W.liftEnd - 3 && !W.liftSaid) { W.liftSaid = 1; W.say('<b>Баба Таня:</b> Ваня, открывай зонтик! Мягкая посадка!'); }
+      if (W.liftEnd && W.t > W.liftEnd) { W.liftEnd = 0; W.liftSaid = 0; const ok = W.tw2.k >= 8; W.tw2 = null; W.EN.forEach((e) => { if (e.tw2) e.dead = true; });
+        if (ok) { W.give('money', 700); W.give('ammo', 40); W.talk([['ded', 'Сели. Зонтик — в клочья. Летуны — тоже.'], ['pip', 'Впереди Лабиринт Ночи: колодцы, шлюзы шахтёров. Баржа ушла туда — шлюзы затопили, чтобы нас задержать.']], () => A.adv()); }
+        else W.talk([['pip', 'Мало сбили — летуны гонятся! Смерч возвращается… держитесь!']], () => this.onArrive()); } } };
+  const lab = { id: 'locks2', start() { A.setObj('Колодцы Лабиринта Ночи: шлюзы', byId('noctis')); }, arrive: 'noctis',
+    onArrive() { W.talk([['pip', 'Лабиринт Ночи — сеть провалов и колодцев. Шахтёры поставили тут затворы. Пираты закрыли их — вода прибывает! Открой все затворы, пока не затопило.']], () => run2()); } };
+  function run2() { W.valves4({ title: '🚰 Затворы Лабиринта Ночи', rules: 'Затвор крутит себя <b>и двух соседей</b> по кругу. Открой все 🟢 не больше чем за <b>8 ходов</b> — вода прибывает.', n: 6, scramble: 3, max: 8, hint: 'Шахтёрская надпись: «Крути там, где красные рядом»', okSay: 'Вода ушла! Проход к пристани открыт', failSay: 'Вода по колёса! Откачиваем — заново' },
+    () => { W.give('money', 600); W.give('parts', 3); W.talk([['pip', 'Вода ушла! Впереди пристань. И баржа. Большая. Очень большая.'], ['ded', 'Таня, ущелье «Глотка» мы объехали по колодцам. Хитро.']], () => A.adv()); }, () => run2()); }
+  // баржа: обман мародёров всплывает — пираты знают, что журнал у вас
+  const dk = S.find((s) => s.id === 'dock'); if (dk) { const oa = dk.onArrive; dk.onArrive = function () { oa.call(this); if (W.flags.cheat2) { setTimeout(() => { const d = byId('dock'); for (let k = 0; k < 4; k++) W.spawn('pirate', d.x + rnd(-50, 50), d.z + rnd(-50, 50), { ai: W.pirateAI || undefined }); W.toast('🦴 Мародёры нажаловались пиратам: «Бабка с фальшивым журналом!» +4 пирата'); }, 1500); } }; }
+  S.splice(gi, 1); const pi2 = S.findIndex((s) => s.id === 'pip'); S.splice(pi2 + 1, 0, tw, lab);
+})();
+
+/* =====================================================================
    ГЛАВА 3 — по плану: таможня (выбор) → город → слежка за фургоном → тир у кратера-смайлика → фото Лица → настройка антенн → Зурга
    ===================================================================== */
 (function ch3() { const S = A.CHAPTERS[3]; if (!S) return; const mu = S.find((s) => s.id === 'museum'), fa = S.find((s) => s.id === 'face'), an = S.find((s) => s.id === 'antennas'); if (!mu || !fa || !an) return;
@@ -390,7 +428,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
    ===================================================================== */
 (function ch5() { const S = A.CHAPTERS[5]; if (!S) return; const ar = S.find((s) => s.id === 'arrive'), gy = S.find((s) => s.id === 'geyser'), au = S.find((s) => s.id === 'aurora'); if (!ar || !gy || !au) return;
   ar.onArrive = function () { W.st.fuel = 100; W.give('food', 3); W.toast('⛽ Полярники заправили полный бак и дали пирожков'); W.talk([['potap', 'Профсоюз медведей Северной шапки приветствует! Лёд — наш. Хотите воды — платите: 40 банок варенья.'], ['tanya', 'Михал Потапыч?! Это ты у меня с дачи варенье унёс?!'], ['potap', 'Было дело. Вкусное. Потому и сорок. Торгуйтесь — профсоюз уважает торг.']], () => run()); };
-  function run() { W.trade4({ title: '🐻‍❄️ Торг с профсоюзом медведей', icon: '🐻‍❄️🫙', price: 40, patience: 3, hello: 'Потапыч: «Сорок банок. Или хоккей — если смелые»', rules: 'Цена — в банках варенья (это патроны деда 🧂). Сбивай цену, следи за терпением ❤. Или вызови медведей на хоккей.',
+  function run() { W.trade4({ title: '🐻‍❄️ Торг с профсоюзом медведей', icon: '🐻‍❄️🫙', price: 40, unit: ' 🫙', have: () => '🫙 ' + W.st.ammo, patience: 3, hello: 'Потапыч: «Сорок банок. Или хоккей — если смелые»', rules: 'Цена — в банках варенья (это патроны деда 🧂). Сбивай цену, следи за терпением ❤. Или вызови медведей на хоккей.',
       acts: (o) => [
         { t: '📉 Тридцать — и по рукам', fn() { o.pat--; if (Math.random() < 0.65) { o.price = Math.max(10, o.price - 8); return 'Потапыч: «Ладно, ' + o.price + '. Профсоюз недоволен»'; } return 'Потапыч: «Р-р-р. Нет»'; } },
         { t: '📜 Стихи деда о медведях', fn() { if (o.poem) { o.pat--; return 'Потапыч: «Второй раз не так трогательно»'; } o.poem = 1; o.price = Math.max(10, o.price - 10); return 'Дед читает… Потапыч прослезился: −10'; } },
