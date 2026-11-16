@@ -69,6 +69,18 @@ function stickney6(x, z, h) { const d = Math.hypot(x - STK6.x, z - STK6.z); if (
 W.deckY = () => stickney6(STK6.x, STK6.z, base6(STK6.x, STK6.z)) + 26;
 function deck6(x, z, h) { if (W.ch !== 6 || !W.deckOn) return h; const dx = x - DECK6.x, dz = z - DECK6.z, Y = W.deckY(); if (Math.abs(dx) <= DECK6.hl && Math.abs(dz) <= DECK6.hw) return Math.max(h, Y);
   if (dx > DECK6.hl && dx < DECK6.hl + 80 && Math.abs(dz) < 14) { const k = (dx - DECK6.hl) / 80; return Math.max(h, Y * (1 - k) + h * k); } return h; }
+
+// глава 7: Фарсида и Олимп — три вулкана, реки лавы, обрыв Олимпа, кальдера на вершине
+const OLY7 = { x: 250, z: -150 }, CONES7 = [{ id: 'arsia', x: -470, z: 330 }, { id: 'pavonis', x: -430, z: 0 }, { id: 'ascraeus', x: -390, z: -330 }], RIV7 = [3.5, 4.4, 5.6];
+W.OLY7 = OLY7;
+const base7 = (x, z) => (fbm(x / 200 + 61, z / 200 - 17) - 0.5) * 16 + (fbm(x / 35, z / 35) - 0.5) * 2.4;
+function lava7(x, z) { const dx = x - OLY7.x, dz = z - OLY7.z, r = Math.hypot(dx, dz); if (r < 80 || r > 520) return 99; const a = Math.atan2(dz, dx); let best = 99;
+  for (const ra of RIV7) { let da = a - (ra + Math.sin(r / 60 + ra) * 0.08); da = Math.atan2(Math.sin(da), Math.cos(da)); best = Math.min(best, Math.abs(da) * r); } return best; }
+W.lava7 = (x, z) => W.ch === 7 && (lava7(x, z) < 6 || Math.hypot(x - OLY7.x, z - OLY7.z) < 20) && roadDist(x, z) > 8;
+function raw7(x, z) { let h = base7(x, z);
+  for (const c of CONES7) { const d = Math.hypot(x - c.x, z - c.z); if (d < 130) h += 42 * Math.max(0, 1 - d / 125) ** 1.25 - (d < 14 ? 7 * (1 - (d / 14) ** 2) : 0); }
+  const r = Math.hypot(x - OLY7.x, z - OLY7.z); if (r < 360) { const top = 45 + 90 * Math.max(0, 1 - r / 330) ** 1.3, k = 1 - sstep(320, 340, r); h = h * (1 - k) + (top + base7(x, z) * 0.3) * k; if (r < 80) h -= 28 * (1 - (r / 80) ** 2) * sstep(0, 1, 1); }
+  const lv = lava7(x, z); if (lv < 9) h -= (1 - sstep(4, 9, lv)) * 2.2; return h; }
 W.CHzc = zc2; W.river2 = (x, z) => Math.abs(z - (zc2(x) + 25 * Math.sin(x / 120))) < 9;
 const CH = W.CH = {
   1: { name: 'Колония «Заречная»', fog: '#9a5a4a', pal: ['#c0603a', '#e8a070', '#6a2e24', '#4a2028', '#3a2a30'],
@@ -163,6 +175,19 @@ const CH = W.CH = {
     raw(x, z) { return stickney6(x, z, base6(x, z)) + craterH(x, z) * 0.8; },
     road(x, z, h, k, y) { return h * (1 - k * 0.8) + y * k * 0.8; },
     poiH: (p) => base6(p.x, p.z), craters: 30 },
+  7: { name: 'Олимп', fog: '#7a3a2a', fogNear: 120, fogFar: 620, far: 900, lava: 1, pal: ['#a84a2a', '#d07a48', '#5a2a22', '#2a1414', '#4a2a22'],
+    pois: [
+      { id: 'arsia', name: 'Гора Арсия', e: '🌋', x: -470, z: 330, r: 22, col: '#ffb04a', kind: 'peak', flat: 0 },
+      { id: 'pavonis', name: 'Гора Павлина', e: '🌋', x: -430, z: 0, r: 22, col: '#ff6a4a', kind: 'peak', flat: 0 },
+      { id: 'ascraeus', name: 'Аскрийская гора', e: '🌋', x: -390, z: -330, r: 22, col: '#ffd24a', kind: 'peak', flat: 0 },
+      { id: 'village', name: 'Посёлок «Подножье»', e: '🏘', x: -60, z: 260, r: 60, col: '#7aff8a', kind: 'city' },
+      { id: 'pad', name: 'Стартовая площадка у обрыва', e: '🚀', x: -125, z: -120, r: 30, col: '#7fe8ff', kind: 'pad' },
+      { id: 'caldera', name: 'Кальдера Олимпа', e: '🔥', x: OLY7.x, z: OLY7.z, r: 70, col: '#ff3a1a', kind: 'boss', flat: 0 }],
+    roads: [[[-560, 600], [-500, 460], [-470, 330]], [[-470, 330], [-470, 160], [-430, 0]], [[-430, 0], [-430, -170], [-390, -330]], [[-390, -330], [-250, -40], [-60, 260]], [[-60, 260], [-120, 80], [-125, -120]], [[-40, -125], [100, -140], [180, -150]]],
+    start: [-555, 590, Math.PI * 0.9],
+    raw: raw7,
+    road(x, z, h, k, y) { return h * (1 - k * 0.6) + y * k * 0.6; },
+    poiH: (p) => raw7(p.x, p.z), craters: 14 },
 };
 // расставить места по каньону и проложить дороги главы 2
 (function () { const C = CH[2]; for (const p of C.pois) { const zc = zc2(p.x), hw = hw2(p.x); p.z = p.side === 'n' ? zc - hw * 1.25 - p.r - 20 : p.side === 's' ? zc + hw * 1.25 + p.r + 30 : zc + (p.dz || 0); }
@@ -175,7 +200,7 @@ const CH = W.CH = {
 })();
 (function () { const C = CH[3]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, base3(x, z) + 0.5]); } } const l = r[r.length - 1]; out.push([l[0], l[1], base3(l[0], l[1]) + 0.5]); return out; }); })();
 (function () { const C = CH[4]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, floor4(x, z) + 0.3]); } } const l = r[r.length - 1]; out.push([l[0], l[1], floor4(l[0], l[1]) + 0.3]); if (r.hw) out.hw = r.hw; return out; }); })();
-(function () { for (const C of [CH[5], CH[6]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
+(function () { for (const C of [CH[5], CH[6], CH[7]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
 function setChapter(n) { CHC = CH[n]; W.ch = n; W.deckOn = n === 6; POI.length = 0; CHC.pois.forEach((p) => POI.push(Object.assign({}, p))); ROADS.length = 0; CHC.roads.forEach((r) => { const c = r.map((q) => q.slice()); if (r.hw) c.hw = r.hw; ROADS.push(c); });
   CRATERS = []; CRATERS = genCraters(CHC.craters, n === 2 ? (x, z) => Math.abs(z - zc2(x)) < hw2(x) * 1.3 : null);
   for (const r of ROADS) for (const q of r) { if (q[2] === 'raw') q[2] = CHC.raw(q[0], q[1]); else if (q[2] === undefined) q[2] = 0; }
@@ -204,7 +229,7 @@ function buildTerrain() {
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); P.setY(i, H(x, z)); }
   g.computeVertexNormals(); const N = g.attributes.normal;
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), ny = N.getY(i), slope = 1 - ny;
-    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 5) { const kd = Math.hypot(x - KOR5.x, z - KOR5.z); if (kd < 90) t.lerp(new THREE.Color('#9ccff5'), (1 - sstep(70, 90, kd)) * 0.7); if (W.spiralD(x, z) < 12) t.lerp(new THREE.Color('#a8c8f0'), 0.45); } if (W.ch === 3) { const fx = (x - FACE.x) / 130, fz = (z - FACE.z) / 169, fe = Math.hypot(fx, fz); if (fe < 1) t.lerp(new THREE.Color('#8a6e64'), (1 - sstep(0.7, 1, fe)) * 0.55); } if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
+    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 7) { const lv = lava7(x, z); if (lv < 6) t.set('#ff6a1a').lerp(new THREE.Color('#ffd24a'), (1 - lv / 6) * 0.6 * (0.5 + 0.5 * Math.sin(x * 0.3 + z * 0.2))); const r7 = Math.hypot(x - OLY7.x, z - OLY7.z); if (r7 < 340 && lv >= 6) t.lerp(new THREE.Color('#4a2420'), 0.45 * (1 - sstep(320, 340, r7))); if (r7 < 80 && lv >= 6) t.lerp(new THREE.Color('#2a1210'), 0.5); } if (W.ch === 5) { const kd = Math.hypot(x - KOR5.x, z - KOR5.z); if (kd < 90) t.lerp(new THREE.Color('#9ccff5'), (1 - sstep(70, 90, kd)) * 0.7); if (W.spiralD(x, z) < 12) t.lerp(new THREE.Color('#a8c8f0'), 0.45); } if (W.ch === 3) { const fx = (x - FACE.x) / 130, fz = (z - FACE.z) / 169, fe = Math.hypot(fx, fz); if (fe < 1) t.lerp(new THREE.Color('#8a6e64'), (1 - sstep(0.7, 1, fe)) * 0.55); } if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
     const rd = roadDist(x, z); if (rd < 7) t.lerp(cRoad, (1 - sstep(3, 7, rd)) * 0.75);
     for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color('#8a5048'), 0.35 * (1 - d / p.r)); }
     C.push(t.r, t.g, t.b); }
@@ -327,6 +352,24 @@ function buildPOIs() {
       for (const sd of [-1, 1]) B2.add(CYL, mat(D.x + D.hl - 6, Y - 6, D.z + sd * 16, 9, 14, 9), '#2a2a30'); S.add(new THREE.Mesh(B2.build(), bakedMat));
       place(B, 'structure_tall', D.x - D.hl + 14, D.z, 8, 0); place(B, 'r_corridor_detailed', D.x - 40, D.z - 10, 6, 0); place(B, 'r_corridor_detailed', D.x + 20, D.z + 12, 6, Math.PI); place(B, 'k_barrels', D.x - 10, D.z + 16, 4, 0); place(B, 'r_satelliteDish_detailed', D.x - D.hl + 30, D.z - 14, 5, 1); }
   }
+  if (W.ch === 7) {
+    // вершины Фарсиды: лоток с пирожками (одна и та же бабушка), на Павлине — пиратский гарнизон
+    for (const c of CONES7) { place(B, 'k_barrels', c.x + 8, c.z + 6, 4, 0.4); place(B, 'lights', c.x - 8, c.z + 6, 5, 0); }
+    const pv = byId('pavonis'); [['r_platform_high', -14, -10, 7, 0], ['r_supports_high', 14, -12, 7, 1], ['r_gate_complex', 0, 16, 7, 0], ['r_barrels_rail', 16, 10, 5, 2]].forEach(([m, x, z, sc, ry]) => place(B, m, pv.x + x, pv.z + z, sc, ry));
+    // посёлок у подножья
+    const vl = byId('village'); [['basemodule_A', -22, -10, 7, 0], ['basemodule_C', 20, -18, 7, 1], ['basemodule_garage', -4, 24, 7, 2], ['windturbine_tall', 36, 14, 7, 0], ['solarpanel', -34, 20, 6, 0], ['lights', 0, -4, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, vl.x + x, vl.z + z, sc, ry)); [[-22, -10, 6], [20, -18, 6], [-4, 24, 6]].forEach(([x, z, r]) => addC(vl.x + x, vl.z + z, r));
+    // стартовая площадка у обрыва
+    const pd = byId('pad'); place(B, 'landingpad_large', pd.x, pd.z, 6, 0); place(B, 'k_rocket_baseA', pd.x - 18, pd.z + 14, 5); place(B, 'k_rocket_fuelA', pd.x - 18, pd.z + 14, 5, 0, 8); place(B, 'k_rocket_topA', pd.x - 18, pd.z + 14, 5, 0, 13); addC(pd.x - 18, pd.z + 14, 4); place(B, 'lights', pd.x + 14, pd.z - 12, 6, 0);
+    // упавший флагман на склоне Олимпа
+    place(B, 'r_craft_cargoB', 70, -40, 14, 2.2, -2); addC(70, -40, 16); for (let k = 0; k < 5; k++) place(B, 'k_rock_largeA', 70 + Math.cos(k) * 24, -40 + Math.sin(k) * 24, 5, k);
+    // светящиеся реки лавы и озеро в кальдере
+    { const P = [], C = [], col = new THREE.Color(); for (const ra of RIV7) { let prev = null; for (let r = 84; r <= 520; r += 7) { const a = ra + Math.sin(r / 60 + ra) * 0.08, x = OLY7.x + Math.cos(a) * r, z = OLY7.z + Math.sin(a) * r, nx = -Math.sin(a) * 4.5, nz = Math.cos(a) * 4.5, rd = roadDist(x, z) < 9;
+        const cur = [x + nx, H(x + nx, z + nz) + 0.35, z + nz, x - nx, H(x - nx, z - nz) + 0.35, z - nz]; if (prev && !rd) { const q = [prev, cur]; const v = (i, j) => P.push(q[i][j * 3], q[i][j * 3 + 1], q[i][j * 3 + 2]); v(0, 0); v(0, 1); v(1, 0); v(0, 1); v(1, 1); v(1, 0); for (let k = 0; k < 6; k++) { col.set(k % 3 === 1 ? '#ffd24a' : '#ff5a12'); C.push(col.r, col.g, col.b); } } prev = rd ? null : cur; } }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false })); S.add(m); W.lavaM = m;
+      const lk = new THREE.Mesh(new THREE.CircleGeometry(20, 28), new THREE.MeshBasicMaterial({ color: '#ff6a1a', fog: false })); lk.rotation.x = -Math.PI / 2; lk.position.set(OLY7.x, H(OLY7.x, OLY7.z) + 0.6, OLY7.z); S.add(lk); }
+    // кальдера: тёмные глыбы по краю
+    for (let k = 0; k < 12; k++) { const a = k / 12 * 6.28; place(B, k % 2 ? 'k_rock_largeA' : 'rocks_B', OLY7.x + Math.cos(a) * 76, OLY7.z + Math.sin(a) * 76, 6 + (k % 3) * 2, a); }
+  }
   // разброс: камни, кристаллы, метеориты, кратеры-модели
   for (let k = 0; k < 220; k++) { const x = (hash(k, 21) - 0.5) * SIZE * 0.95, z = (hash(k, 23) - 0.5) * SIZE * 0.95; if (roadDist(x, z) < 9 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r) || (CHC.dark && cave4(x, z) < 0.7)) continue; const r = hash(k, 29);
     place(B, r < 0.45 ? 'rocks_A' : r < 0.7 ? 'rocks_B' : r < 0.85 ? 'k_rock_largeA' : r < 0.95 ? 'k_rocks_smallA' : 'k_meteor_detailed', x, z, 3 + hash(k, 31) * 6, hash(k, 37) * 6.28, -0.3); }
@@ -413,6 +456,7 @@ function roverStep(dt) {
   if (keys.has('KeyW') || keys.has('ArrowUp')) thr = 1; if (keys.has('KeyS') || keys.has('ArrowDown')) thr = -1; if (keys.has('KeyA') || keys.has('ArrowLeft')) st = 1; if (keys.has('KeyD') || keys.has('ArrowRight')) st = -1;
   if (W.view === 2 && W.auto) { const a = W.auto; thr = a.thr; st = a.st; } // в турели ведёт бабка
   if (W.lock > 0) { thr = 0; st = 0; }
+  if (W.nobrake > 0 && thr < 0) thr = 0; // ракетный двигатель вместо тормозов
   const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? 0.62 : 1) * (W.flyMode ? 1.5 : 1), n = normalAt(R.x, R.z);
   const fwd = new THREE.Vector3(Math.sin(R.h), 0, Math.cos(R.h)), slope = fwd.x * n.x + fwd.z * n.z; // спуск разгоняет, подъём тормозит
   if (R.air <= 0) { if (thr > 0) R.v += (thr * 9 - (R.v < 0 ? -6 : 0)) * dt; else if (thr < 0) R.v += thr * (R.v > 0 ? 14 : 6) * dt; else R.v -= Math.sign(R.v) * Math.min(Math.abs(R.v), (onRoad ? 2 : 4) * dt);
@@ -496,7 +540,7 @@ function buildUI() {
 }
 function drawMap() { const c = $('wdMapC'), x = c.getContext('2d'), N = 128, im = x.createImageData(N, N);
   if (!W.mapImg) { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const wx = (i / N - 0.5) * SIZE, wz = (j / N - 0.5) * SIZE, h = H(wx, wz), rd = roadDist(wx, wz), k = (j * N + i) * 4, sh = Math.max(0.3, Math.min(1.3, 0.85 + (H(wx + 6, wz) - h) * -0.08));
-      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
+      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (CHC.lava) { r = 120 + h * 0.9; g = 60 + h * 0.6; b = 50 + h * 0.4; if (lava7(wx, wz) < 6) { r = 255; g = 120; b = 30; } } if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
   const t = document.createElement('canvas'); t.width = t.height = N; t.getContext('2d').putImageData(W.mapImg, 0, 0); x.imageSmoothingEnabled = true; x.drawImage(t, 0, 0, 512, 512);
   const P = (wx, wz) => [(wx / SIZE + 0.5) * 512, (wz / SIZE + 0.5) * 512]; x.font = '22px system-ui'; x.textAlign = 'center';
   POI.forEach((p) => { const [a, b] = P(p.x, p.z); x.fillStyle = p.col; x.globalAlpha = 0.3; x.beginPath(); x.arc(a, b, 16, 0, 7); x.fill(); x.globalAlpha = 1; x.fillText(p.e, a, b + 8); x.fillStyle = '#fff'; x.font = '12px system-ui'; x.fillText(p.name, a, b + 24); x.font = '22px system-ui'; });

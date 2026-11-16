@@ -42,6 +42,7 @@ const T = W.TYPES = {
   fighter: { m: 'r_craft_racer', name: 'пиратский истребитель', h: 2, hp: 20, sp: 20, dmg: 8, xp: 8, r: 2, fly: 13, rot: Math.PI },
   deng: { m: 'r_turret_double', name: 'двигатель флагмана', h: 3.4, hp: 150, sp: 0, dmg: 0, xp: 30, r: 2.6, ground: 1, still: 1 },
   admiral: { m: 'm_orc_skull', name: 'Адмирал Галина', h: 6.5, hp: 700, sp: 0, dmg: 16, xp: 450, r: 3.5, ground: 1, boss: 1, tint: '#ffb0e0' },
+  olymp: { m: 'm_goleling', name: 'Дух Олимпа', h: 10, hp: 600, sp: 0, dmg: 20, xp: 600, r: 5, ground: 1, boss: 1, tint: '#ff9a5a' },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
