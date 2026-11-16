@@ -314,6 +314,41 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
 
 /* =====================================================================
+   ГЛАВА 3 — по плану: таможня (выбор) → город → слежка за фургоном → тир у кратера-смайлика → фото Лица → настройка антенн → Зурга
+   ===================================================================== */
+(function ch3() { const S = A.CHAPTERS[3]; if (!S) return; const mu = S.find((s) => s.id === 'museum'), fa = S.find((s) => s.id === 'face'), an = S.find((s) => s.id === 'antennas'); if (!mu || !fa || !an) return;
+  function van() { let mesh; if (MODELS.spacetruck || MODELS.k_rover) { const b = new Builder([]); b.add(MODELS.spacetruck || MODELS.k_rover, mat(0, 0, 0, 5, 5, 5), null, { vcol: true, vk: 0.9 }); mesh = new THREE.Mesh(b.build(), bakedMat); } else mesh = new THREE.Mesh(new THREE.BoxGeometry(3, 2.4, 6), new THREE.MeshLambertMaterial({ color: '#4a6a8a' })); const g = new THREE.Group(); g.add(mesh); const sp = emojiSprite('🥕', 2.4); sp.position.y = 5; g.add(sp); return g; }
+  mu.onArrive = function () { W.talk([['tanya', 'Здравствуйте. Это мой огород. Верните, пожалуйста.'], ['pip', 'Смотритель говорит: «Экспонат упал с неба — значит, подарок».'], ['ksar', '<b>Ксар-ФМ</b>: Ограбление в Музее землян! Фургон с огородом уходит!'], ['pip', 'Не стреляй! Проследим — узнаем, кто заказчик. Держись подальше, а когда водитель оглядывается 👀 — замри.']], () => run()); };
+  function run() { const m = byId('museum'); W.tail4({ label: 'Фургон похитителей', path: [[m.x + 10, m.z - 10], [-120, 200], [-200, 150], [-290, 30], [-380, -80]], sp: 8, see: 55, near: 20, far: 100, lostMax: 7, mesh: van,
+      onWin() { W.give('money', 600); W.give('parts', 3); W.talk([['tanya', 'Остановились у кратера-смайлика. Открываю… А где огород?! Тут только пугало. В моём халате. И записка.'], ['none', '<i>«Огород — у меня. Хотите обратно — сначала помойте мой портрет в Кидонии. Тёща Зурга.»</i>'], ['pip', 'Ой! Клопы лезут грызть смайлик — это гордость Ксар-Талы! Там есть вышка — защищай с неё!']], () => A.adv()); },
+      onFail(why) { W.talk([['pip', why === 'seen' ? 'Водитель нас заметил и вернулся к музею! Ждём, пока поедет снова.' : 'Потеряли! Он опять у музея — пробуй ещё.']], () => run()); } }); A.setObj('Следи за фургоном', m); }
+  mu.tick = (dt) => W.tl4 && W.tailStep4(dt);
+  const smile = { id: 'smile3', start() { A.setObj('Кратер-смайлик: вышка', byId('smile')); }, arrive: 'smile',
+    onArrive() { W.talk([['pip', 'Кратер-смайлик настоящий — на Марсе есть кратер Галле, он улыбается! Клопы лезут грызть «зубы». Заезжай на вышку: клопы прячутся за куполами, бей, когда грызут.']], () => run2()); } };
+  function run2() { const c = byId('smile'), y = W.H(c.x, c.z); if (!W.tw3m) { const g = new THREE.Group(); for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6.4, 0.8), new THREE.MeshLambertMaterial({ color: '#8a6a5a' })); l.position.set(c.x + dx, y + 3.2, c.z + dz); g.add(l); } const pl = new THREE.Mesh(new THREE.BoxGeometry(11, 0.4, 11), new THREE.MeshLambertMaterial({ color: '#d8a43a' })); pl.position.set(c.x, y + 6.2, c.z); g.add(pl);
+      for (let k = 0; k < 4; k++) { const a = k * 1.571 + 0.4, x = c.x + Math.sin(a) * 24, z = c.z + Math.cos(a) * 24, d = new THREE.Mesh(new THREE.SphereGeometry(5, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#bfe8ff', transparent: true, opacity: 0.55 })); d.position.set(x, W.H(x, z), z); g.add(d); } W.scene.add(g); W.tw3m = g; }
+    W.tower4({ x: c.x, z: c.z, y: y + 7, type: 'bug', waves: [4, 5, 7], drill: 2, hpK: 1.5, label: 'Смайлик', cover: [0, 1, 2, 3].map((k) => ({ x: c.x + Math.sin(k * 1.571 + 0.4) * 24, z: c.z + Math.cos(k * 1.571 + 0.4) * 24 })),
+      onWin() { W.give('money', 900); W.give('ammo', 60); W.talk([['ksar', '<b>Ксар-ФМ</b>: Смайлик спасён! Город улыбается!'], ['ded', 'Портрет — это, видать, то Лицо на холме. Таня, бери фотоаппарат: Зурга хочет новый снимок для музея.']], () => A.adv()); },
+      onFail() { W.talk([['pip', 'Смайлик погрызли… Марсиане подрисовали. Давай ещё раз!']], () => run2()); } }); A.setObj('Защити смайлик с вышки', c); }
+  smile.tick = (dt) => W.tw4 && W.towerStep4(dt);
+  clear4.push(() => { if (W.tw3m) { W.scene.remove(W.tw3m); W.tw3m = null; } });
+  fa.talkFace = function () { W.talk([['pip', 'Лицо Кидонии. Земляне сфотографировали его в 1976-м и спорили 25 лет: лицо это или просто холм. Мы, марсиане, знаем — это тёща Зурга.'], ['pip', 'Зурге нужен портрет: глаза, нос, рот и бровь. Солнце садится — успей, пока светло!']], () => run3()); };
+  function run3() { const F = W.FACE, k = 1.3; W.photo4({ need: 4, time: 150, tg: [[-34, -34, '👁', 'Левый глаз'], [34, -34, '👁', 'Правый глаз'], [0, -14, '👃', 'Нос'], [0, 22, '👄', 'Рот'], [-34, -64, '〰', 'Бровь (с клопами)']].map(([dx, dz, e, name]) => ({ x: F.x + dx * k, z: F.z + dz * k, e, name, y: 3 })),
+      onWin() { W.give('parts', 2); W.talk([['tanya', 'Ваня… Это же ты. Нос твой. Брови твои. И рот такой, будто говорит: «Таня, где мои очки?»'], ['ded', 'Хм. На Марсе я раньше не бывал. Или бывал?.. В 1984-м был странный отпуск.'], ['pip', 'Это скандал. Тёща Зурга будет… очень… тёщей.'],
+        { who: 'pip', text: 'Что скажем столице?', ch: [{ t: '🫖 «Это Зурга. Очень похожа!»', sub: '+300 ₽ от музея, Зурга довольна', fn() { W.give('money', 300); W.flags.zhappy = 1; } }, { t: '👴 «Это мой Ваня!»', sub: '+40 нервов; Зурга в ярости — но у неё будет на 1 зонтик меньше', fn() { W.nerve(40); W.flags.zangry = 1; } }] }], () => A.adv()); },
+      onFail() { W.talk([['pip', 'Стемнело! Ждём утра… Утро на Марсе — через минуту, если очень попросить.']], () => run3()); } }); A.setObj('Сфотографируй Лицо: наведи, остановись, 📷', F); }
+  fa.tick = (dt) => W.ph4 && W.photoStep4(dt);
+  fa.start = function () { A.setObj('Лицо Кидонии: портрет для Зурги', byId('face')); };
+  an.start = function () { W.talk([['gena', '<b>Марс-ФМ</b>: в эфире повторяется сигнал: три коротких, три длинных… Изобретатель Никола Тесла однажды поймал похожий сигнал и решил, что это привет с Марса!'], ['pip', 'Это старые антенны «Привет». Пульт настройки — у первой. Совмести волны всех трёх — узнаем, кто шлёт.']], () => A.setObj('Пульт антенн «Привет»', byId('ant1'))); };
+  an.arrive = 'ant1'; an.onArrive = function () { run4(); };
+  function run4() { W.tune4({ title: '📡 Антенны «Привет от Теслы»', rules: 'Подгони жёлтую волну к зелёной (частота и сила) для каждой из трёх антенн. Клопы грызут кабель — помехи растут!', n: 3, time: 45, bonus: 8, okSay: ['…Ва… ня…', '…ты… вы… клю…', '…чил… у… тюг…'] },
+    () => { W.give('money', 500); W.give('fuel', 40); W.talk([['gena', '<b>Марс-ФМ</b>: Расшифровка сигнала: «Ваня. Ты. Выключил. Утюг?»'], ['ded', '…Таня. Я, кажется, не выключил. В 1984-м.'], ['pip', 'Сигнал идёт из дворца Зурги! Она подслушивает всё радио Марса. Едем пить чай. Тяжёлый будет чай.']], () => A.adv()); },
+    () => W.talk([['pip', 'Клопы перегрызли кабель! Я скрутил изолентой — давай заново.']], () => run4())); }
+  an.tick = () => {};
+  S.splice(S.indexOf(fa), 0, smile);
+})();
+
+/* =====================================================================
    ГЛАВА 4 — по плану: пешком за гномом → штреки → плот гномов через море → кот Гоша + поющие кристаллы в гроте → червь
    ===================================================================== */
 (function ch4() { const S = A.CHAPTERS[4]; if (!S) return; const di = S.findIndex((s) => s.id === 'descent'), se = S.findIndex((s) => s.id === 'sea'), go = S.find((s) => s.id === 'gosha'); if (di < 0 || se < 0 || !go) return;
