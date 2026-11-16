@@ -81,6 +81,15 @@ function raw7(x, z) { let h = base7(x, z);
   for (const c of CONES7) { const d = Math.hypot(x - c.x, z - c.z); if (d < 130) h += 42 * Math.max(0, 1 - d / 125) ** 1.25 - (d < 14 ? 7 * (1 - (d / 14) ** 2) : 0); }
   const r = Math.hypot(x - OLY7.x, z - OLY7.z); if (r < 360) { const top = 45 + 90 * Math.max(0, 1 - r / 330) ** 1.3, k = 1 - sstep(320, 340, r); h = h * (1 - k) + (top + base7(x, z) * 0.3) * k; if (r < 80) h -= 28 * (1 - (r / 80) ** 2) * sstep(0, 1, 1); }
   const lv = lava7(x, z); if (lv < 9) h -= (1 - sstep(4, 9, lv)) * 2.2; return h; }
+
+// глава 8: Церера — карликовая планета в поясе астероидов: лёд и соль, кратер Оккатор с яркими пятнами, гора Ахуна
+const OCC8 = { x: -320, z: 200 }, AHU8 = { x: 300, z: 260 }, RIG8 = { x: 330, z: -330 }, MINE8 = { x: -250, z: -300 };
+W.OCC8 = OCC8; W.AHU8 = AHU8; W.MINE8 = MINE8;
+const base8 = (x, z) => (fbm(x / 160 - 41, z / 160 + 23) - 0.5) * 18 + (fbm(x / 30, z / 30) - 0.5) * 2 - (x * x + z * z) / (2 * 2200);
+function raw8(x, z) { let h = base8(x, z) + craterH(x, z) * 0.9; const od = Math.hypot(x - OCC8.x, z - OCC8.z);
+  if (od < 170) { const k = 1 - sstep(95, 125, od); h = h * (1 - k) + (base8(OCC8.x, OCC8.z) - 18) * k + 14 * Math.exp(-(((od - 128) / 14) ** 2)) + (od < 22 ? 9 * (1 - (od / 22) ** 2) : 0); }
+  const ad = Math.hypot(x - AHU8.x, z - AHU8.z); if (ad < 90) h += 55 * (1 - sstep(38, 70, ad)); return h; }
+W.salt8 = (x, z) => { const od = Math.hypot(x - OCC8.x, z - OCC8.z); return od < 26 || (Math.hypot(x - OCC8.x - 45, z - OCC8.z + 20) < 16) || (Math.hypot(x - OCC8.x + 40, z - OCC8.z - 30) < 12); };
 W.CHzc = zc2; W.river2 = (x, z) => Math.abs(z - (zc2(x) + 25 * Math.sin(x / 120))) < 9;
 const CH = W.CH = {
   1: { name: 'Колония «Заречная»', fog: '#9a5a4a', pal: ['#c0603a', '#e8a070', '#6a2e24', '#4a2028', '#3a2a30'],
@@ -188,6 +197,18 @@ const CH = W.CH = {
     raw: raw7,
     road(x, z, h, k, y) { return h * (1 - k * 0.6) + y * k * 0.6; },
     poiH: (p) => raw7(p.x, p.z), craters: 14 },
+  8: { name: 'Церера', fog: '#06070e', fogNear: 320, fogFar: 1100, far: 1800, space: 1, mars: 0, belt: 1, g: 5, pal: ['#4e4e56', '#6a6a74', '#3a3a42', '#222228', '#4a4a52'],
+    pois: [
+      { id: 'transit', name: 'Станция «Церера-Транзит»', e: '🛰', x: 0, z: 0, r: 70, col: '#7aff8a', kind: 'city' },
+      { id: 'occator', name: 'Кратер Оккатор — соляные пятна', e: '⚪', x: OCC8.x, z: OCC8.z, r: 110, col: '#ffffff', kind: 'salt', flat: 0 },
+      { id: 'ahuna', name: 'Гора Ахуна — ледяной вулкан', e: '🗻', x: AHU8.x, z: AHU8.z, r: 70, col: '#7fe8ff', kind: 'ice', flat: 0 },
+      { id: 'mine', name: 'Шахта гномов «Ледяная»', e: '⛏', x: MINE8.x, z: MINE8.z, r: 60, col: '#ffd24a', kind: 'mine' },
+      { id: 'rig', name: 'Камнедробилка Толяна', e: '🏴‍☠️', x: RIG8.x, z: RIG8.z, r: 90, col: '#ff4a3a', kind: 'boss' }],
+    roads: [[[0, 0], [-160, 100], [-230, 160]], [[0, 0], [150, 130], [240, 210]], [[0, 0], [-120, -150], [-250, -300]], [[0, 0], [170, -170], [330, -330]]],
+    start: [10, 30, Math.PI],
+    raw: raw8,
+    road(x, z, h, k, y) { return h * (1 - k * 0.8) + y * k * 0.8; },
+    poiH: (p) => base8(p.x, p.z), craters: 34 },
 };
 // расставить места по каньону и проложить дороги главы 2
 (function () { const C = CH[2]; for (const p of C.pois) { const zc = zc2(p.x), hw = hw2(p.x); p.z = p.side === 'n' ? zc - hw * 1.25 - p.r - 20 : p.side === 's' ? zc + hw * 1.25 + p.r + 30 : zc + (p.dz || 0); }
@@ -200,7 +221,7 @@ const CH = W.CH = {
 })();
 (function () { const C = CH[3]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, base3(x, z) + 0.5]); } } const l = r[r.length - 1]; out.push([l[0], l[1], base3(l[0], l[1]) + 0.5]); return out; }); })();
 (function () { const C = CH[4]; C.roads = C.roads.map((r) => { const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 25)); for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, z = a[1] + (b[1] - a[1]) * k / n; out.push([x, z, floor4(x, z) + 0.3]); } } const l = r[r.length - 1]; out.push([l[0], l[1], floor4(l[0], l[1]) + 0.3]); if (r.hw) out.hw = r.hw; return out; }); })();
-(function () { for (const C of [CH[5], CH[6], CH[7]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
+(function () { for (const C of [CH[5], CH[6], CH[7], CH[8]]) C.roads = C.roads.map((r) => { if (r[0][2] === 'raw') return r; const out = []; for (let i = 0; i < r.length - 1; i++) { const a = r[i], b = r[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 20)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'raw']); } const l = r[r.length - 1]; out.push([l[0], l[1], 'raw']); return out; }); })();
 function setChapter(n) { CHC = CH[n]; W.ch = n; W.deckOn = n === 6; POI.length = 0; CHC.pois.forEach((p) => POI.push(Object.assign({}, p))); ROADS.length = 0; CHC.roads.forEach((r) => { const c = r.map((q) => q.slice()); if (r.hw) c.hw = r.hw; ROADS.push(c); });
   CRATERS = []; CRATERS = genCraters(CHC.craters, n === 2 ? (x, z) => Math.abs(z - zc2(x)) < hw2(x) * 1.3 : null);
   for (const r of ROADS) for (const q of r) { if (q[2] === 'raw') q[2] = CHC.raw(q[0], q[1]); else if (q[2] === undefined) q[2] = 0; }
@@ -229,7 +250,7 @@ function buildTerrain() {
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); P.setY(i, H(x, z)); }
   g.computeVertexNormals(); const N = g.attributes.normal;
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), ny = N.getY(i), slope = 1 - ny;
-    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 7) { const lv = lava7(x, z); if (lv < 6) t.set('#ff6a1a').lerp(new THREE.Color('#ffd24a'), (1 - lv / 6) * 0.6 * (0.5 + 0.5 * Math.sin(x * 0.3 + z * 0.2))); const r7 = Math.hypot(x - OLY7.x, z - OLY7.z); if (r7 < 340 && lv >= 6) t.lerp(new THREE.Color('#4a2420'), 0.45 * (1 - sstep(320, 340, r7))); if (r7 < 80 && lv >= 6) t.lerp(new THREE.Color('#2a1210'), 0.5); } if (W.ch === 5) { const kd = Math.hypot(x - KOR5.x, z - KOR5.z); if (kd < 90) t.lerp(new THREE.Color('#9ccff5'), (1 - sstep(70, 90, kd)) * 0.7); if (W.spiralD(x, z) < 12) t.lerp(new THREE.Color('#a8c8f0'), 0.45); } if (W.ch === 3) { const fx = (x - FACE.x) / 130, fz = (z - FACE.z) / 169, fe = Math.hypot(fx, fz); if (fe < 1) t.lerp(new THREE.Color('#8a6e64'), (1 - sstep(0.7, 1, fe)) * 0.55); } if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
+    t.copy(cRust).lerp(cDust, Math.max(0, sstep(-2, 18, y) * 0.55 + (fbm(x / 25, z / 25) - 0.5) * 0.9)).lerp(cRock, sstep(0.1, 0.3, slope)).lerp(cDark, sstep(0.3, 0.55, slope) * 0.6).multiplyScalar(0.9 + (hash(Math.floor(x / 3), Math.floor(z / 3)) - 0.5) * 0.12); if (W.ch === 1 && y < -10) t.lerp(cDark, sstep(-10, -22, y) * 0.7); if (W.ch === 8) { if (W.salt8(x, z)) t.set('#f4f6ff'); const ad = Math.hypot(x - AHU8.x, z - AHU8.z); if (ad < 72) t.lerp(new THREE.Color('#c8dcf0'), 0.35 + 0.3 * Math.max(0, Math.sin(Math.atan2(z - AHU8.z, x - AHU8.x) * 9))); } if (W.ch === 7) { const lv = lava7(x, z); if (lv < 6) t.set('#ff6a1a').lerp(new THREE.Color('#ffd24a'), (1 - lv / 6) * 0.6 * (0.5 + 0.5 * Math.sin(x * 0.3 + z * 0.2))); const r7 = Math.hypot(x - OLY7.x, z - OLY7.z); if (r7 < 340 && lv >= 6) t.lerp(new THREE.Color('#4a2420'), 0.45 * (1 - sstep(320, 340, r7))); if (r7 < 80 && lv >= 6) t.lerp(new THREE.Color('#2a1210'), 0.5); } if (W.ch === 5) { const kd = Math.hypot(x - KOR5.x, z - KOR5.z); if (kd < 90) t.lerp(new THREE.Color('#9ccff5'), (1 - sstep(70, 90, kd)) * 0.7); if (W.spiralD(x, z) < 12) t.lerp(new THREE.Color('#a8c8f0'), 0.45); } if (W.ch === 3) { const fx = (x - FACE.x) / 130, fz = (z - FACE.z) / 169, fe = Math.hypot(fx, fz); if (fe < 1) t.lerp(new THREE.Color('#8a6e64'), (1 - sstep(0.7, 1, fe)) * 0.55); } if (W.ch === 2) { if (y < -50) t.lerp(cDust, 0.25); if (W.river2(x, z)) t.lerp(cRiver, 0.7); if (y > -50 && y < 5) t.multiplyScalar(0.85 + 0.15 * Math.sin(y * 0.9)); } // полосы слоёв на стенах каньона
     const rd = roadDist(x, z); if (rd < 7) t.lerp(cRoad, (1 - sstep(3, 7, rd)) * 0.75);
     for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color('#8a5048'), 0.35 * (1 - d / p.r)); }
     C.push(t.r, t.g, t.b); }
@@ -370,6 +391,17 @@ function buildPOIs() {
     // кальдера: тёмные глыбы по краю
     for (let k = 0; k < 12; k++) { const a = k / 12 * 6.28; place(B, k % 2 ? 'k_rock_largeA' : 'rocks_B', OLY7.x + Math.cos(a) * 76, OLY7.z + Math.sin(a) * 76, 6 + (k % 3) * 2, a); }
   }
+  if (W.ch === 8) {
+    // станция «Церера-Транзит»: модули, антенна, ракета, гномы-шахтёры
+    const tr = byId('transit'); [['basemodule_A', -22, -14, 7, 0], ['basemodule_B', 20, -20, 7, 1], ['basemodule_garage', -6, 26, 7, 2], ['structure_tall', 34, 12, 8, 0], ['k_satelliteDish_large', -36, 14, 6, 0.6], ['landingpad_large', 30, 40, 6, 0], ['lights', 0, 0, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, tr.x + x, tr.z + z, sc, ry)); [[-22, -14, 6], [20, -20, 6], [-6, 26, 6], [34, 12, 3]].forEach(([x, z, r]) => addC(tr.x + x, tr.z + z, r));
+    place(B, 's_Spaceship5', tr.x + 30, tr.z + 40, 1.4, 0.8, 1.5); for (let k = 0; k < 6; k++) place(B, k % 2 ? 'k_astronautA' : 'k_astronautB', tr.x - 12 + k * 4, tr.z + 10, 1.6, 2.8);
+    // кратер Оккатор: кристаллы соли
+    for (let k = 0; k < 10; k++) { const a = k * 0.63; place(B, k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', OCC8.x + Math.cos(a) * (30 + (k % 3) * 18), OCC8.z + Math.sin(a) * (30 + (k % 3) * 18), 6, a); }
+    // шахта гномов «Ледяная»: купол, буры, бочки
+    const mn = byId('mine'); place(B, 'k_hangar_roundGlass', mn.x, mn.z, 12, 0); addC(mn.x, mn.z, 12); [['drill_structure', -26, 18, 7, 0], ['drill_structure', 24, -20, 7, 2], ['k_barrels', 18, 18, 5, 0], ['r_barrels_rail', -20, -18, 6, 1]].forEach(([m, x, z, sc, ry]) => place(B, m, mn.x + x, mn.z + z, sc, ry));
+    // камнедробилка: площадка пиратов
+    const rg = byId('rig'); [['r_platform_long', -40, 40, 8, 0], ['r_platform_long', 40, 40, 8, 0], ['k_rocket_baseA', -50, -40, 6, 0], ['r_satelliteDish_detailed', 50, -40, 6, 1], ['k_barrels', 0, 55, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, rg.x + x, rg.z + z, sc, ry));
+  }
   // разброс: камни, кристаллы, метеориты, кратеры-модели
   for (let k = 0; k < 220; k++) { const x = (hash(k, 21) - 0.5) * SIZE * 0.95, z = (hash(k, 23) - 0.5) * SIZE * 0.95; if (roadDist(x, z) < 9 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r) || (CHC.dark && cave4(x, z) < 0.7)) continue; const r = hash(k, 29);
     place(B, r < 0.45 ? 'rocks_A' : r < 0.7 ? 'rocks_B' : r < 0.85 ? 'k_rock_largeA' : r < 0.95 ? 'k_rocks_smallA' : 'k_meteor_detailed', x, z, 3 + hash(k, 31) * 6, hash(k, 37) * 6.28, -0.3); }
@@ -383,10 +415,13 @@ function buildPOIs() {
     m.position.set(p.x, p.h + 80, p.z); S.add(m); p.beam = m; beams.push(m); });
   // столкновения с постройками (упрощённо — круги)
 }
-function buildSpace() { if (!CHC.space) return; const g = new THREE.SphereGeometry(330, 48, 32), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.6, 0.5, 0.6).normalize();
+function buildSpace() { if (!CHC.space) return; if (CHC.belt) buildBelt(); if (CHC.mars === 0) return; const g = new THREE.SphereGeometry(330, 48, 32), P = g.attributes.position, C = [], sd = new THREE.Vector3(-0.6, 0.5, 0.6).normalize();
   for (let i = 0; i < P.count; i++) { const nx = P.getX(i) / 330, ny = P.getY(i) / 330, nz = P.getZ(i) / 330, n = fbm(nx * 3 + 7, nz * 3 + ny * 2), n2 = fbm(nx * 9 - 2, nz * 9 + ny * 5); const c = new THREE.Color('#c8643a').lerp(new THREE.Color('#e8a070'), n2 * 0.6).lerp(new THREE.Color('#5a2a22'), sstep(0.55, 0.7, n) * 0.8);
     if (Math.abs(ny) > 0.86) c.lerp(new THREE.Color('#f4f4ff'), sstep(0.86, 0.92, Math.abs(ny))); if (Math.abs(nz * 0.6 + nx * 0.8) < 0.05 && ny > -0.3 && ny < 0.3) c.multiplyScalar(0.6); const l = Math.max(0.08, nx * sd.x + ny * sd.y + nz * sd.z) * 0.9 + 0.1; c.multiplyScalar(l); C.push(c.r, c.g, c.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false })); m.renderOrder = -1; S.add(m); W.marsBall = m; }
+function buildBelt() { const N = 70, m = new THREE.InstancedMesh(ICO, new THREE.MeshLambertMaterial({ color: '#8a8a92', fog: false }), N), M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2 + hash(i, 5) * 0.3, r = 520 + hash(i, 6) * 160, y = 140 + hash(i, 7) * 160, sc = 6 + hash(i, 8) * 26; e.set(hash(i, 9) * 6, hash(i, 10) * 6, 0); q.setFromEuler(e); M.compose(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), q, new THREE.Vector3(sc, sc * (0.6 + hash(i, 11) * 0.5), sc * 0.8)); m.setMatrixAt(i, M); }
+  m.frustumCulled = false; m.renderOrder = -1; S.add(m); W.beltM = m; }
 function buildAurora() { if (!CHC.aurora) return; const g = new THREE.Group(); g.userData.aur = 1;
   for (let k = 0; k < 4; k++) { const w = 700, geo = new THREE.PlaneGeometry(w, 150, 40, 6), P = geo.attributes.position, C = [];
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), t = (y + 75) / 150; P.setZ(i, Math.sin(x / 70 + k * 2) * 60 + Math.sin(x / 23 + k) * 14); const c = new THREE.Color(k % 2 ? '#7aff9a' : '#6af0c8').lerp(new THREE.Color('#b07aff'), t * t); const a = Math.sin(t * Math.PI) * (0.6 + 0.4 * Math.sin(x / 40 + k)); C.push(c.r * a, c.g * a, c.b * a); }
@@ -395,7 +430,7 @@ function buildAurora() { if (!CHC.aurora) return; const g = new THREE.Group(); g
   S.add(g); W.aurora = g;
   const N = 500, sg = new THREE.BufferGeometry(), sp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { sp[i * 3] = (Math.random() - 0.5) * 140; sp[i * 3 + 1] = Math.random() * 60; sp[i * 3 + 2] = (Math.random() - 0.5) * 140; }
   sg.setAttribute('position', new THREE.BufferAttribute(sp, 3)); const pts = new THREE.Points(sg, new THREE.PointsMaterial({ color: '#ffffff', size: 0.35, transparent: true, opacity: 0.85, depthWrite: false })); pts.frustumCulled = false; S.add(pts); W.snowP = pts; }
-W.snowStep = function (dt) { if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); W.marsBall.rotation.y += dt * 0.004; } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
+W.snowStep = function (dt) { if (W.beltM) { W.beltM.position.set(camera.position.x, 0, camera.position.z); W.beltM.rotation.y += dt * 0.01; } if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); W.marsBall.rotation.y += dt * 0.004; } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
   for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 4; a[i] += Math.sin(W.t + i) * dt * 0.6; let x = a[i], z = a[i + 2]; if (x - cx > 70) x -= 140; if (x - cx < -70) x += 140; if (z - cz > 70) z -= 140; if (z - cz < -70) z += 140; a[i] = x; a[i + 2] = z;
     if (a[i + 1] < H(x, z) + 9) { a[i + 1] = camera.position.y + 30 + Math.random() * 25; } } p.geometry.attributes.position.needsUpdate = true; if (W.aurora) W.aurora.position.set(cx, 0, cz); if (W.aurora) W.aurora.children.forEach((m, k) => (m.material.opacity = 0.6 + 0.3 * Math.sin(W.t * 0.5 + k * 1.3))); }
 function buildWater() { if (CHC.water === undefined) return; const g = new THREE.CircleGeometry(SEA4.r * 1.08, 48); g.rotateX(-Math.PI / 2); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#1a6a8a', transparent: true, opacity: 0.72, depthWrite: false })); m.position.set(SEA4.x, CHC.water, SEA4.z); m.renderOrder = 1; S.add(m); W.waterM = m; }
@@ -405,7 +440,7 @@ function buildScene() {
   if (old) old.traverse((o) => { if (o.geometry && !o.userData.keep && o.geometry !== MODELS[o.name]) { /* общие геометрии моделей не трогаем */ } });
   S = W.scene = new THREE.Scene(); const fogC = new THREE.Color(CHC.fog); S.fog = new THREE.Fog(fogC, CHC.fogNear || 120, CHC.fogFar || 520); S.background = fogC;
   hemi = CHC.dark ? new THREE.HemisphereLight('#c0a8f0', '#4a3050', 1.0) : CHC.ice ? new THREE.HemisphereLight('#dce8ff', '#3a4868', 0.8) : new THREE.HemisphereLight('#ffe0c8', '#5a2a28', 0.9); S.add(hemi); sun = new THREE.DirectionalLight(CHC.dark ? '#7a90ff' : CHC.ice ? '#cfe0ff' : '#ffd0a0', CHC.dark ? 0.35 : 0.8); sun.position.set(0.5, 1, 0.3); S.add(sun);
-  beams = []; W.snowP = null; W.aurora = null; W.marsBall = null; buildTerrain(); buildPOIs(); buildWater(); buildAurora(); buildSpace(); if (!roverG) buildRover(); else S.add(roverG); if (!W.saucer && MODELS.s_Spaceship5) { const b = new Builder([]); b.add(MODELS.s_Spaceship5, mat(0, -1.2, 0, 1.1, 1.1, 1.1), null, { vcol: true, vk: 1.1 }); W.saucer = new THREE.Mesh(b.build(), bakedMat); W.saucer.visible = false; roverG.add(W.saucer); }
+  beams = []; W.snowP = null; W.aurora = null; W.marsBall = null; W.beltM = null; buildTerrain(); buildPOIs(); buildWater(); buildAurora(); buildSpace(); if (!roverG) buildRover(); else S.add(roverG); if (!W.saucer && MODELS.s_Spaceship5) { const b = new Builder([]); b.add(MODELS.s_Spaceship5, mat(0, -1.2, 0, 1.1, 1.1, 1.1), null, { vcol: true, vk: 1.1 }); W.saucer = new THREE.Mesh(b.build(), bakedMat); W.saucer.visible = false; roverG.add(W.saucer); }
   if (!W.head) { const L = new THREE.SpotLight('#ffe8c0', 0, 120, 0.62, 0.5, 1); L.position.set(0, 2.2, 2.6); L.target.position.set(0, -1, 30); roverG.add(L); roverG.add(L.target); W.head = L; } W.head.intensity = CHC.dark ? 2.6 : 0; keep.forEach((o) => S.add(o)); W.ready = true;
 }
 // модели для глав догружаются по требованию (не на старте игры): пещерам нужны дачные модели Kenney и рыбы Quaternius
@@ -540,7 +575,7 @@ function buildUI() {
 }
 function drawMap() { const c = $('wdMapC'), x = c.getContext('2d'), N = 128, im = x.createImageData(N, N);
   if (!W.mapImg) { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const wx = (i / N - 0.5) * SIZE, wz = (j / N - 0.5) * SIZE, h = H(wx, wz), rd = roadDist(wx, wz), k = (j * N + i) * 4, sh = Math.max(0.3, Math.min(1.3, 0.85 + (H(wx + 6, wz) - h) * -0.08));
-      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (CHC.lava) { r = 120 + h * 0.9; g = 60 + h * 0.6; b = 50 + h * 0.4; if (lava7(wx, wz) < 6) { r = 255; g = 120; b = 30; } } if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
+      let r = 190 + h * 2, g = 100 + h * 1.6, b = 70 + h; if (W.ch === 8) { r = 90 + h * 1.5; g = 90 + h * 1.5; b = 105 + h * 1.5; if (W.salt8(wx, wz)) { r = g = b = 250; } } if (CHC.lava) { r = 120 + h * 0.9; g = 60 + h * 0.6; b = 50 + h * 0.4; if (lava7(wx, wz) < 6) { r = 255; g = 120; b = 30; } } if (CHC.ice) { r = 140 + h; g = 160 + h; b = 195 + h * 0.8; } if (CHC.dark) { const c = cave4(wx, wz); r = 30 + c * 140; g = 22 + c * 110; b = 36 + c * 130; if (h < CHC.water) { r = 40; g = 120; b = 170; } } if (rd < 7) { r = 70; g = 50; b = 60; } im.data[k] = r * sh; im.data[k + 1] = g * sh; im.data[k + 2] = b * sh; im.data[k + 3] = 255; } W.mapImg = im; }
   const t = document.createElement('canvas'); t.width = t.height = N; t.getContext('2d').putImageData(W.mapImg, 0, 0); x.imageSmoothingEnabled = true; x.drawImage(t, 0, 0, 512, 512);
   const P = (wx, wz) => [(wx / SIZE + 0.5) * 512, (wz / SIZE + 0.5) * 512]; x.font = '22px system-ui'; x.textAlign = 'center';
   POI.forEach((p) => { const [a, b] = P(p.x, p.z); x.fillStyle = p.col; x.globalAlpha = 0.3; x.beginPath(); x.arc(a, b, 16, 0, 7); x.fill(); x.globalAlpha = 1; x.fillText(p.e, a, b + 8); x.fillStyle = '#fff'; x.font = '12px system-ui'; x.fillText(p.name, a, b + 24); x.font = '22px system-ui'; });
@@ -577,7 +612,7 @@ W.start = function () {
 W.stop = function () { if (!W.active) return; W.active = false; document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
   W.t += dt; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
-  cameraStep(dt); hudStep(); if (W.snowP || W.marsBall) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
+  cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
   sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
 };
