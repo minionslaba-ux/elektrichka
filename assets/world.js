@@ -145,7 +145,7 @@ const CH = W.CH = {
       { id: 'rim', name: 'Лагерь на краю Маринер', e: '⛺', x: -560, z: 0, r: 55, col: '#7aff8a', kind: 'city', side: 'n' },
       { id: 'grave', name: 'Кладбище кораблей', e: '🚀', x: -300, z: 0, r: 75, col: '#7fe8ff', kind: 'wreck', side: 'f' },
       { id: 'pip', name: 'Сбитый корабль марсианина', e: '🛸', x: -40, z: 0, r: 40, col: '#9aff6a', kind: 'wreck', side: 'f', dz: -40 },
-      { id: 'tw2', name: 'Пыльная равнина', e: '🌪', x: 60, z: 0, r: 40, col: '#d8a878', kind: 'view', side: 'f' },
+      { id: 'tw2', name: 'Пыльная равнина', e: '🌪', x: 60, z: 0, r: 40, col: '#d8a878', kind: 'view', side: 'f', dz: -40 },
       { id: 'noctis', name: 'Колодцы Лабиринта Ночи', e: '🕳', x: 40, z: 0, r: 60, col: '#b07aff', kind: 'lair', side: 's' },
       { id: 'gorge', name: 'Ущелье «Глотка»', e: '🪨', x: 250, z: 0, r: 26, col: '#ffb04a', kind: 'pass', side: 'f' },
       { id: 'tower', name: 'Пиратская вышка', e: '📡', x: 240, z: 0, r: 30, col: '#ff6a4a', kind: 'outpost', side: 'n' },

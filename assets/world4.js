@@ -314,6 +314,51 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
 
 /* =====================================================================
+   ГЛАВА 1 — по плану: дрон Вали с рассадой (погоня, горшки на ходу) → оборона теплиц с заграждениями → турель у Лёхи (сборка) → королева гнезда (выбор) → Колян
+   ===================================================================== */
+(function ch1() { const S = A.CHAPTERS[1]; if (!S) return; const fi = S.findIndex((s) => s.id === 'farm'), rz = S.find((s) => s.id === 'rzhav'), bo = S.find((s) => s.id === 'boss'); if (fi < 0 || !rz || !bo) return;
+  const drone = { id: 'drone1', start() { A.setObj('Заправка «У Петровича»: за топливом', byId('station')); W.toast('👆 Левый палец — руль и газ. Едем к Петровичу!'); }, arrive: 'station',
+    onArrive() { W.st.fuel = 100; W.talk([['petr', 'О, Таня! Бак залил — за счёт заведения. Ой… смотри, дрон Вали тащит твою рассаду!'], ['valya', 'Таня, это не я! Это мой дрон сам! Он у меня… <i>самостоятельный</i>.'], ['ded', 'Таня, газуй за ним! Горшки роняет — лови на ходу. А я его солью!']], () => run()); } };
+  function run() { dEnd(); const st = byId('station'); const lx = byId('liner'), a0 = Math.atan2(lx.x - st.x, lx.z - st.z), e = W.spawn('glub', st.x + Math.sin(a0) * 40, st.z + Math.cos(a0) * 40, { hpK: 12, keep: 1, drone: 1, ai: dAI, immune: true, immMsg: '🛸 высоко! догоняй и лови горшки' }); if (e) e.scl = 1.7; W.dr1 = { e, t: 2, pots: [], got: 0 }; A.setObj('Догони дрон: лови горшки 🪴, сбей дрон', null); }
+  function dEnd() { if (W.dr1) { W.dr1.pots.forEach((q) => !q.done && W.scene.remove(q.sp)); if (W.dr1.e) W.dr1.e.dead = true; W.dr1 = null; } }
+  clear4.push(dEnd);
+  function dAI(e, dt, d) { const c = byId('liner'), tx = c.x - e.x, tz = c.z - e.z, td = Math.hypot(tx, tz) || 1, sp = d < 25 ? 10 : d > 70 ? 4 : 7; e.vx += ((tx / td) * sp - e.vx) * dt * 2; e.vz += ((tz / td) * sp - e.vz) * dt * 2; if (td < 25 && W.dr1) W.dr1.esc = 1; }
+  drone.tick = function (dt) { const D = W.dr1; if (!D) return; const e = D.e; D.t -= dt; D.it = (D.it || 0) + dt; if (e && e.immune && D.it > 8) { e.immune = false; W.toast('🛸 Дрон снизился — стреляй!'); }
+    if (e && !e.dead && D.t <= 0) { D.t = 2.6; D.pots.push(A.mkPick(e.x, e.z, '🪴', 'pot')); }
+    for (const q of D.pots) if (!q.done && Math.hypot(q.x - R.x, q.z - R.z) < 5.5) { q.done = true; W.scene.remove(q.sp); D.got++; W.give('money', 40); if (D.got % 2 === 0) W.give('food', 1); sfx('j_found', { vol: 0.5 }); W.toast('🪴 Горшок пойман! +40 ₽'); }
+    if (e && W.obj) { W.obj.x = e.x; W.obj.z = e.z; } $('wdObj').innerHTML = '🛸 Дрон Вали: <b>' + (e ? Math.max(0, Math.round(e.hp / e.max * 100)) : 0) + '%</b> · 🪴 поймано: <b>' + D.got + '</b> · не дай улететь к лайнеру';
+    if (!e || e.dead) { const g = D.got; dEnd(); W.give('food', 2); W.give('money', 60); W.talk([['tanya', 'Рассада спасена! ' + (g ? 'И ' + g + ' горшков — на ходу поймали!' : 'Хоть один помидор доживёт до свадьбы внука.')], ['gena', '<b>Марс-ФМ</b> на связи! У теплиц колонии замечены жуки. Целые колонны! С транспарантами!']], () => A.adv()); }
+    else if (D.esc) { dEnd(); W.talk([['valya', 'Улетел к лайнеру… Ой, вернулся! Сам. На заправку. Он у меня домашний.'], ['ded', 'Таня, второй раунд. Жми, я целюсь.']], () => run()); } };
+  const fa = S[fi]; fa.onArrive = function () { W.talk([['ded', 'Вон они, Таня! С транспарантами! «Ботва — народу!»'], ['tanya', 'Ящики у теплиц — ставь заграждения на жёлтых кругах, пока жуки далеко. Ни одного огурца врагу!']], () => run2()); };
+  function run2() { const f = byId('farm'), g = { x: f.x, z: f.z }, slots = [], spawns = []; [[1, 0.2], [-0.3, 1], [0.2, -1]].forEach(([ax, az]) => { const l = Math.hypot(ax, az); ax /= l; az /= l; slots.push({ x: g.x + ax * 22, z: g.z + az * 22 }, { x: g.x + ax * 42, z: g.z + az * 42 }); spawns.push([g.x + ax * 85, g.z + az * 85]); });
+    W.def4({ gate: g, slots, spawns, waves: [4, 6, 8], per: 2, build: 14, type: 'bug', chew: 16, bite: 4, hpK: 1.2, label: '🌱 Теплицы',
+      onWin() { W.give('food', 4); W.give('money', 200); W.give('ammo', 40); W.talk([['gena', 'Колония празднует! Теплицы целы.'], ['ded', 'Таня, Колян грабит караваны. Надо в Ржавобург — там внук Лёха механиком. Пусть турель мне соберёт.']], () => A.adv()); },
+      onFail() { W.talk([['valya', 'Теплицу прогрызли! Мы залатали плёнкой — давай снова, ставь ящики, где жуков больше.']], () => run2()); } }); A.setObj('Ставь заграждения 🧱, потом отбей жуков', g); }
+  fa.tick = (dt) => W.df4 && W.defStep4(dt);
+  rz.onArrive = function () { W.flags.workshop = 1; W.talk([['lyokha', 'Ба! Дед! На этом вы приехали?! Это не марсоход, это кастрюля на колёсах.'], ['lyokha', 'Турель на крышу? Соберём! Только детали все похожие — держи чертёж. А Гоша опять что-то притащил.']], () => run3()); };
+  function run3() { W.assemble4({ title: '🔧 Мастерская Лёхи: турель для деда', rules: 'Чертёж называет деталь — выбери именно её. Лишние детали подсовывает Гоша.', maxErr: 2, gosha: 0.45, goshaItem: '🐟 рыбья косточка от Гоши', okSay: ['Лёха: «Во!»', 'Дед: «Красота»', 'Щёлк!'],
+      parts: [{ need: 'Поворотный круг большой', ok: 'Круг большой', bad: ['Круг малый', 'Сковородка'], e: '⭕' }, { need: 'Стойка с двумя болтами', ok: 'Стойка 2 болта', bad: ['Стойка 3 болта', 'Ножка табурета'], e: '🔩' }, { need: 'Ствол для соли, широкий', ok: 'Ствол широкий', bad: ['Ствол узкий', 'Труба самовара'], e: '🧂' }, { need: 'Прицел с красной точкой', ok: 'Прицел красный', bad: ['Прицел зелёный', 'Очки деда'], e: '🎯' }] },
+    () => { const w = W.WEAP.salt; if (w.lv < 5) w.lv++; W.give('parts', 3); W.toast('🔧 Турель на крыше: солевой дробовик сильнее!'); W.talk([['lyokha', 'Готово! Мастерская открыта — приносите детали ⚙.'], ['lyokha', 'И ещё: гнездо клопов на юго-востоке мешает караванам. Королева там… разговорчивая. Сходите, поговорите — от неё зависит, с кем будет Колян.']], () => { A.save(); A.adv(); }); },
+    () => W.talk([['lyokha', 'Лишние детали остались — значит, неправильно. Разбираем!']], () => run3())); }
+  const nest = { id: 'nest1', start() { A.setObj('Гнездо клопов: поговорить с королевой', byId('nest')); }, arrive: 'nest',
+    onArrive() { W.flags.nestDone = 1; W.talk([['queen', 'Кто посмел наступить на мой огород… то есть гнездо? А-а, бабка с солью. Колян обещал нам ваши огурцы.'],
+      { who: 'queen', text: 'Ну? Что предложишь, чтобы мы ушли?', ch: [
+        { t: '🫙 Банку варенья — и уходите', sub: '−20 соли; в бою с Коляном жуков не будет', ok: () => W.st.ammo >= 20, fn() { W.st.ammo -= 20; W.flags.q1 = 'gift'; } },
+        { t: '🏘 Переезжайте в Ржавобург — там тепло', sub: 'рой королевы будет кусать Коляна', fn() { W.flags.q1 = 'ally'; } },
+        { t: '⚔ Уходите, а то дед!', sub: 'бой с королевой сейчас; потом жуков у Коляна не будет', fn() { W.flags.q1 = 'fight'; } }] }], () => {
+        if (W.flags.q1 === 'fight') { const p = byId('nest'); W.q1 = W.spawn('queen', p.x, p.z, { keep: 1 }); for (let k = 0; k < 8; k++) W.spawn('bug2', p.x + rnd(-25, 25), p.z + rnd(-25, 25)); sfx('j_boss'); A.setObj('Победи королеву гнезда', null); }
+        else W.talk([['queen', W.flags.q1 === 'gift' ? 'Варенье! Уходим. Коляну передайте — пусть сам копает.' : 'В Ржавобург? С отоплением? Мы с вами, бабка! А Коляна мы покусаем.']], () => A.adv()); }); } };
+  nest.tick = function () { const q = W.q1; if (!q) return; if (W.obj) { W.obj.x = q.x; W.obj.z = q.z; } A.bossBar(q, 'Королева гнезда'); if (q.dead) { W.q1 = null; A.bossBar(null); W.give('money', 400); W.give('parts', 4); W.talk([['queen', 'Сдаюсь! Уходим за горизонт. Коляну не помогаем.']], () => A.adv()); } };
+  clear4.push(() => { if (W.q1) { W.q1.dead = true; W.q1 = null; } });
+  const bo0 = bo.onArrive; bo.onArrive = function () { bo0.call(this); };
+  const bt = bo.tick; bo.tick = function (dt) { const b = W.boss; if (b && !b.q1) { b.q1 = 1; if (W.flags.q1 === 'gift' || W.flags.q1 === 'fight') { W.EN.forEach((e) => { if (e.type === 'bug2') e.dead = true; }); W.toast(W.flags.q1 === 'gift' ? '🫙 Жуки ушли за вареньем — Колян один!' : '🍄 Королева не пришла на помощь Коляну'); } else if (W.flags.q1 === 'ally') { W.toast('🍄 Рой королевы на твоей стороне!'); b.qt = 8; } }
+    if (b && !b.dead && W.flags.q1 === 'ally' && !W.paused) { b.qt -= dt; if (b.qt <= 0) { b.qt = 9; W.hitEnemy(b, b.max * 0.06); burst(W.scene, b.x, b.y + 2, b.z, 'spark', '#ff6ad5', 4, 0.6); W.toast('🪲 Рой покусал Коляна!'); } } bt.call(this, dt); };
+  bo.start = function () { A.setObj('Логово Бешеного Коляна', byId('camp')); };
+  // новый порядок: дрон на заправке → теплицы → Ржавобург → гнездо → Колян
+  const order = [drone, S[fi], rz, nest, bo]; S.length = 0; order.forEach((q) => S.push(q));
+})();
+
+/* =====================================================================
    ГЛАВА 2 — по плану: серпантин без бортов (точность, ветер) → торг с мародёрами → смерч (бой в воздухе) → шлюзы Лабиринта Ночи → баржа
    ===================================================================== */
 (function ch2() { const S = A.CHAPTERS[2]; if (!S) return; const de = S.find((s) => s.id === 'descent'), gi = S.findIndex((s) => s.id === 'gorge'), pi = S.findIndex((s) => s.id === 'pip'); if (!de || gi < 0 || pi < 0) return;
