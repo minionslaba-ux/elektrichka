@@ -573,7 +573,7 @@ W.director = function (dt) { const s = st(); if (s.dead) return;
   // топливо по пройденному пути, еда по времени
   const moved = Math.hypot(R.x - lastX, R.z - lastZ); lastX = R.x; lastZ = R.z; if (moved < 20) s.fuel = Math.max(0, s.fuel - moved * 0.05 * (W.flags.tank ? 0.8 : 1) * (W.boss ? 0 : 1) * (W.ch === 4 ? 1.15 : 1) * (W.calm || W.gy || W.flyMode ? 0 : 1) * (W.ch === 6 ? 0.6 : 1)); W.fuelOut = s.fuel <= 0;
   if (W.fuelOut && !W.fuelWarn) { W.fuelWarn = 1; W.say('<b>Дед:</b> Таня, бензин всё! Ползём на парах. До заправки или канистры!'); } if (!W.fuelOut) W.fuelWarn = 0;
-  foodT -= dt; if (foodT <= 0) { foodT = 70; if (s.food > 0) { s.food--; W.nerve(4); W.toast('🥟 Обед в пути: бабуля и дед поели'); } else { W.nerve(-15, '<b>Баба Таня:</b> Ваня, у меня от голода нервы шалят! Где пирожки?!'); } }
+  foodT -= dt; if (foodT <= 0) { foodT = 70; if (s.food > 0) { s.food--; W.nerve(4); W.toast('🥟 Обед в пути: бабуля и дед поели'); } else { W.nerve(-8, '<b>Баба Таня:</b> Ваня, у меня от голода нервы шалят! Где пирожки?!'); } }
   // окружающие твари
   const danger = (Math.min(1.6, Math.hypot(R.x, R.z) / 450) + (night ? 0.5 : 0)) * (W.ch === 1 ? 0.75 : 1); /* первая глава — обучающая, тварей меньше */ spawnT -= dt;
   const alive = W.EN.filter((e) => !e.dead).length; if (spawnT <= 0 && alive < (W.mwave || W.boss || W.queen ? 6 : 22 + danger * 10) && !W.inCity) { spawnT = Math.max(0.6, 3.2 - danger * 1.4); const n = 2 + Math.floor(Math.random() * (3 + danger * 4));
