@@ -208,7 +208,8 @@ const CH = W.CH = {
   6: { name: 'Фобос', fog: '#05060c', fogNear: 320, fogFar: 1100, far: 1800, space: 1, g: 3.6, pal: ['#5c5652', '#7e7670', '#46403e', '#2a2628', '#56504c'],
     pois: [
       { id: 'port', name: 'Космопорт «Фобос-Узловая»', e: '🛰', x: 0, z: -40, r: 80, col: '#7aff8a', kind: 'city' },
-      { id: 'hangar', name: 'Ангар тарелок', e: '🛸', x: 170, z: -150, r: 40, col: '#9aff6a', kind: 'hangar' },
+      { id: 'tourist6', name: 'Старый маяк — космотурист', e: '🧳', x: -300, z: -250, r: 45, col: '#ffd24a', kind: 'view' },
+      { id: 'hangar', name: 'Ангар тарелок', e: '🛸', x: 300, z: -350, r: 40, col: '#9aff6a', kind: 'hangar' },
       { id: 'tail', name: 'Под хвостом кометы', e: '☄️', x: 380, z: 300, r: 90, col: '#7fe8ff', kind: 'comet' },
       { id: 'stickney', name: 'Кратер Стикни — флагман', e: '🏴‍☠️', x: STK6.x, z: STK6.z, r: 175, col: '#ff4a3a', kind: 'boss', flat: 0 }],
     roads: [[[0, -40], [170, -150]], [[0, -40], [150, 120], [380, 300]], [[0, -40], [-120, 80], [-90, 210]], [[0, -40], [-300, -250]], [[0, -40], [300, -350]]],
@@ -498,6 +499,7 @@ function buildPOIs() {
     [[-40, -30], [40, -36]].forEach(([x, z]) => { place(B, 'k_rocket_baseA', pt.x + x, pt.z + z, 6); place(B, 'k_rocket_fuelA', pt.x + x, pt.z + z, 6, 0, 9.6); place(B, 'k_rocket_topA', pt.x + x, pt.z + z, 6, 0, 15.6); addC(pt.x + x, pt.z + z, 5); });
     for (let k = 0; k < 9; k++) place(B, k % 3 === 2 ? 'k_astronautA' : 'k_alien', pt.x - 16 + k * 3.2, pt.z + 12, 2.2, Math.PI / 2);
     // ангар тарелок
+    const tu = byId('tourist6'); place(B, 'structure_tall', tu.x - 8, tu.z + 6, 9, 0); place(B, 'lights', tu.x - 8, tu.z + 6, 8, 0, 8); place(B, 'k_satelliteDish', tu.x + 12, tu.z - 8, 3, 1);
     const hg = byId('hangar'); place(B, 'k_hangar_roundA', hg.x, hg.z - 20, 12, 0); addC(hg.x, hg.z - 20, 12); place(B, 's_Spaceship5', hg.x - 16, hg.z + 10, 1.4, 0.6, 1); place(B, 's_Spaceship5', hg.x + 18, hg.z + 6, 1.4, 2.2, 1); place(B, 'r_craft_racer', hg.x + 4, hg.z + 22, 4, 1.4);
     // под хвостом кометы — ледяные глыбы
     const tl = byId('tail'); for (let k = 0; k < 10; k++) { const a = k * 0.63; place(B, k % 2 ? 'k_rock_crystalsLargeA' : 'k_rock_crystals', tl.x + Math.cos(a) * (50 + (k % 3) * 15), tl.z + Math.sin(a) * (50 + (k % 3) * 15), 6, a); }

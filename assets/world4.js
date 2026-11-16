@@ -79,12 +79,12 @@ W.simon4 = function (cfg, onWin, onFail) {
 /* ---------- фотоохота: поймать цель в кадр (по ходу «Буханки»), стоять, нажать 📷 ---------- */
 const pb = document.createElement('button'); pb.id = 'ph4'; pb.textContent = '📷 Снимок'; pb.style.cssText = 'position:fixed;right:18px;bottom:150px;z-index:40;display:none;min-width:110px;min-height:64px;border-radius:32px;border:3px solid #fff;background:#3a6aff;color:#fff;font:inherit;font-size:17px;box-shadow:0 4px 14px #0007';
 document.body.appendChild(pb); const fr = document.createElement('div'); fr.style.cssText = 'position:fixed;left:30%;right:30%;top:22%;bottom:38%;border:3px dashed #fff8;border-radius:12px;z-index:30;pointer-events:none;display:none'; document.body.appendChild(fr);
-W.photo4 = function (o) { W.photoEnd4(); const P = W.ph4 = Object.assign({ t: o.time, got: 0, lost: 0 }, o); P.tg.forEach((q) => { q.sp = emojiSprite(q.e, 2.4); q.sp.position.set(q.x, W.H(q.x, q.z) + (q.y || 1.6), q.z); W.scene.add(q.sp); q.done = q.gone = false; }); return P; };
-W.photoEnd4 = function () { const P = W.ph4; pb.style.display = fr.style.display = 'none'; if (!P) return; P.tg.forEach((q) => W.scene.remove(q.sp)); W.ph4 = null; };
+W.photo4 = function (o) { W.photoEnd4(); const P = W.ph4 = Object.assign({ t: o.time, got: 0, lost: 0 }, o); P.tg.forEach((q) => { q.sp = emojiSprite(q.e, 2.4); q.sp.position.set(q.x, W.H(q.x, q.z) + (q.y || 1.6), q.z); W.scene.add(q.sp); q.done = q.gone = false; }); W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); return P; };
+W.photoEnd4 = function () { const P = W.ph4; pb.style.display = fr.style.display = 'none'; if (!P) return; P.tg.forEach((q) => W.scene.remove(q.sp)); W.ph4 = null; W.calm = 0; };
 clear4.push(() => W.photoEnd4());
-function inFrame(q) { const dx = q.x - R.x, dz = q.z - R.z, d = Math.hypot(dx, dz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - R.h), Math.cos(Math.atan2(dx, dz) - R.h))); return d > 7 && d < 38 && da < 0.33 ? 1 - da / 0.33 * 0.5 : 0; }
+function inFrame(q) { const dx = q.x - R.x, dz = q.z - R.z, d = Math.hypot(dx, dz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - R.h), Math.cos(Math.atan2(dx, dz) - R.h))); return d > 6 && d < 42 && da < 0.4 ? 1 - da / 0.4 * 0.5 : 0; }
 W.photoShot4 = function () { const P = W.ph4; if (!P) return; const q = P.tg.filter((t) => !t.done && !t.gone).map((t) => [t, inFrame(t)]).filter((a) => a[1] > 0).sort((a, b) => b[1] - a[1])[0];
-  flash('#ffffff', 0.35); sfx('click'); if (!q) { W.toast('📷 В кадре ничего — наведи «Буханку» прямо на 👣 или 🪞'); return; } if (Math.abs(R.v) > 2) { W.toast('📷 Смазалось! Остановись'); return; }
+  flash('#ffffff', 0.35); sfx('click'); if (!q) { W.toast('📷 В кадре ничего — наведи «Буханку» прямо на 👣 или 🪞'); return; } if (Math.abs(R.v) > 3.5) { W.toast('📷 Смазалось! Остановись'); return; }
   q[0].done = true; P.got++; W.scene.remove(q[0].sp); sfx('j_found'); W.toast('📸 ' + q[0].name + (q[1] > 0.85 ? ' — отличный кадр!' : ' — снято')); };
 pb.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); W.photoShot4(); };
 addEventListener('keydown', (e) => { if (W.ph4 && (e.code === 'KeyE' || e.code === 'KeyP')) W.photoShot4(); });
@@ -254,6 +254,18 @@ W.spotStep4 = function (dt) { const P = W.sp4; if (!P || !P.on) return; P.a += d
   if (d < P.L && da < 0.36) { P.ht = (P.ht || 0) - dt; if (P.ht <= 0) { P.ht = 0.8; W.hurt(P.dmg, 'прожектор навёл снайперов'); } P.cone.material.color.set('#ff7a5a'); } else P.cone.material.color.set('#fff6b0');
   if (Math.hypot(R.x - P.gx, R.z - P.gz) < 8 && Math.abs(R.v) < 6) { P.hold += dt; if (P.hold > 2) { P.on = false; const f = P.onOff; W.spotEnd4(); sfx('j_found'); f(); } } else P.hold = Math.max(0, P.hold - dt); };
 
+/* ---------- порядок справок: у каждой — условия; робот меняет правила на ходу ---------- */
+W.docs4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.cfg = cfg; o.have = {}; o.err = 0; o.dep = JSON.parse(JSON.stringify(cfg.dep)); o.changed = 0; o.card = document.createElement('div'); o.card.className = 'card'; o.card.style.textAlign = 'left'; o.card.style.fontSize = '14px'; o.body.appendChild(o.card); o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    const nm = (k) => cfg.docs[k][0] + ' ' + cfg.docs[k][1];
+    o.draw = () => { o.card.innerHTML = '<b>Правила окошек:</b><br>' + Object.keys(cfg.docs).map((k) => (o.have[k] ? '✅ ' : '▫ ') + nm(k) + (o.dep[k].length ? ' — <span style="opacity:.8">нужно: ' + o.dep[k].map((d) => cfg.docs[d][0]).join(' ') + '</span>' : ' — без условий') + (o.changed === k ? ' <b style="color:#ffd24a">(новое!)</b>' : '')).join('<br>'); o.st.textContent = 'Ошибок ' + o.err + ' из ' + cfg.maxErr; [...o.row.children].forEach((b, i) => { const k = Object.keys(cfg.docs)[i]; b.style.opacity = o.have[k] ? 0.4 : 1; }); };
+    o.get = (k) => { if (o.have[k] || o.done) return; const miss = o.dep[k].filter((d) => !o.have[d]); if (miss.length) { o.err++; sfx('caught'); o.say('🤖 «Окно закрыто. Сначала: ' + miss.map(nm).join(', ') + '»'); if (o.err > cfg.maxErr) { o.done = 1; o.say('🤖 «Обед. Приходите в 2087 году»'); setTimeout(() => o.fail(), 1300); } o.draw(); return; }
+      o.have[k] = 1; sfx('coin'); o.say('🤖 «Шлёп!» ' + nm(k) + ' — выдана'); const n = Object.keys(o.have).length;
+      if (n >= Object.keys(cfg.docs).length) { o.done = 1; setTimeout(() => o.win(), 900); }
+      else if (n === cfg.changeAt && !o.changed) { const [k2, add] = cfg.change(o); if (k2) { o.dep[k2].push(add); o.changed = k2; setTimeout(() => { sfx('warn'); o.say('🤖 «ВНИМАНИЕ. Новые правила: ' + nm(k2) + ' — только после ' + nm(add) + '»'); o.draw(); }, 700); } }
+      o.draw(); };
+    o.row = btns(o, Object.keys(cfg.docs).map((k) => cfg.docs[k][0] + '<br><small>' + cfg.docs[k][1] + '</small>'), (i) => o.get(Object.keys(cfg.docs)[i])); o.draw(); o.say(cfg.hello); } }); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -287,6 +299,31 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 6 — по плану: очередь справок (правила меняются) → фотосессия космотуриста → хвост кометы → воздушный бой на тарелке → флагман
+   ===================================================================== */
+(function ch6() { const S = A.CHAPTERS[6]; if (!S) return; const q6 = S.find((s) => s.id === 'queue'), wi = S.findIndex((s) => s.id === 'warehouse'); if (!q6 || wi < 0) return;
+  q6.tick = () => {};
+  q6.onArrive = function () { W.st.fuel = 100; W.toast('⛽ Диспетчер заправил полный бак (за справку)'); W.talk([['byuro', 'Бип. Очередь на взлёт, посадку, проход и существование. Справки выдаются в окошках по правилам. Правила висят на стене. Правила меняются.'], ['tanya', 'Ваня, держи пирожки, я пошла.']], () => run()); };
+  function run() { W.docs4({ title: '🤖 Окошки космопорта', rules: 'Получи все справки. У каждой — условия (что нужно сначала). Робот может поменять правила посреди очереди!', maxErr: 3, changeAt: 2, hello: '🤖 «Следующий!»',
+      docs: { pas: ['📄', 'паспорт'], med: ['🩺', 'медосмотр'], pie: ['🥟', 'справка о пирожках'], cat: ['🐱', 'справка на кота'], board: ['🎫', 'посадочный'] },
+      dep: { pas: [], med: ['pas'], pie: ['pas'], cat: ['med'], board: ['med', 'cat', 'pie'] },
+      change: (o) => (!o.have.cat && !o.have.pie ? ['cat', 'pie'] : !o.have.board ? ['board', 'pas'] : [null]) },
+    () => { W.give('money', 400); W.talk([['byuro', 'Все справки собраны. Ой. Вы за огородом? Его погрузили на флагман в кратере Стикни. Вход — по пропуску пиратов.'], ['pip', 'Пропуск есть у космотуриста — он пиратский бухгалтер в отпуске. Сидит у старого маяка на западе и мечтает о фотографиях.']], () => A.adv()); },
+    () => W.talk([['tanya', 'Ваня, они закрылись на обед! На три минуты. Это по-нашему.']], () => run())); }
+  const tour = { id: 'tour6', start() { A.setObj('Старый маяк: космотурист', byId('tourist6')); }, arrive: 'tourist6',
+    onArrive() { W.talk([['tourist', 'Я турист! Отпуск! А фото нет: мой дрон улетел. Снимите меня у четырёх красот Фобоса — дам пропуск. Только быстро: Фобос восходит на западе, и закат тут каждые четыре часа!'], ['ded', 'Таня, ты — фотограф. Я — штатив.']], () => run2()); } };
+  function run2() { const t = byId('tourist6'); W.photo4({ need: 4, time: 140, tg: [{ x: t.x + 30, z: t.z + 10, e: '🤳', name: 'Турист у маяка', y: 2 }, { x: t.x - 25, z: t.z + 35, e: '🧍', name: 'Турист у кратера', y: 2 }, { x: t.x + 10, z: t.z - 40, e: '🙋', name: 'Турист с Марсом за спиной', y: 2 }, { x: t.x - 40, z: t.z - 15, e: '🕺', name: 'Турист в прыжке (тяжести нет!)', y: 5 }, { x: t.x + 45, z: t.z - 30, e: '🧘', name: 'Турист медитирует', y: 2 }],
+      onWin() { W.give('money', 900); W.talk([['tourist', 'Шедевры! Вот пропуск: «Предъявитель сего — пират. Наверное». И ещё: над Фобосом комета! Ледяной хвост сыплет льдинками.'], ['gena', '<b>Марс-ФМ</b>: Это же чистая вода, бабушки! Ловите тазами!']], () => A.adv()); },
+      onFail() { W.talk([['tourist', 'Закат! Ну вот… Подождём следующего восхода — он через пару часов. То есть через минуту. Фобос!']], () => run2()); } });
+    A.setObj('Сфотографируй туриста у 4 красот: наведи, остановись, 📷', { x: t.x, z: t.z }); }
+  tour.tick = (dt) => W.ph4 && W.photoStep4(dt);
+  S.splice(wi, 1, tour);
+  // тарелка: чистый воздушный бой — у картошки теперь нет задачи
+  const sc = S.find((s) => s.id === 'saucer'); if (sc) { const oa = sc.onArrive, ot = sc.tick; sc.onArrive = oa;
+    sc.tick = function (dt) { (W.pot6 || []).forEach((q) => { if (!q.done) { q.done = true; W.scene.remove(q.sp); } }); ot.call(this, dt); if (!W.pot6) return; const f = W.EN.filter((e) => !e.dead && e.fgt).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0]; if (f && W.obj) { W.obj.x = f.x; W.obj.z = f.z; } $('wdObj').innerHTML = '🛸 Воздушный бой: ✈ сбито <b>' + Math.min(10, W.ftr) + ' из 10</b> · уходи от очередей, бей с хвоста'; }; }
+})();
 
 /* =====================================================================
    ГЛАВА 7 — по плану: пирожки на Арсии (готовка) → штурм Павлины (прожектор) → сборка двигателя и спуск → эвакуация → прыжок → Дух Олимпа
