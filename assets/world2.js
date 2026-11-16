@@ -16,7 +16,7 @@ const T = W.TYPES = {
   squid: { m: 'm_squidle', name: 'летучий кальмар', h: 2.2, hp: 8, sp: 9, dmg: 7, xp: 4, r: 1.5, fly: 5 },
   glub: { m: 'm_glub', name: 'рыба-пузырь', h: 1.4, hp: 2, sp: 13, dmg: 3, xp: 1, r: 1, fly: 3 },
   whirl: { m: 'm_hywirl', name: 'пылевой вихрь', h: 3.6, hp: 50, sp: 5, dmg: 14, xp: 18, r: 2.4, ground: 1, elite: 1 },
-  ghost: { m: 'm_ghost', name: 'марсианский призрак', h: 2.4, hp: 10, sp: 7, dmg: 0, nerve: 6, xp: 5, r: 1.4, fly: 2 },
+  ghost: { m: 'm_ghost', name: 'марсианский призрак', h: 2.4, hp: 10, sp: 7, dmg: 0, nerve: 5, xp: 5, r: 1.4, fly: 2 },
   gole: { m: 'm_goleling', name: 'страж гнезда', h: 2.4, hp: 22, sp: 4, dmg: 10, xp: 8, r: 1.6, fly: 2.5, shoots: 1 },
   pink: { m: 'm_pinkblob', name: 'слизень-делитель', h: 1.8, hp: 6, sp: 6, dmg: 4, xp: 2, r: 1.2, ground: 1, split: 1 },
   mush: { m: 'm_mushnub', name: 'гриб-путаник', h: 1.8, hp: 6, sp: 5, dmg: 5, xp: 3, r: 1.2, ground: 1, spore: 1 },
@@ -159,7 +159,7 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
       const reach = t.r * (e.scl || 1) + 1.7, spd = Math.abs(R.v);
       if (d < reach && spd > 7 && !t.boss && !t.elite && !t.fly && Math.abs(e.y - R.y) < 2.5 && (e.ram || 0) <= 0) { e.ram = 0.4; const fx = Math.sin(R.h), fz = Math.cos(R.h); if ((-dx * fx - dz * fz) / d > 0.3) { W.hitEnemy(e, spd * 0.9, fx * spd * 1.2 + (-dz / d) * 6, fz * spd * 1.2 + (dx / d) * 6); e.cd = 0.6; sfx('slap', { vol: 0.6, rnd: 0.3 }); burst(W.scene, e.x, e.y + 1, e.z, 'spark', '#ffd27a', 2, 0.25); if (!W.ramT || W.t - W.ramT > 6) { W.ramT = W.t; if (Math.random() < 0.4) W.say && W.say(pick(['<b>Баба Таня:</b> Посторонись, членистоногие!', '<b>Дед:</b> Таня, это таран! Как в 72-м на тракторе!', '<b>Баба Таня:</b> Пешеходам — дорогу. Жукам — нет!'])); } } }
       e.ram = (e.ram || 0) - dt;
-      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5 && !(W.sleepT > 0 && !t.boss) && !e.nohurt) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.nerve) W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
+      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5 && !(W.sleepT > 0 && !t.boss) && !e.nohurt) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.nerve && (W.nT || 0) < W.t) { W.nT = W.t + 1.2; W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); } if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
       if (t.shoots && !(W.sleepT > 0)) { e.st2 = (e.st2 || rnd(1, 3)) - dt; if (e.st2 <= 0 && d < 40) { e.st2 = rnd(2.2, 3.5); const v = new V3(dx, 0, dz).normalize().multiplyScalar(18); v.y = 4; prj.push({ k: 'spit', p: new V3(e.x, e.y + 1.5, e.z), v, g: 4, life: 3, dmg: 8 }); sfx('jump', { vol: 0.3, rate: 0.7 }); } }
       if (t.elite && d < 14 && t.m === 'm_hywirl') { R.v *= 1 - dt * 0.6; R.h += dt * 0.7; if (Math.random() < 0.3) burst(W.scene, e.x, e.y + 2, e.z, 'smoke', '#c88060', 5, 0.8); } // вихрь крутит и тормозит
       e.hit = Math.max(0, e.hit - dt);
