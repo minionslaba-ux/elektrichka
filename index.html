@@ -249,7 +249,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
   <button id="stNext">📖 Следующая история ▶</button><div class="btns2"><button id="again" class="alt"><img class="ic" src="assets/ui/return.png" alt="">Ещё раз</button><button id="toMap"><img class="ic" src="assets/ui/menuGrid.png" alt="">На карту</button></div></div></div>
 <div id="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="mapSvg"></svg>
   <div class="hdr g"><b>Колония «Заречная»</b> <small id="mapSub"></small><div class="bar"><i id="mapBank"></i></div></div>
-  <div id="mapTabs"><button data-v="home">🏡 Колония</button><button data-v="exp">🚀 Экспедиция · 12 глав</button></div><div id="expMap"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="expSvg"></svg><div id="expPins"></div><button id="expGo"></button></div><div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
+  <div id="mapTabs"><button data-v="home">🏡 Колония</button><button data-v="exp">🚀 Экспедиция</button><button data-v="opt" aria-label="Настройки">⚙</button></div><div id="expMap"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="expSvg"></svg><div id="expPins"></div><button id="expGo"></button></div><div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
 <button id="snd" aria-label="Звук"></button><button id="menuB" aria-label="В меню">☰<span>Меню</span></button>
@@ -1126,7 +1126,7 @@ function showMsg(t, sub, col, ms = 1500, bad) {
   m.style.color = col || '#fff'; if (bad) m.classList.add('bad'); m.classList.add('on'); clearTimeout(showMsg.t); showMsg.t = setTimeout(() => m.classList.remove('on'), ms);
 }
 function bump(el, cls = 'bump') { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
-function flash(col, op = 0.6) { const f = $('flash'); f.style.background = col; f.style.setProperty('--fo', op); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function flash(col, op = 0.6) { try { if (localStorage.getItem('bm_noflash') === '1') return; } catch (e) {} const f = $('flash'); f.style.background = col; f.style.setProperty('--fo', op); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
 const PV = new THREE.Vector3();
 function floatText(txt, x, y, z, col) {
   PV.set(x, y, z).project(camera); if (PV.z > 1) return;
@@ -1469,7 +1469,7 @@ $('toMap').onclick = () => showMap();
 { let askT = 0; $('menuB').onclick = (e) => { e.stopPropagation(); const b = $('menuB');
   if (!b.classList.contains('ask')) { b.classList.add('ask'); b.innerHTML = '☰<span>Выйти в меню?</span>'; sfx('click'); clearTimeout(askT); askT = setTimeout(() => { b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; }, 4000); return; }
   clearTimeout(askT); b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; if (window.WD && WD.active && WD.saveNow) { WD.saveNow(); try { localStorage.setItem('bm_tab', 'exp'); } catch (e) {} } if (car.state === 'go') car.state = 'menu'; ST.cur = 0; document.body.classList.remove('storyon'); $('story').classList.remove('on'); showMap(); }; }
-$('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin') && !e.target.closest('.cpin')) $('mapSheet').classList.remove('on'); });
+$('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin') && !e.target.closest('.cpin') && !e.target.closest('#mapTabs')) $('mapSheet').classList.remove('on'); });
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 
 /* ---------- управление: плавающий джойстик, как в «Ночном тарифе» ---------- */
@@ -1910,7 +1910,9 @@ function expState() { let sv = null; try { sv = JSON.parse(localStorage.getItem(
   const fin = (n) => n < cur || (n === cur && (n <= 7 ? (n === 7 ? !!f.done : !!f['ch' + n]) : !!f['ch' + n])) || (n <= 7 && f.done);
   const next = fin(cur) && cur < EXPED.length ? cur + 1 : 0; return { sv, f, cur, step, fin, next, test: TEST }; }
 function drawExp() { const S = expState(); let h = '', pts = [];
-  for (const c of EXPED) { const [x, y] = EXP_POS[c.n]; pts.push(x + ',' + y); const done = S.fin(c.n), cur = c.n === S.cur && !done, nx = c.n === S.next, lock = !done && !cur && !nx && !S.test;
+  // раскладка по свободному месту: между вкладками и кнопкой «Продолжить»; в альбомной ориентации — слева направо
+  const W0 = innerWidth, H0 = innerHeight, land = W0 > H0 * 1.15, tbr = $('mapTabs').getBoundingClientRect(), top = (tbr.bottom || 130) + 26, bot = H0 - 96 - 22, P = (n) => { if (land) { const i = n - 1; return [6 + i * (88 / (EXPED.length - 1)), top + (i % 2 ? 0.15 : 0.85) * (bot - top)]; } const [x, y] = EXP_POS[n]; return [x, top + (y - 19) / 63 * (bot - top)]; };
+  for (const c of EXPED) { const [x, yp] = P(c.n), y = yp / H0 * 100; pts.push(x + ',' + y); const done = S.fin(c.n), cur = c.n === S.cur && !done, nx = c.n === S.next, lock = !done && !cur && !nx && !S.test;
     h += `<button class="cpin${c.n === 13 ? ' earth' : ''}${cur || nx ? ' cur' : ''}${lock ? ' lock' : ''}" data-c="${c.n}" style="left:${x}%;top:${y}%"><i>${lock ? '🔒' : c.e}${done ? '<em>✓</em>' : cur ? '<em>' + Math.min(S.step + 1, c.m.length) + '/' + c.m.length + '</em>' : nx ? '<em>новая</em>' : ''}</i><span>${c.n} · ${c.t}</span></button>`; }
   if (S.test) h += '<button id="testB" style="position:absolute;left:12px;top:calc(130px + env(safe-area-inset-top));z-index:3;border:1px solid #7aff8a;border-radius:12px;padding:6px 10px;background:rgba(20,40,20,.85);color:#bfffc8;font:800 12px system-ui">🧪 ТЕСТ: всё открыто<br><small style="font-weight:600">нажми — вернуть мой прогресс</small></button>';
   $('expPins').innerHTML = h; $('expSvg').innerHTML = `<polyline points="${pts.join(' ')}" fill="none" stroke="rgba(255,210,120,.55)" stroke-width="2" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>` + Array.from({ length: 40 }, (_, k) => `<circle cx="${(k * 37) % 100}" cy="${(k * 53) % 62}" r="${0.15 + (k % 3) * 0.12}" fill="#fff" opacity=".6"/>`).join('');
@@ -1937,8 +1939,13 @@ function testJump(ch, step) { try { if (localStorage.getItem('bm_world_backup') 
   localStorage.setItem('bm_world', JSON.stringify({ ch, step, flags: fl, st: { hull: 320, hullMax: 320, nerves: 100, fuel: 100, food: 8, ammo: 220, parts: 20, money: 6000, xp: 0, need: 340, lvl: 28, kills: 0, armor: 3 }, w: { salt: 5, jam: 4, slip: 3, bayan: 2, cuc: 2 }, p: { glasses: 3, salt: 3, hands: 2, magnet: 2, pots: 3, pie: 2, engine: 1 } })); } catch (e) {} goExp(null, 0); }
 function testOff() { try { const b = localStorage.getItem('bm_world_backup'); if (b !== null) { if (b === 'null') localStorage.removeItem('bm_world'); else localStorage.setItem('bm_world', b); localStorage.removeItem('bm_world_backup'); } localStorage.removeItem('bm_test'); } catch (e) {} showMsg('🧪 Тест выключен', 'твой прогресс возвращён', '#9aff8a', 1600); drawExp(); }
 function setMapTab(v) { $('map').classList.toggle('exp', v === 'exp'); $('mapTabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v)); $('mapSheet').classList.remove('on'); try { localStorage.setItem('bm_tab', v); } catch (e) {} if (v === 'exp') drawExp(); }
-$('mapTabs').querySelectorAll('button').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); sfx('click'); setMapTab(b.dataset.v); }));
+function openOpts() { const g = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } }, nf = g('bm_noflash', false), fm = g('bm_fewmsg', true);
+  $('msT').textContent = '⚙ Настройки'; $('msD').textContent = 'Сохраняются на этом устройстве';
+  $('msL').innerHTML = `<button class="m" data-o="bm_noflash">${nf ? '✅' : '⬜'} Без вспышек<small>убирает яркие вспышки экрана (молнии, взрывы, радиация)</small></button><button class="m" data-o="bm_fewmsg">${fm ? '✅' : '⬜'} Меньше сообщений<small>не больше двух подсказок сразу, без повторов</small></button>`;
+  $('msL').querySelectorAll('[data-o]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const k = b.dataset.o, cur = k === 'bm_noflash' ? nf : fm; try { localStorage.setItem(k, cur ? '0' : '1'); } catch (er) {} sfx('click'); openOpts(); })); $('mapSheet').classList.add('on'); }
+$('mapTabs').querySelectorAll('button').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); sfx('click'); if (b.dataset.v === 'opt') return openOpts(); setMapTab(b.dataset.v); }));
 $('expGo').onclick = (e) => { e.stopPropagation(); goExp(null, 0); };
+addEventListener('resize', () => { if ($('map').classList.contains('exp') && document.body.classList.contains('mapon')) drawExp(); });
 function showMap() {
   stopWalk(); stopFarm(); stopFishing(); stopDefense(); stopMG(); stxClear(); if (window.WD) WD.stop(); $('end').classList.remove('on');
   drawMapSvg(); const frac = Math.min(1, BANK / TICKET);
