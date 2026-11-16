@@ -56,6 +56,7 @@ const T = W.TYPES = {
   bdrone: { m: 'r_craft_racer', name: 'дрон-коллектор', h: 1.8, hp: 26, sp: 18, dmg: 8, xp: 9, r: 1.8, fly: 9, rot: Math.PI, tint: '#9ad0ff' },
   pet13: { m: 'm_pinkblob', name: 'марсианская зверушка', h: 1.7, hp: 999999, sp: 0, dmg: 0, xp: 0, r: 1.3, ground: 1, tint: '#ffc0e0' },
   gdino: { m: 'm_dino', name: 'Ящер-переросток', h: 8, hp: 900, sp: 0, dmg: 10, xp: 700, r: 4.5, ground: 1, boss: 1, tint: '#9ad06a' },
+  som: { m: 'f_ArmoredCatfish', name: 'Сом-Батюшка', h: 9, hp: 900, sp: 0, dmg: 0, xp: 700, r: 5, fly: -0.5, boss: 1, tint: '#7a6a4a' },
   tsar: { m: 'f_GoblinShark', name: 'Царь-рыба Европы', h: 8, hp: 700, sp: 0, dmg: 18, xp: 600, r: 6, boss: 1, tint: '#bfe6ff' },
   rival: { m: 'r_craft_racer', name: 'Колян на гоночном байке', h: 2.2, hp: 9999, sp: 0, dmg: 0, xp: 0, r: 2, fly: 13, rot: Math.PI, elite: 1 },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
