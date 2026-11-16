@@ -134,7 +134,7 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
   for (const k in PG) { PG[k].count = cnt[k] || 0; PG[k].instanceMatrix.needsUpdate = true; }
   if (W.waveT !== undefined && W.waveT < 0.5) { W.waveT += dt; W.wave.position.set(R.x, R.y + 0.6, R.z); W.wave.scale.setScalar(W.waveR * (W.waveT / 0.5)); W.wave.material.opacity = 0.8 * (1 - W.waveT / 0.5); } else if (W.wave) W.wave.material.opacity = 0; }
 
-W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg, src: e.t.name }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
+W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg, src: e.srcName || e.t.name }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
 const reach0 = (e) => e.t.r * (e.scl || 1) + 1.7;
 /* ---------- твари: повадки ---------- */
 function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
