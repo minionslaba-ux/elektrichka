@@ -571,7 +571,7 @@ W.director = function (dt) { const s = st(); if (s.dead) return;
   W.scene.fog.color.setRGB(0.6 * (0.25 + day * 0.75), 0.35 * (0.25 + day * 0.75), 0.3 * (0.3 + day * 0.7)); W.scene.background = W.scene.fog.color; skyG.traverse((o) => { if (o.material && o.material.color && o.material.vertexColors) o.material.color.setScalar(0.25 + day * 0.75); }); }
   if (W.ch !== 4 && night !== W.wasNight) { W.wasNight = night; if (night) W.say('<b>Марс-ФМ:</b> над «Заречной» ночь. Две луны, звёзды — и призраки на дорогах. Едьте с фарами, бабушки!'); }
   // топливо по пройденному пути, еда по времени
-  const moved = Math.hypot(R.x - lastX, R.z - lastZ); lastX = R.x; lastZ = R.z; if (moved < 20) s.fuel = Math.max(0, s.fuel - moved * 0.05 * (W.flags.tank ? 0.8 : 1) * (W.boss ? 0.5 : 1) * (W.ch === 4 ? 1.15 : 1) * (W.calm || W.gy || W.flyMode ? 0 : 1) * (W.ch === 6 ? 0.6 : 1)); W.fuelOut = s.fuel <= 0;
+  const moved = Math.hypot(R.x - lastX, R.z - lastZ); lastX = R.x; lastZ = R.z; if (moved < 20) s.fuel = Math.max(0, s.fuel - moved * 0.05 * (W.flags.tank ? 0.8 : 1) * (W.boss ? 0 : 1) * (W.ch === 4 ? 1.15 : 1) * (W.calm || W.gy || W.flyMode ? 0 : 1) * (W.ch === 6 ? 0.6 : 1)); W.fuelOut = s.fuel <= 0;
   if (W.fuelOut && !W.fuelWarn) { W.fuelWarn = 1; W.say('<b>Дед:</b> Таня, бензин всё! Ползём на парах. До заправки или канистры!'); } if (!W.fuelOut) W.fuelWarn = 0;
   foodT -= dt; if (foodT <= 0) { foodT = 70; if (s.food > 0) { s.food--; W.nerve(4); W.toast('🥟 Обед в пути: бабуля и дед поели'); } else { W.nerve(-15, '<b>Баба Таня:</b> Ваня, у меня от голода нервы шалят! Где пирожки?!'); } }
   // окружающие твари
