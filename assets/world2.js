@@ -49,6 +49,9 @@ const T = W.TYPES = {
   gasbag: { m: 'p_gasbag', name: 'баллон с краденым газом', h: 4.2, hp: 130, sp: 0, dmg: 0, xp: 30, r: 2.8, elite: 1, fly: 10 },
   tanker: { m: 'k_craft_cargoA', name: 'газовоз пиратов', h: 3.4, hp: 240, sp: 14, dmg: 0, xp: 80, r: 3.6, fly: 1.4, elite: 1, rot: Math.PI, tint: '#ff9ab8' },
   acidj: { m: 'm_squidle', name: 'кислотная медуза', h: 2.4, hp: 12, sp: 8, dmg: 8, xp: 5, r: 1.6, fly: 5, tint: '#d8ff6a' },
+  methw: { m: 'f_Worm', name: 'метановый червь', h: 1.9, hp: 26, sp: 8, dmg: 8, xp: 7, r: 1.3, ground: 1, tint: '#ff9a4a' },
+  kraken: { m: 'm_squidle', name: 'Метановый Кракен', h: 11, hp: 900, sp: 0, dmg: 18, xp: 700, r: 7, fly: 1, boss: 1, tint: '#c8603a' },
+  tent: { m: 'p_tentacle', name: 'щупальце Кракена', h: 9, hp: 150, sp: 0, dmg: 0, xp: 40, r: 2.2, elite: 1 },
   tsar: { m: 'f_GoblinShark', name: 'Царь-рыба Европы', h: 8, hp: 700, sp: 0, dmg: 18, xp: 600, r: 6, boss: 1, tint: '#bfe6ff' },
   rival: { m: 'r_craft_racer', name: 'Колян на гоночном байке', h: 2.2, hp: 9999, sp: 0, dmg: 0, xp: 0, r: 2, fly: 13, rot: Math.PI, elite: 1 },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
@@ -109,17 +112,17 @@ W.dropLoot = (e, x, z, res, n) => loot.push(lootItem(e, x, z, res, n));
 function fire(dt) { const st = W.st;
   for (const [id, w] of Object.entries(WEAP)) { if (!w.lv) continue; w.t = (w.t || 0) - dt; if (w.t > 0) continue; const L = w.lv - 1, cdm = 1 - PERK.hands.lv * 0.1;
     if (w.cost && st.ammo < w.cost) { if (!w.warn) { w.warn = 1; W.say && W.say('<b>Дед:</b> Таня, ' + w.name.toLowerCase() + ' — без патронов! Ищи ящики 🧂'); } continue; } w.warn = 0;
-    const manual = W.view === 2 && (W.firing || W.manual > 0); let tgt = manual ? null : W.focus && !W.focus.dead && dist2(W.focus, R) < (w.range || 20) ** 2 ? W.focus : nearest(w.range || 20);
-    if (id === 'bayan') { if (!nearest(w.rad[L])) continue; w.t = w.cd[L] * cdm; sfx('turbo', { vol: 0.5, rate: 0.6 }); W.waveT = 0; W.waveR = w.rad[L]; for (const e of EN) if (!e.dead && dist2(e, R) < w.rad[L] ** 2) { const d = Math.hypot(e.x - R.x, e.z - R.z) || 1; W.hitEnemy(e, w.dmg[L], (e.x - R.x) / d * 9, (e.z - R.z) / d * 9); } continue; }
+    const manual = !W.autoFire, lk = W.lock && !W.lock.dead && dist2(W.lock, R) < ((w.range || 20) * 1.4) ** 2 ? W.lock : null; let tgt = manual ? lk : W.focus && !W.focus.dead && dist2(W.focus, R) < (w.range || 20) ** 2 ? W.focus : nearest(w.range || 20);
+    if (id === 'bayan') { if (!nearest(w.rad[L]) || (manual && !W.firing)) continue; w.t = w.cd[L] * cdm; sfx('turbo', { vol: 0.5, rate: 0.6 }); W.waveT = 0; W.waveR = w.rad[L]; for (const e of EN) if (!e.dead && dist2(e, R) < w.rad[L] ** 2) { const d = Math.hypot(e.x - R.x, e.z - R.z) || 1; W.hitEnemy(e, w.dmg[L], (e.x - R.x) / d * 9, (e.z - R.z) / d * 9); } continue; }
     if (!manual && !tgt) continue; if (manual && !W.firing) continue;
     const m = muzzle(); let dir;
-    if (manual) { const yaw = R.h + W.aimYaw; dir = new V3(Math.sin(yaw) * Math.cos(W.aimPitch), Math.sin(W.aimPitch), Math.cos(yaw) * Math.cos(W.aimPitch)); }
+    if (manual && tgt) dir = aimDir(tgt); else if (manual) { const yaw = R.h + W.aimYaw; dir = new V3(Math.sin(yaw) * Math.cos(W.aimPitch), Math.sin(W.aimPitch), Math.cos(yaw) * Math.cos(W.aimPitch)); }
     else { dir = aimDir(tgt); const ya = Math.atan2(dir.x, dir.z) - R.h; W.aimYaw += Math.atan2(Math.sin(ya - W.aimYaw), Math.cos(ya - W.aimYaw)) * 0.6; W.aimPitch = Math.asin(Math.max(-0.4, Math.min(0.5, dir.y))) * 0.6; }
-    w.t = w.cd[L] * cdm; st.ammo -= w.cost;
+    w.t = w.cd[L] * cdm; st.ammo = Math.max(0, st.ammo - w.cost * (manual ? 0.5 : 1)); // сам целишься — промахи бывают, соль тратится вдвое экономнее
     if (id === 'salt') { for (let k = 0; k < w.n[L]; k++) { const d2 = dir.clone(); d2.x += rnd(-0.12, 0.12); d2.y += rnd(-0.05, 0.08); d2.z += rnd(-0.12, 0.12); d2.normalize(); prj.push({ k: 'salt', p: m.clone(), v: d2.multiplyScalar(55), life: w.range / 55, dmg: w.dmg[L] }); } sfx('shot', { rnd: 0.2, vol: 0.55 }); burst(W.scene, m.x, m.y, m.z, 'muzzle', '#fff2c0', 1.6, 0.08); shake = Math.max(shake, 0.06); }
     if (id === 'jam') { const to = tgt || { x: m.x + dir.x * 22, z: m.z + dir.z * 22 }, dx = to.x - m.x, dz = to.z - m.z, d = Math.hypot(dx, dz), T0 = Math.max(0.5, d / 22); prj.push({ k: 'jam', p: m.clone(), v: new V3(dx / T0, 9, dz / T0), g: 18, life: 3, dmg: w.dmg[L], rad: w.rad[L] }); sfx('jar', { vol: 0.5 }); }
     if (id === 'slip') throwSlip(w.n[L], w.dmg[L], w.range, dir);
-    if (id === 'cuc') { for (let k = 0; k < w.n[L]; k++) prj.push({ k: 'cuc', p: m.clone(), v: new V3(dir.x * 14 + rnd(-6, 6), 10, dir.z * 14 + rnd(-6, 6)), life: 4, dmg: w.dmg[L], tgt: manual ? null : nearest(w.range) , home: 1 }); sfx('turbo', { vol: 0.35, rate: 1.6 }); }
+    if (id === 'cuc') { for (let k = 0; k < w.n[L]; k++) prj.push({ k: 'cuc', p: m.clone(), v: new V3(dir.x * 14 + rnd(-6, 6), 10, dir.z * 14 + rnd(-6, 6)), life: 4, dmg: w.dmg[L], tgt: manual ? tgt : nearest(w.range) , home: 1 }); sfx('turbo', { vol: 0.35, rate: 1.6 }); }
     if (id === 'samo') { for (const e of EN) { if (e.dead) continue; const dx = e.x - m.x, dz = e.z - m.z, d = Math.hypot(dx, dz); if (d > w.range) continue; if ((dx * dir.x + dz * dir.z) / (d || 1) > 0.8) W.hitEnemy(e, w.dmg[L]); } if (Math.random() < 0.7) burst(W.scene, m.x + dir.x * 4, m.y + dir.y * 4, m.z + dir.z * 4, 'smoke', '#ffd8a0', 3, 0.4); if (Math.random() < 0.2) sfx('turbo', { vol: 0.2, rate: 2 }); }
   } }
 function throwSlip(n, dmg, range, dir) { const m = muzzle(); for (let k = 0; k < n; k++) { const t = nearest(range); const d = dir ? dir.clone() : t ? aimDir(t) : new V3(Math.sin(R.h), 0, Math.cos(R.h)); const a = Math.atan2(d.x, d.z) + (k - (n - 1) / 2) * 0.4; prj.push({ k: 'slip', p: m.clone(), v: new V3(Math.sin(a) * 26, 0, Math.cos(a) * 26), life: 1.6, t: 0, dmg, back: 1, hitset: new Set() }); } sfx('slap', { vol: 0.4 }); }
@@ -209,7 +212,7 @@ function showCards() { W.paused = true; W.pendingLv--; const pool = cardPool(), 
   let box = document.getElementById('rcards'); if (!box) { box = document.createElement('div'); box.id = 'rcards'; document.body.appendChild(box); const css = document.createElement('style'); css.textContent = `#rcards{position:fixed;inset:0;z-index:15;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(ellipse at 50% 40%,rgba(60,20,50,.75),rgba(10,4,10,.92));padding:16px;color:#ffe8d0;font-family:system-ui}#rcards.on{display:flex}#rcards h2{margin:0;font-size:24px;color:#ffd27a;text-shadow:0 0 18px rgba(255,200,100,.6);animation:pop .4s both}#rcards .cs{display:grid;gap:10px;width:min(440px,100%)}
     #rcards button{display:grid;grid-template-columns:54px 1fr;gap:4px 12px;align-items:center;text-align:left;border-radius:16px;padding:12px 14px;border:2px solid rgba(255,210,140,.35);background:linear-gradient(135deg,rgba(80,40,60,.95),rgba(40,18,30,.95));color:#ffe8d0;font:600 13px/1.3 system-ui;cursor:pointer;animation:pop .35s cubic-bezier(.2,1.5,.4,1) both}#rcards button:nth-child(2){animation-delay:.08s}#rcards button:nth-child(3){animation-delay:.16s}
     #rcards button i{grid-row:span 2;font-style:normal;font-size:40px;text-align:center;filter:drop-shadow(0 0 10px rgba(255,220,140,.5))}#rcards button b{font-size:17px;color:#fff}#rcards button.new{border-color:#7fe8ff;box-shadow:0 0 22px rgba(127,232,255,.35)}#rcards button.new b:after{content:' НОВОЕ';font-size:11px;color:#7fe8ff;margin-left:6px}#rcards small{opacity:.7}`; document.head.appendChild(css); }
-  box.innerHTML = `<h2>Уровень ${W.st.lvl}! Дед выбирает…</h2><div class="cs">${ch.map((c, k) => `<button data-k="${k}" class="${c.rare ? 'new' : ''}"><i>${c.e}</i><b>${c.name}${c.lv ? ' ' + '★'.repeat(c.lv) : ''}</b><span>${c.d}</span></button>`).join('')}</div><small>оружие стреляет само · выбери улучшение</small>`;
+  box.innerHTML = `<h2>Уровень ${W.st.lvl}! Дед выбирает…</h2><div class="cs">${ch.map((c, k) => `<button data-k="${k}" class="${c.rare ? 'new' : ''}"><i>${c.e}</i><b>${c.name}${c.lv ? ' ' + '★'.repeat(c.lv) : ''}</b><span>${c.d}</span></button>`).join('')}</div><small>оружие стреляет по кнопке «ОГОНЬ» · выбери улучшение</small>`;
   box.classList.add('on'); sfx('j_found'); box.querySelectorAll('button').forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); const c = ch[+b.dataset.k]; applyCard(c); sfx('click'); box.classList.remove('on'); if (W.pendingLv > 0) setTimeout(showCards, 250); else { W.paused = false; } })); }
 function applyCard(c) { const st = W.st; if (c.kind === 'w') WEAP[c.id].lv++; else if (c.kind === 'p') { PERK[c.id].lv++; if (c.id === 'pie') { st.hullMax += 25; st.hull += 25; } if (c.id === 'engine') W.vmax = 17 * (1 + PERK.engine.lv * 0.08); } else { st.hull = Math.min(st.hullMax, st.hull + 40); W.nerve(20); }
   showMsg(c.e + ' ' + c.name, '', '#ffd27a', 1000); }
@@ -222,7 +225,20 @@ W.tap = function (x, y) { if (W.view === 2) return; // тап по твари �
   if (best) { W.focus = best; burst(W.scene, best.x, best.y + best.t.h + 0.6, best.z, 'spark', '#ff5a4a', 1.4, 0.3); } };
 
 /* ---------- кадр боя ---------- */
-W.combat = function (dt) { if (W.manual > 0) W.manual -= dt; W.iframe = (W.iframe || 0) - dt; if (W.spore > 0) { W.spore -= dt; W.sxs = -1; } else W.sxs = 1;
+// ручной прицел: игрок наводит пальцем, «магнит» помогает поймать тварь рядом с перекрестьем
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+function aimStep(dt) { const cr = document.getElementById('wdCross'), fb = document.getElementById('wdFire'); if (!cr) return;
+  let best = null, bs = 0.36; const yaw = R.h + W.aimYaw; for (const e of EN) { if (e.dead || e.st === 'buried') continue; const dx = e.x - R.x, dz = e.z - R.z, d = Math.hypot(dx, dz); if (d > 60 || d < 1) continue; const da = Math.abs(wrapA(Math.atan2(dx, dz) - yaw)) - (e === W.focus ? 0.08 : 0); if (da < bs) { bs = da; best = e; } }
+  W.lock = W.autoFire ? null : best; if (!W.autoFire && W.st.ammo < 25 && !W.st.dead) { W.st.ammo += dt * 3; if (!W.saltTip && W.st.ammo < 5) { W.saltTip = 1; W.say && W.say('<b>Дед:</b> Таня, соль на донышке! Подсыпаю из запасов по щепотке. Ищи ящики 🧂'); } } /* соль не кончается насовсем: бой не застрянет */ const near = nearest(55), show = !W.autoFire && !W.paused && !W.st.dead && !!(near || W.boss); W.aimOn = show;
+  if (!show) { cr.style.display = 'none'; fb.style.display = 'none'; W.firing = W.firing && W.aimId != null; return; } fb.style.display = 'block'; if (W.flags && !W.flags.aimTip) { W.flags.aimTip = 1; W.toast && W.toast('🎯 Твари рядом! Держи <b>ОГОНЬ</b>, веди пальцем справа — целься'); }
+  if (best && W.firing) { const a = wrapA(Math.atan2(best.x - R.x, best.z - R.z) - R.h); W.aimYaw += wrapA(a - W.aimYaw) * Math.min(1, dt * 5); } // держит цель, пока жмёшь «огонь»
+  else if (!W.firing && !(W.manual > 0) && W.view !== 2) W.aimYaw *= 1 - Math.min(1, dt * 1.2); // отпустил — турель смотрит вперёд
+  if (W.view !== 2) W.aimYaw = Math.max(-1.7, Math.min(1.7, W.aimYaw));
+  if (best) { const t = aimDir(best); W.aimPitch += (Math.asin(Math.max(-0.35, Math.min(0.6, t.y))) - W.aimPitch) * Math.min(1, dt * 6); P.set(best.x, best.y + best.t.h * 0.5, best.z); }
+  else { const m = muzzle(), y2 = R.h + W.aimYaw; P.set(m.x + Math.sin(y2) * 26, m.y + Math.sin(W.aimPitch) * 26, m.z + Math.cos(y2) * 26); }
+  P.project(camera); const on = P.z < 1, sx = Math.max(30, Math.min(innerWidth - 30, (P.x + 1) / 2 * innerWidth)), sy = Math.max(120, Math.min(innerHeight - 60, (1 - P.y) / 2 * innerHeight));
+  cr.style.display = on ? 'block' : 'none'; cr.style.left = sx + 'px'; cr.style.top = sy + 'px'; cr.classList.toggle('lock', !!best); fb.classList.toggle('on', !!W.firing); }
+W.combat = function (dt) { if (W.manual > 0) W.manual -= dt; aimStep(dt); W.iframe = (W.iframe || 0) - dt; if (W.spore > 0) { W.spore -= dt; W.sxs = -1; } else W.sxs = 1;
   if (W.focus && (W.focus.dead || Math.hypot(W.focus.x - R.x, W.focus.z - R.z) > 40)) W.focus = null;
   fire(dt); stepPrj(dt); stepEnemies(dt); stepGems(dt); if (W.director) W.director(dt);
   if (W.pendingLv > 0 && !W.paused && !(document.getElementById('rcards') || {}).classList?.contains('on')) showCards(); };

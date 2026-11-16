@@ -173,7 +173,8 @@ body.walk #zl,body.walk #zr,body.walk #turbo,body.walk #prog,body.walk #tr,body.
 #joy i{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 9px;color:rgba(255,255,255,.45);font:900 14px system-ui,sans-serif;font-style:normal}
 body.play #joy{display:block}body.farm #joy,body.def #joy,body.fish #joy,body.mapon #joy,body.walk #joy i{display:none}body.walk #joy{display:block}
 body.walk #combo,body.farm #combo,body.def #combo,body.fish #combo,body.walk #speedfx,body.farm #speedfx,body.def #speedfx,body.fish #speedfx,body.mapon #speedfx{display:none}
-#snd{position:fixed;left:16px;top:calc(156px + env(safe-area-inset-top));z-index:9;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(30,14,22,.6);font-size:18px;padding:0;color:var(--ink)}body.mapon #snd{top:auto;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30}body:not(.play) #snd{display:none}
+#menuB{position:fixed;left:16px;top:calc(150px + env(safe-area-inset-top));z-index:9;height:38px;min-width:38px;border-radius:19px;border:1px solid var(--line);background:rgba(30,14,22,.7);font:800 18px system-ui,sans-serif;padding:0 12px 0 10px;color:var(--ink);display:flex;align-items:center;gap:6px;cursor:pointer;touch-action:manipulation}#menuB span{font-size:13px}#menuB.ask{background:#c8402a;color:#fff;border-color:#ffb08a}body:not(.play) #menuB,body.mapon #menuB{display:none}
+#snd{position:fixed;left:16px;top:calc(200px + env(safe-area-inset-top));z-index:9;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(30,14,22,.6);font-size:18px;padding:0;color:var(--ink)}body.mapon #snd{top:auto;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30}body:not(.play) #snd{display:none}
 @font-face{font-family:KFuture;src:url(assets/ui/kfuture.woff2) format('woff2');font-display:swap}
 #spd,#time,#pot{font-family:KFuture,system-ui,sans-serif;letter-spacing:.02em}
 #snd{background:rgba(30,14,22,.6) center/22px no-repeat}#snd[data-m='2']{background-image:url(assets/ui/musicOn.png)}#snd[data-m='1']{background-image:url(assets/ui/audioOn.png)}#snd[data-m='0']{background-image:url(assets/ui/audioOff.png)}
@@ -244,7 +245,7 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
   <div id="pins"></div><button id="wdGo">🚀 ЭКСПЕДИЦИЯ<small>открытый Марс · твари · пираты</small></button><button id="stBtn" class="g">📖 <b>150 историй</b><small id="stBtnN"></small></button>
   <div id="mapSheet" class="g"><h3 id="msT"></h3><p id="msD"></p><div class="ms" id="msL"></div></div></div>
 <div id="defHud"><button id="reload">🔄 ПЕРЕЗАРЯДКА</button><div id="jars" class="g"></div><div id="shells"><b></b><b></b></div></div>
-<button id="snd" aria-label="Звук"></button>
+<button id="snd" aria-label="Звук"></button><button id="menuB" aria-label="В меню">☰<span>Меню</span></button>
 <div id="haggle" class="g"><div class="hw" id="hgWho"></div><div class="hp"><span id="hgItem"></span> <b id="hgPrice">0</b> ₽ <small id="hgPat"></small></div><div class="hb"><i id="hgOk"></i><i id="hgNd"></i></div><div class="hs" id="hgSay"></div><div class="btns2"><button id="hgTalk" class="alt">🗣 Торговаться</button><button id="hgSell">🤝 Продать</button></div></div>
 <div id="joy"><i><b>◀</b><b>▶</b></i><div id="knob"></div></div>
 <div id="story"><div class="sh"><b>📖 150 историй</b><small id="stProg"></small><button id="stClose" aria-label="Закрыть">✕</button></div><div id="stList"></div></div>
@@ -1392,7 +1393,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 37); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 38); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : loadJS('assets/world.js').then(() => loadJS('assets/world2.js')).then(() => { WD_PART2(); return loadJS('assets/world3.js'); }).then(() => WD_PART3());
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
@@ -1457,6 +1458,10 @@ function renderOrders() {
 }
 $('again').onclick = () => { if (SM()) ORDER = SM().base; newRun(false); };
 $('toMap').onclick = () => showMap();
+// ☰ в меню из любого режима: первое нажатие — спросить, второе — выйти
+{ let askT = 0; $('menuB').onclick = (e) => { e.stopPropagation(); const b = $('menuB');
+  if (!b.classList.contains('ask')) { b.classList.add('ask'); b.innerHTML = '☰<span>Выйти в меню?</span>'; sfx('click'); clearTimeout(askT); askT = setTimeout(() => { b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; }, 4000); return; }
+  clearTimeout(askT); b.classList.remove('ask'); b.innerHTML = '☰<span>Меню</span>'; if (window.WD && WD.active && WD.saveNow) WD.saveNow(); if (car.state === 'go') car.state = 'menu'; ST.cur = 0; document.body.classList.remove('storyon'); $('story').classList.remove('on'); showMap(); }; }
 $('map').addEventListener('pointerdown', (e) => { if (!e.target.closest('#mapSheet') && !e.target.closest('.pin')) $('mapSheet').classList.remove('on'); });
 const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 
@@ -1468,7 +1473,7 @@ function joyMove(e) { if (e.pointerId !== JOY.id) return; let dx = (e.clientX - 
 function joyEnd(e) { if (e && e.pointerId !== JOY.id) return; JOY.id = null; JOY.x = JOY.y = 0; joyPlace(); }
 const touches = new Map();
 function updInput() { let l = false, r = false; for (const x of touches.values()) { if (x < innerWidth / 2) l = true; else r = true; } input.tl = l; input.tr = r; }
-addEventListener('pointerdown', (e) => { if (window.WD && WD.active) { WD.pointer(e); return; } if (e.target.closest('#haggle') || MG.active) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
+addEventListener('pointerdown', (e) => { if (e.target.closest('#menuB') || e.target.closest('#snd')) return; if (window.WD && WD.active) { WD.pointer(e); return; } if (e.target.closest('#haggle') || MG.active) return; if (e.target.closest('#end') || e.target.closest('#farmHud button') || e.target.closest('#seeds')) return; if (FS.active) { farmTap(e.clientX, e.clientY); return; } if (DF.active) { if (e.target.closest('#reload')) return; DF.swY = e.clientY; defTap(e.clientX, e.clientY); return; } if (WK.active) { joyStart(e); return; } if (document.body.classList.contains('mapon')) return; if (FISH.active) { FISH.hold = true; fishTap(); } if (car.stuck) { car.stuck.taps++; bump($('combo')); sfx('thud', { vol: 0.5, rnd: 0.3 }); } if (!FISH.active) joyStart(e); touches.set(e.pointerId, e.clientX); updInput(); });
 addEventListener('pointermove', (e) => { joyMove(e); if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); updInput(); } });
 const up = (e) => { if (DF.active && DF.swY !== undefined && e.clientY - DF.swY > 70) defReload(); DF.swY = undefined; joyEnd(e); touches.delete(e.pointerId); updInput(); if (FISH.active && !touches.size) FISH.hold = false; };
 addEventListener('pointerup', up); addEventListener('pointercancel', up);
