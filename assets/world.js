@@ -219,7 +219,7 @@ const CH = W.CH = {
   7: { name: 'Олимп', fog: '#7a3a2a', fogNear: 120, fogFar: 620, far: 900, lava: 1, pal: ['#a84a2a', '#d07a48', '#5a2a22', '#2a1414', '#4a2a22'],
     pois: [
       { id: 'arsia', name: 'Гора Арсия', e: '🌋', x: -470, z: 330, r: 22, col: '#ffb04a', kind: 'peak', flat: 0 },
-      { id: 'pavonis', name: 'Гора Павлина', e: '🌋', x: -430, z: 0, r: 22, col: '#ff6a4a', kind: 'peak', flat: 0 },
+      { id: 'pavonis', name: 'Гора Павлина', e: '🌋', x: -430, z: 0, r: 30, col: '#ff6a4a', kind: 'peak', flat: 0 },
       { id: 'ascraeus', name: 'Аскрийская гора', e: '🌋', x: -390, z: -330, r: 22, col: '#ffd24a', kind: 'peak', flat: 0 },
       { id: 'village', name: 'Посёлок «Подножье»', e: '🏘', x: -60, z: 260, r: 60, col: '#7aff8a', kind: 'city' },
       { id: 'pad', name: 'Стартовая площадка у обрыва', e: '🚀', x: -125, z: -120, r: 30, col: '#7fe8ff', kind: 'pad' },

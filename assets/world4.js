@@ -222,6 +222,38 @@ W.trade4 = function (cfg, onWin, onFail) {
     const acts = cfg.acts(o); o.acts = acts; btns(o, acts.map((a) => a.t), (i) => { if (o.done) return; const r = acts[i].fn(); sfx('click'); if (r) o.say(r); o.draw(); if (o.pat <= 0 && !o.done) { o.done = 1; setTimeout(() => o.fail(), 1300); } });
     o.draw(); o.say(cfg.hello); } }); };
 
+/* ---------- готовка: рецепт по памяти, потом печь — вынуть вовремя ---------- */
+W.cook4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.err = 0; o.ph = 'show'; o.card = document.createElement('div'); o.card.className = 'card'; o.body.appendChild(o.card); o.rowW = document.createElement('div'); o.body.appendChild(o.rowW); o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.rec = cfg.recipe.slice(); o.t = cfg.showT; o.card.innerHTML = '<div style="font-size:14px">Рецепт бабушки — запоминай!</div><div style="font-size:34px;letter-spacing:6px">' + o.rec.map((r) => r[0]).join(' → ') + '</div><div style="font-size:12px;opacity:.8">' + o.rec.map((r) => r[1]).join(' → ') + '</div>';
+    o.mix = () => { o.ph = 'mix'; o.i = 0; o.card.innerHTML = '<div class="big">🥣</div><div>Клади по рецепту: шаг 1 из ' + o.rec.length + '</div>'; const all = cfg.recipe.concat(cfg.extra).sort(() => Math.random() - 0.5); o.opts = all; o.rowW.innerHTML = '';
+      const r = document.createElement('div'); r.className = 'row'; all.forEach((it) => { const b = document.createElement('button'); b.innerHTML = it[0] + '<br><small>' + it[1] + '</small>'; b.style.flex = '1 1 22%'; b.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); o.put(it); }; r.appendChild(b); }); o.rowW.appendChild(r); };
+    o.put = (it) => { if (o.ph !== 'mix') return; if (it === o.rec[o.i]) { o.i++; sfx('pick'); o.say(it[0] + ' — да!'); o.card.innerHTML = '<div class="big">🥣</div><div>Шаг ' + Math.min(o.i + 1, o.rec.length) + ' из ' + o.rec.length + '</div>'; if (o.i >= o.rec.length) o.oven(); } else { o.err++; sfx('caught'); o.say('❌ Не то! Бабушка: «' + cfg.hint + '»'); if (o.err > cfg.maxErr) { o.ph = 'x'; setTimeout(() => o.fail('mix'), 1000); } } o.st.textContent = 'Ошибок ' + o.err + ' из ' + cfg.maxErr; };
+    o.oven = () => { o.ph = 'oven'; o.batch = 0; o.ok = 0; o.rowW.innerHTML = ''; btns(o, ['🧤 Вынуть!'], () => o.take()); o.bake(); };
+    o.bake = () => { o.heat = 0; o.sp = cfg.bake[0] + Math.random() * (cfg.bake[1] - cfg.bake[0]); o.card.innerHTML = '<div class="big">🔥🥟</div><div>Противень ' + (o.batch + 1) + ' из ' + cfg.batches + '</div><div style="position:relative;height:26px;background:#0006;border-radius:13px;margin:8px 4px;overflow:hidden"><div style="position:absolute;left:62%;width:18%;top:0;bottom:0;background:#c8902a"></div><div class="mk" style="position:absolute;top:0;bottom:0;width:0;background:#ffd27a55"></div></div><div style="font-size:12px">золотистые — в жёлтой зоне</div>'; o.mk = o.card.querySelector('.mk'); };
+    o.take = () => { if (o.ph !== 'oven' || o.heat <= 0.05) return; const h = o.heat; o.batch++; if (h >= 0.62 && h <= 0.8) { o.ok++; sfx('coin'); o.say('🥟 Золотистые!'); } else { sfx('caught'); o.say(h < 0.62 ? '🥟 Сырые внутри…' : '🔥 Подгорели!'); } o.st.textContent = 'Удачных противней: ' + o.ok + ' из ' + cfg.batches + ' (нужно ' + cfg.need + ')'; if (o.batch >= cfg.batches) { o.ph = 'x'; setTimeout(() => (o.ok >= cfg.need ? o.win() : o.fail('oven')), 900); } else o.bake(); };
+    o.st.textContent = 'Смотри внимательно…'; },
+    tick(dt) { const o = this; if (o.ph === 'show') { o.t -= dt; if (o.t <= 0) o.mix(); } else if (o.ph === 'oven') { o.heat += o.sp * dt; o.mk.style.width = Math.min(100, o.heat * 100) + '%'; if (o.heat >= 1) { o.heat = 0.99; o.take(); } } } }); };
+
+/* ---------- сборка по чертежу: на каждом шаге выбери нужную деталь среди похожих ---------- */
+W.assemble4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.cfg = cfg; o.i = 0; o.err = 0; o.card = document.createElement('div'); o.card.className = 'card'; o.body.appendChild(o.card); o.rowW = document.createElement('div'); o.body.appendChild(o.rowW); o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.step = () => { if (o.i >= cfg.parts.length) return o.win(); const P = cfg.parts[o.i]; o.card.innerHTML = '<div style="font-size:13px;opacity:.8">Чертёж, шаг ' + (o.i + 1) + ' из ' + cfg.parts.length + ':</div><div style="font-size:17px"><b>' + P.need + '</b></div><div style="font-size:24px">' + cfg.parts.slice(0, o.i).map((q) => q.e).join('') + '⬜</div>';
+      const opts = [P.ok].concat(P.bad).concat(Math.random() < cfg.gosha ? [cfg.goshaItem] : []).sort(() => Math.random() - 0.5); o.cur = opts; o.rowW.innerHTML = '';
+      const r = document.createElement('div'); r.className = 'row'; opts.forEach((t) => { const b = document.createElement('button'); b.textContent = t; b.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); o.pick(t); }; r.appendChild(b); }); o.rowW.appendChild(r);
+      o.st.textContent = 'Ошибок ' + o.err + ' из ' + cfg.maxErr; };
+    o.pick = (t) => { const P = cfg.parts[o.i]; if (t === P.ok) { o.i++; sfx('thud'); o.say('🔩 ' + pick(cfg.okSay)); o.step(); } else { o.err++; sfx('caught'); o.say(t === cfg.goshaItem ? '🐱 Это Гоша подсунул!' : '❌ Не та деталь — читай чертёж'); if (o.err > cfg.maxErr) return setTimeout(() => o.fail(), 900); o.st.textContent = 'Ошибок ' + o.err + ' из ' + cfg.maxErr; } };
+    o.step(); } }); };
+
+/* ---------- прожектор-конус (крутится над целью; пока горит — цели под защитой) ---------- */
+W.spot4 = function (o) { W.spotEnd4(); const P = W.sp4 = Object.assign({ a: 0, hold: 0, on: true }, o); P.cone = coneMesh(o.L, 0.32); P.cone.material.color.set('#fff6b0'); W.scene.add(P.cone); P.gen = emojiSprite('🔦', 3); P.gen.position.set(o.gx, W.H(o.gx, o.gz) + 2.5, o.gz); W.scene.add(P.gen); P.ring = A.ring11(o.gx, o.gz, '#ffd24a', 6); return P; };
+W.spotEnd4 = function () { const P = W.sp4; if (!P) return; W.scene.remove(P.cone); W.scene.remove(P.gen); if (P.ring) W.scene.remove(P.ring); W.sp4 = null; };
+clear4.push(() => W.spotEnd4());
+W.spotStep4 = function (dt) { const P = W.sp4; if (!P || !P.on) return; P.a += dt * P.spd; P.cone.position.set(P.x, W.H(P.x, P.z) + 6, P.z); P.cone.rotation.y = P.a;
+  const dx = R.x - P.x, dz = R.z - P.z, d = Math.hypot(dx, dz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - P.a), Math.cos(Math.atan2(dx, dz) - P.a)));
+  if (d < P.L && da < 0.36) { P.ht = (P.ht || 0) - dt; if (P.ht <= 0) { P.ht = 0.8; W.hurt(P.dmg, 'прожектор навёл снайперов'); } P.cone.material.color.set('#ff7a5a'); } else P.cone.material.color.set('#fff6b0');
+  if (Math.hypot(R.x - P.gx, R.z - P.gz) < 8 && Math.abs(R.v) < 6) { P.hold += dt; if (P.hold > 2) { P.on = false; const f = P.onOff; W.spotEnd4(); sfx('j_found'); f(); } } else P.hold = Math.max(0, P.hold - dt); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -255,6 +287,28 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   $('wdObj').innerHTML = (left.length ? S.label + ': <b>' + S.got + ' из ' + S.items.length + '</b>' + (S.hold > 0 ? ' · сматываю ' + Math.round(S.hold / S.take * 100) + '%' : '') : '🚤 Уходи к лодке Лидии') + ' · 👁 <b style="color:' + (S.sus > 60 ? '#ff6a4a' : S.sus > 25 ? '#ffc04a' : '#9f9') + '">' + Math.round(S.sus) + '%</b> · тише едешь — дальше будешь';
   if (S.sus >= 100) { S.sus = 0; sfx('caught'); S.onCaught(); return; }
   if (!left.length && Math.hypot(S.exit.x - R.x, S.exit.z - R.z) < 12) { const f = S.onWin; W.stealthEnd4(); f(); } };
+
+/* =====================================================================
+   ГЛАВА 7 — по плану: пирожки на Арсии (готовка) → штурм Павлины (прожектор) → сборка двигателя и спуск → эвакуация → прыжок → Дух Олимпа
+   ===================================================================== */
+(function ch7() { const S = A.CHAPTERS[7]; if (!S) return; const a7 = S.find((s) => s.id === 'arsia'), p7 = S.find((s) => s.id === 'pavonis'), s7 = S.find((s) => s.id === 'ascraeus'); if (!a7 || !p7 || !s7) return;
+  a7.tick = () => { if (W.st.fuel < 25) W.st.fuel = 25; if (W.cans7) { W.cans7.forEach((q) => !q.done && W.scene.remove(q.sp)); W.cans7 = null; } };
+  a7.onArrive = function () { W.give('fuel', 60); W.talk([['babka2', 'Пирожки! Только печь некому: руки трясутся, вулкан трясётся. Внученька, напеки сама — рецепт покажу один раз.'], ['ded', 'Таня, это экзамен. Я в тебя верю. И я голодный.']], () => run()); };
+  function run() { W.cook4({ title: '🥟 Пирожки бабушки с Арсии', rules: 'Запомни рецепт, положи всё по порядку, потом вынимай противни, когда пирожки <b>золотистые</b>.', showT: 4.5, maxErr: 2, hint: 'Сначала тесто, потом начинка!',
+      recipe: [['🥚', 'яйцо'], ['🥛', 'молоко'], ['🌾', 'мука'], ['🧈', 'масло'], ['🥔', 'картошка']], extra: [['🧂', 'соль деда'], ['🐟', 'рыба Гоши'], ['🌶', 'перец']], bake: [0.16, 0.24], batches: 3, need: 2 },
+    () => { W.give('food', 4); W.give('money', 600); W.talk([['babka2', 'Ох, лучше моих! Бензин — к пирожкам бесплатно. Дальше — гора Павлина: там пираты засели, и у них прожектор.']], () => A.adv()); },
+    (why) => W.talk([['babka2', why === 'oven' ? 'Подгорели… Ничего, тесто ещё есть — давай снова.' : 'Перепутала! Смотри ещё раз.']], () => run())); }
+  const po = p7.onArrive; p7.onArrive = function () { po.call(this); const pv = byId('pavonis'); (W.gar7 || []).forEach((e) => { e.immune = true; e.immMsg = '💡 прожектор слепит — выключи генератор 🔦'; });
+    W.spot4({ x: pv.x, z: pv.z, L: 60, spd: 0.9, dmg: 5, gx: pv.x + 52, gz: pv.z - 30, onOff() { (W.gar7 || []).forEach((e) => (e.immune = false)); W.toast('🔦 Прожектор погас! Турели ослепли — бей!'); } });
+    W.say && W.say('<b>Пип:</b> Прожектор наводит снайперов. Сначала выключи генератор 🔦 — постой у него две секунды!'); };
+  const pt = p7.tick; p7.tick = function (dt) { if (W.sp4) { W.spotStep4(dt); if (W.obj && !W.paused) { W.obj.x = W.sp4.gx; W.obj.z = W.sp4.gz; } $('wdObj').innerHTML = '🔦 Выключи прожектор: постой у генератора' + (W.sp4 && W.sp4.hold > 0 ? ' · ' + Math.round(W.sp4.hold / 2 * 100) + '%' : '') + ' · в луче — по тебе стреляют'; return; } pt.call(this, dt); };
+  s7.onArrive = function () { W.talk([['babka2', 'Пирожки! И ракетный двигатель — вчерашний, в разобранном виде. Чертёж — вот. Собирай, а Гоша поможет… или помешает.']], () => run3()); };
+  function run3() { W.assemble4({ title: '🚀 Сборка ракетного двигателя', rules: 'На каждом шаге чертёж называет деталь — выбери именно её. Детали похожи! Гоша иногда подсовывает своё.', maxErr: 2, gosha: 0.4, goshaItem: '🐟 «деталь» от Гоши', okSay: ['Встала как родная', 'Дед: «Затянул!»', 'Щёлк!'],
+      parts: [{ need: 'Сопло большое Ø3', ok: 'Сопло Ø3', bad: ['Сопло Ø2', 'Воронка'], e: '🔻' }, { need: 'Камера сгорания, двойная стенка', ok: 'Камера двойная', bad: ['Камера одинарная', 'Кастрюля'], e: '🛢' },
+        { need: 'Насос топлива — синий', ok: 'Насос синий', bad: ['Насос красный', 'Насос от самовара'], e: '🔵' }, { need: 'Бак на 40 литров', ok: 'Бак 40 л', bad: ['Бак 4 л', 'Бак 400 л'], e: '⛽' }, { need: 'Обтекатель — острый', ok: 'Обтекатель острый', bad: ['Обтекатель тупой', 'Ведро'], e: '🔺' }] },
+    () => { W.flags.rocket = 1; W.nobrake = 30; W.give('parts', 4); W.toast('🚀 Ракетный двигатель! Тормоза — сняты на 30 секунд'); W.talk([['babka2', 'Ракета стоит! Только тормоза пришлось снять — места не хватило. Вниз — с ветерком!']], () => { A.setObj('Спуск без тормозов — в посёлок «Подножье»', byId('village')); A.adv(); }); },
+    () => W.talk([['ded', 'Таня, у нас лишние детали. Это плохой знак. Разбираем и заново.']], () => run3())); }
+})();
 
 /* =====================================================================
    ГЛАВА 8 — по плану: шлюзы соляной шахты (переключатели) → гонка → торг с гномом → оборона купола с заграждениями → Толян
