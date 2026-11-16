@@ -44,7 +44,7 @@ const T = W.TYPES = {
   admiral: { m: 'm_orc_skull', name: 'Адмирал Галина', h: 6.5, hp: 700, sp: 0, dmg: 16, xp: 450, r: 3.5, ground: 1, boss: 1, tint: '#ffb0e0' },
   olymp: { m: 'm_goleling', name: 'Дух Олимпа', h: 10, hp: 600, sp: 0, dmg: 20, xp: 600, r: 5, ground: 1, boss: 1, tint: '#ff9a5a' },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
-  kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
+  kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 400, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
 const EN = W.EN = []; const IM = {};
 function initMon() { if (MON) { W.addMon(); return Promise.resolve(); } return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); W.addMon(); }); }
