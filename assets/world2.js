@@ -5,7 +5,7 @@ window.WD_PART2 = function () {
 'use strict';
 const W = window.WD, R = W.rover, V3 = THREE.Vector3;
 let MON = null; const MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
-const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), SC = new V3(), P = new V3(), CW = new THREE.Color(1, 1, 1), CH = new THREE.Color(3, 3, 3), CF = new THREE.Color(1.6, 0.6, 0.6);
+const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), SC = new V3(), P = new V3(), CW = new THREE.Color(1, 1, 1), CH = new THREE.Color(3, 3, 3), CF = new THREE.Color(1.6, 0.6, 0.6), CS = new THREE.Color(0.55, 0.65, 1.1);
 const rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)], dist2 = (a, b) => (a.x - b.x) ** 2 + (a.z - b.z) ** 2;
 
 /* ---------- виды тварей ---------- */
@@ -36,14 +36,17 @@ const T = W.TYPES = {
   catf: { m: 'f_ArmoredCatfish', name: 'сом-броненосец', h: 2.6, hp: 45, sp: 6, dmg: 14, xp: 12, r: 2.2, fly: -0.3, elite: 1 },
   larva: { m: 'f_Worm', name: 'червячок', h: 1.3, hp: 5, sp: 7, dmg: 4, xp: 1, r: 0.9, ground: 1 },
   worm: { m: 'k_wormhead', name: 'Червь-картофелеед', h: 5, hp: 600, sp: 0, dmg: 18, xp: 350, r: 3.5, boss: 1 },
+  yeti: { m: 'p_animal-polar', name: 'медведь-йети', h: 3, hp: 40, sp: 9, dmg: 12, xp: 12, r: 2, ground: 1 },
+  hbear: { m: 'p_animal-polar', name: 'медведь-хоккеист', h: 3.2, hp: 9999, sp: 0, dmg: 0, xp: 0, r: 2, ground: 1 },
+  idragon: { m: 'm_dragon', name: 'Ледяной дракон', h: 8, hp: 700, sp: 0, dmg: 16, xp: 400, r: 4.5, fly: 12, boss: 1, tint: '#a8e0ff' },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
 const EN = W.EN = []; const IM = {};
 function initMon() { if (MON) { W.addMon(); return Promise.resolve(); } return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); W.addMon(); }); }
 // подключить к бою новые модели (паки догружаются по главам): только виды, у которых ещё нет InstancedMesh
-W.addMon = function () { if (!MON) return; for (const n in MODELS) if (/^(r|s|k|f|n|o)_/.test(n)) MON[n] = MODELS[n];
-  for (const [id, t] of Object.entries(T)) { if (IM[id]) continue; const g = MON[t.m]; if (!g) continue; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
+W.addMon = function () { if (!MON) return; for (const n in MODELS) if (/^(r|s|k|f|n|o|p)_/.test(n)) MON[n] = MODELS[n];
+  for (const [id, t] of Object.entries(T)) { if (t.tint && !t.tintC) t.tintC = new THREE.Color(t.tint); if (IM[id]) continue; const g = MON[t.m]; if (!g) continue; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
     const im = new THREE.InstancedMesh(g, MAT, t.boss ? 3 : t.elite ? 6 : 60); im.count = 0; im.frustumCulled = false; im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(im.count * 3 + 180 * 3), 3); im.userData.keep = true; W.scene.add(im); IM[id] = im; } };
 W.spawn = function (type, x, z, o = {}) { const t = T[type]; if (!t || !IM[type]) return null; if (EN.filter((e) => e.type === type && !e.dead).length >= (t.boss ? 3 : t.elite ? 6 : 60)) return null;
   const e = Object.assign({ type, t, x, z, y: W.H(x, z), vx: 0, vz: 0, h: rnd(0, 6), hp: t.hp * (o.hpK || 1), max: t.hp * (o.hpK || 1), hit: 0, cd: 0, ph: rnd(0, 6), st: t.buried ? 'buried' : 'go', age: 0 }, o); EN.push(e); return e; };
@@ -127,7 +130,7 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
   for (const k in PG) { PG[k].count = cnt[k] || 0; PG[k].instanceMatrix.needsUpdate = true; }
   if (W.waveT !== undefined && W.waveT < 0.5) { W.waveT += dt; W.wave.position.set(R.x, R.y + 0.6, R.z); W.wave.scale.setScalar(W.waveR * (W.waveT / 0.5)); W.wave.material.opacity = 0.8 * (1 - W.waveT / 0.5); } else if (W.wave) W.wave.material.opacity = 0; }
 
-W.enemyShoot = function (e, spd = 26, dmg = 8) { const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
+W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
 const reach0 = (e) => e.t.r * (e.scl || 1) + 1.7;
 /* ---------- твари: повадки ---------- */
 function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
@@ -136,7 +139,8 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
     else {
       const dx = R.x - e.x, dz = R.z - e.z, d = Math.hypot(dx, dz) || 1; if (d > 230 && !t.boss && !e.keep) { EN.splice(i, 1); continue; }
       const slow = e.slow > 0 ? 0.45 : 1; e.slow = (e.slow || 0) - dt;
-      if (e.st === 'buried') { if (d < 16) { e.st = 'leap'; e.lt = 0; e.l0 = { x: e.x, z: e.z }; e.l1 = { x: R.x + fwdx * R.v * 0.6, z: R.z + fwdz * R.v * 0.6 }; sfx('jump', { vol: 0.6 }); burst(W.scene, e.x, e.y + 0.4, e.z, 'smoke', '#c88060', 3, 0.5); } }
+      if (W.sleepT > 0 && !t.boss) { e.vx *= 0.8; e.vz *= 0.8; if (Math.random() < 0.01) floatText('💤', e.x, e.y + t.h + 0.5, e.z, '#bfe8ff'); }
+      else if (e.st === 'buried') { if (d < 16) { e.st = 'leap'; e.lt = 0; e.l0 = { x: e.x, z: e.z }; e.l1 = { x: R.x + fwdx * R.v * 0.6, z: R.z + fwdz * R.v * 0.6 }; sfx('jump', { vol: 0.6 }); burst(W.scene, e.x, e.y + 0.4, e.z, 'smoke', '#c88060', 3, 0.5); } }
       else if (e.st === 'leap') { e.lt += dt / 0.8; const k = Math.min(1, e.lt); e.x = e.l0.x + (e.l1.x - e.l0.x) * k; e.z = e.l0.z + (e.l1.z - e.l0.z) * k; e.jy = Math.sin(k * Math.PI) * 5; if (k >= 1) { e.st = 'go'; e.jy = 0; } }
       else if (e.ai) e.ai(e, dt, d, dx, dz);
       else if (t.still || t.mine) { e.vx = 0; e.vz = 0; if (t.m === 'r_turret_single') { e.st3 = (e.st3 || 2) - dt; e.h = Math.atan2(dx, dz); if (e.st3 <= 0 && d < 130) { e.st3 = 2.6; W.enemyShoot(e, 34, 9); } } }
@@ -151,8 +155,8 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
       const reach = t.r * (e.scl || 1) + 1.7, spd = Math.abs(R.v);
       if (d < reach && spd > 7 && !t.boss && !t.elite && !t.fly && Math.abs(e.y - R.y) < 2.5 && (e.ram || 0) <= 0) { e.ram = 0.4; const fx = Math.sin(R.h), fz = Math.cos(R.h); if ((-dx * fx - dz * fz) / d > 0.3) { W.hitEnemy(e, spd * 0.9, fx * spd * 1.2 + (-dz / d) * 6, fz * spd * 1.2 + (dx / d) * 6); e.cd = 0.6; sfx('slap', { vol: 0.6, rnd: 0.3 }); burst(W.scene, e.x, e.y + 1, e.z, 'spark', '#ffd27a', 2, 0.25); if (!W.ramT || W.t - W.ramT > 6) { W.ramT = W.t; if (Math.random() < 0.4) W.say && W.say(pick(['<b>Баба Таня:</b> Посторонись, членистоногие!', '<b>Дед:</b> Таня, это таран! Как в 72-м на тракторе!', '<b>Баба Таня:</b> Пешеходам — дорогу. Жукам — нет!'])); } } }
       e.ram = (e.ram || 0) - dt;
-      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.nerve) W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
-      if (t.shoots) { e.st2 = (e.st2 || rnd(1, 3)) - dt; if (e.st2 <= 0 && d < 40) { e.st2 = rnd(2.2, 3.5); const v = new V3(dx, 0, dz).normalize().multiplyScalar(18); v.y = 4; prj.push({ k: 'spit', p: new V3(e.x, e.y + 1.5, e.z), v, g: 4, life: 3, dmg: 8 }); sfx('jump', { vol: 0.3, rate: 0.7 }); } }
+      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5 && !(W.sleepT > 0 && !t.boss) && !e.nohurt) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.nerve) W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
+      if (t.shoots && !(W.sleepT > 0)) { e.st2 = (e.st2 || rnd(1, 3)) - dt; if (e.st2 <= 0 && d < 40) { e.st2 = rnd(2.2, 3.5); const v = new V3(dx, 0, dz).normalize().multiplyScalar(18); v.y = 4; prj.push({ k: 'spit', p: new V3(e.x, e.y + 1.5, e.z), v, g: 4, life: 3, dmg: 8 }); sfx('jump', { vol: 0.3, rate: 0.7 }); } }
       if (t.elite && d < 14 && t.m === 'm_hywirl') { R.v *= 1 - dt * 0.6; R.h += dt * 0.7; if (Math.random() < 0.3) burst(W.scene, e.x, e.y + 2, e.z, 'smoke', '#c88060', 5, 0.8); } // вихрь крутит и тормозит
       e.hit = Math.max(0, e.hit - dt);
     }
@@ -160,7 +164,7 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
     const im = IM[e.type]; if (!im || cnt[e.type] >= 60 && !t.boss) continue; const s = t.sc * (e.scl || 1), sq = e.dead ? 1 + e.dt * 4 : 1, bob = t.ground ? Math.abs(Math.sin(e.ph * 1.6)) * 0.12 : 0;
     E.set(t.fly ? Math.sin(e.ph) * 0.1 : 0, e.h + (t.rot || 0), e.st === 'leap' ? -0.4 : 0, 'YXZ'); Q.setFromEuler(E); SC.set(s * sq * (1 + (t.ground ? Math.sin(e.ph * 3.2) * 0.05 : 0)), s * (e.dead ? Math.max(0.05, 1 - e.dt * 4) : 1 + (t.ground ? Math.sin(e.ph * 3.2 + 1.5) * 0.07 : Math.sin(e.ph * 2) * 0.05)), s * sq);
     if (e.st === 'buried') { SC.multiplyScalar(0.35); P.set(e.x, e.y - 0.5, e.z); } else P.set(e.x, e.y + t.y0 * (e.scl || 1) + bob, e.z);
-    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : CW); }
+    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : W.sleepT > 0 && !t.boss ? CS : t.tintC || CW); }
   for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
 
 /* ---------- опыт, находки, магнит ---------- */
