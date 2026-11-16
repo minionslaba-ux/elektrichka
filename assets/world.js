@@ -284,8 +284,9 @@ const CH = W.CH = {
       { id: 'apollo', name: 'Море Спокойствия — «Аполлон-11»', e: '👣', x: -330, z: 230, r: 80, col: '#ffd24a', kind: 'view' },
       { id: 'luno', name: 'Море Дождей — «Луноход-1»', e: '🚙', x: 340, z: 240, r: 70, col: '#7fe8ff', kind: 'view' },
       { id: 'copern', name: 'Кратер Коперник', e: '🕳', x: -340, z: -80, r: 70, col: '#c8c8d0', kind: 'view', flat: 0 },
+      { id: 'tele', name: 'Радиотелескоп', e: '📡', x: 330, z: -350, r: 50, col: '#9ad0ff', kind: 'view' },
       { id: 'port', name: 'Космодром «Луна — Земля»', e: '🚀', x: 0, z: -470, r: 90, col: '#ff4a3a', kind: 'boss' }],
-    roads: [[[0, 60], [-170, 150], [-330, 230]], [[0, 60], [170, 150], [340, 240]], [[0, 60], [0, -100], [0, -170], [0, -330], [0, -470]], [[-330, 230], [-400, 70], [-420, -80]], [[-420, -80], [-250, -110], [0, -100]], [[340, 240], [380, 40], [160, -90], [0, -100]]],
+    roads: [[[0, 60], [-170, 150], [-330, 230]], [[0, 60], [170, 150], [340, 240]], [[0, 60], [0, -100], [0, -170], [0, -330], [0, -470]], [[-330, 230], [-400, 70], [-420, -80]], [[-420, -80], [-250, -110], [0, -100]], [[340, 240], [380, 40], [160, -90], [0, -100]], [[0, -330], [170, -360], [330, -350]]],
     start: [10, 110, Math.PI],
     raw: raw12, post: post12, solid: solid12,
     road(x, z, h, k, y) { return h * (1 - k * 0.85) + y * k * 0.85; },
@@ -581,6 +582,8 @@ function buildPOIs() {
     const st = byId('station'); [['basemodule_A', -24, -16, 7, 0], ['basemodule_B', 22, -22, 7, 1], ['basemodule_C', -8, 28, 7, 2], ['k_hangar_roundGlass', 36, 10, 9, 0], ['k_satelliteDish_large', -38, 12, 6, 0.6], ['landingpad_large', 32, 42, 6, 0], ['lights', 0, 0, 6, 0], ['roofmodule_solarpanels', -36, -36, 6, 0.4], ['solarpanel', 44, -40, 6, 0]].forEach(([m, x, z, sc, ry]) => place(B, m, st.x + x, st.z + z, sc, ry)); [[-24, -16, 6], [22, -22, 6], [-8, 28, 6], [36, 10, 8]].forEach(([x, z, r]) => addC(st.x + x, st.z + z, r));
     for (let k = 0; k < 5; k++) place(B, k % 2 ? 'k_astronautA' : 'k_astronautB', st.x - 12 + k * 4, st.z + 14, 1.6, 2.8);
     const ap = byId('apollo'); place(B, 'lander_A', ap.x, ap.z, 6, 0.3); addC(ap.x, ap.z, 5); place(B, 'k_satelliteDish', ap.x + 14, ap.z - 8, 3, 1);
+    const cn = byId('copern'); place(B, 'basemodule_D', cn.x - 20, cn.z - 14, 6, 0.4); place(B, 'k_machine_generator', cn.x + 16, cn.z - 18, 4, 1); place(B, 'lights', cn.x, cn.z - 4, 5, 0);
+    const te = byId('tele'); for (let k = 0; k < 4; k++) { const a = k * 1.571 + 0.4; place(B, 'k_satelliteDish_large', te.x + Math.sin(a) * 24, te.z + Math.cos(a) * 24, 7, a + Math.PI); } for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) { B.add(BOX, mat(te.x + dx, H(te.x + dx, te.z + dz) + 3.2, te.z + dz, 0.8, 6.4, 0.8), () => TC.set('#8a8a92'), { emit: true }); addC(te.x + dx, te.z + dz, 0.5); } B.add(BOX, mat(te.x, H(te.x, te.z) + 6.2, te.z, 11, 0.4, 11), () => TC.set('#d8a43a'), { emit: true });
     const ln = byId('luno'); place(B, 'basemodule_E', ln.x + 30, ln.z - 26, 5, 1); place(B, 'k_crater', ln.x - 30, ln.z + 20, 6, 0);
     const pt = byId('port'); [['landingpad_large', -30, 10, 8, 0], ['k_rocket_baseA', -30, 10, 8, 0], ['k_rocket_fuelA', -30, 10, 8, 0, 4.6], ['k_rocket_topA', -30, 10, 8, 0, 9.2], ['structure_tall', 36, -30, 8, 0], ['k_machine_generator', 40, 26, 6, 1], ['lights', 0, 30, 6, 0]].forEach(([m, x, z, sc, ry, dy]) => place(B, m, pt.x + x, pt.z + z, sc, ry, dy || 0)); addC(pt.x - 30, pt.z + 10, 8);
     { const R12 = RAMP12, L = R12.z0 - R12.z1, a = Math.atan2(R12.h, L), hy = H(R12.x, (R12.z0 + R12.z1) / 2); B.add(BOX, mat(R12.x, hy - 0.25, (R12.z0 + R12.z1) / 2, 12, 0.5, Math.hypot(L, R12.h) + 0.4, 0, a), (cx, cy, cz, nx, ny) => TC.set(Math.abs(Math.round(cx / 2)) % 2 ? '#d8a43a' : '#3a3a42').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
@@ -713,7 +716,7 @@ function wheelsStep(dt) { const M = new THREE.Matrix4(), q = new THREE.Quaternio
   W.wpos.forEach(([lx, lz], k) => { p.set(lx, 0.62, lz).applyMatrix4(roverG.matrixWorld); const gy = H(p.x, p.z) + 0.62, t = R.air > 0 ? -0.25 : Math.max(-0.35, Math.min(0.35, gy - p.y)); W.wsus[k] += (t - W.wsus[k]) * Math.min(1, dt * 18);
     p.set(lx, 0.62 + W.wsus[k], lz).applyMatrix4(roverG.matrixWorld); e.set(roverG.rotation.x, R.h + (lz > 1 ? R.steer * 0.35 : 0), roverG.rotation.z, 'YXZ'); q.setFromEuler(e); const q2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), W.wrot); q.multiply(q2); M.compose(p, q, sc); W.wheels.setMatrixAt(k, M); });
   W.wheels.instanceMatrix.needsUpdate = true; }
-const keys = new Set(); addEventListener('keydown', (e) => keys.add(e.code)); addEventListener('keyup', (e) => keys.delete(e.code)); addEventListener('blur', () => keys.clear()); addEventListener('visibilitychange', () => document.hidden && keys.clear());
+const keys = W.keys = new Set(); addEventListener('keydown', (e) => keys.add(e.code)); addEventListener('keyup', (e) => keys.delete(e.code)); addEventListener('blur', () => keys.clear()); addEventListener('visibilitychange', () => document.hidden && keys.clear());
 function roverStep(dt) {
   // ввод: джойстик (x — руль, y — газ/тормоз-назад), клавиатура WASD/стрелки
   let thr = 0, st = 0; if (JOY.id != null) { const jy = -JOY.y, jx = JOY.x; thr = Math.abs(jy) > 0.12 ? jy : 0; st = Math.abs(jx) > 0.1 ? -jx : 0; if (W.autoFwd && thr === 0 && Math.hypot(jx, jy) > 0.1) thr = 0.6; }
