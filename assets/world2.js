@@ -26,6 +26,11 @@ const T = W.TYPES = {
   dino: { m: 'm_dino', name: 'ящер-камнеед', h: 3.4, hp: 45, sp: 7, dmg: 14, xp: 14, r: 2.4, ground: 1, elite: 1 },
   barge: { m: 'r_craft_cargoB', name: 'Баржа «ТрансГалактик»', h: 9, hp: 700, sp: 9, dmg: 20, xp: 250, r: 9, fly: 8, boss: 1, rot: Math.PI },
   bpart: { m: 'r_turret_double', name: 'двигатель баржи', h: 3, hp: 170, sp: 0, dmg: 0, xp: 30, r: 2.4, fly: 8, boss: 1 },
+  police: { m: 'k_alien', name: 'марсианский полицейский', h: 2.6, hp: 14, sp: 9, dmg: 6, xp: 5, r: 1.3, ground: 1 },
+  thief: { m: 'k_craft_cargoA', name: 'фургон похитителей', h: 3.2, hp: 170, sp: 14, dmg: 0, xp: 60, r: 3.5, fly: 1.4, elite: 1, rot: Math.PI },
+  umb: { m: 'k_satelliteDish', name: 'зонтик-щит', h: 3.2, hp: 55, sp: 0, dmg: 0, xp: 20, r: 2.2, fly: 7, elite: 1 },
+  pusik: { m: 'm_dragon', name: 'Пусик, дракончик Зурги', h: 4, hp: 150, sp: 10, dmg: 12, xp: 60, r: 2.5, fly: 4, elite: 1, shoots: 1 },
+  zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 18, xp: 300, r: 4, ground: 1, boss: 1 },
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 500, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
@@ -66,7 +71,7 @@ const gems = []; const loot = [];
 function muzzle() { const b = W.barrel; b.updateMatrixWorld(); return new V3(0, 0.8, 0).applyMatrix4(b.matrixWorld); }
 function aimDir(t) { const m = muzzle(); return new V3(t.x - m.x, (t.y + t.t.h * 0.5) - m.y, t.z - m.z).normalize(); }
 function nearest(range, from) { const o = from || R; let b = null, bd = range * range; for (const e of EN) { if (e.dead || e.st === 'buried') continue; const d = dist2(e, o); if (d < bd) { bd = d; b = e; } } return b; }
-function dmgMul() { return (1 + PERK.salt.lv * 0.15) * (W.flags && W.flags.pip ? 1.1 : 1); }
+function dmgMul() { return (1 + PERK.salt.lv * 0.15) * (W.flags && W.flags.pip ? 1.1 : 1) * (1 + (W.dmgBonus || 0)); }
 function crit() { return Math.random() < PERK.glasses.lv * 0.12 ? 2 : 1; }
 W.hitEnemy = function (e, d, kx, kz) { if (e.dead) return; if (e.immune) { if (!W.immT || W.t - W.immT > 3) { W.immT = W.t; floatText(e.immMsg || '🛡 броня!', e.x, e.y + e.t.h, e.z, '#9fd8ff'); } return; } const c = crit(); d *= c * dmgMul() * (e.p === 'stun' ? 2 : 1); e.hp -= d; e.hit = 0.12; if (kx !== undefined && !e.t.boss) { e.vx += kx; e.vz += kz; }
   if (c > 1 || d >= 8) floatText((c > 1 ? '💥' : '') + Math.round(d), e.x, e.y + e.t.h + 0.5, e.z, c > 1 ? '#ffcf3a' : '#fff');
