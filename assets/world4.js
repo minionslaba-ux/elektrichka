@@ -89,7 +89,7 @@ W.photoShot4 = function () { const P = W.ph4; if (!P) return; const q = P.tg.fil
 pb.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); W.photoShot4(); };
 addEventListener('keydown', (e) => { if (W.ph4 && (e.code === 'KeyE' || e.code === 'KeyP')) W.photoShot4(); });
 W.photoStep4 = function (dt) { const P = W.ph4; if (!P) return; P.t -= dt; let can = false, near = null, nd = 1e9;
-  for (const q of P.tg) { if (q.done || q.gone) continue; const d = Math.hypot(q.x - R.x, q.z - R.z); if (d < nd) { nd = d; near = q; } if (inFrame(q) > 0) can = true; if (q.fragile && d < 3.5) { q.gone = true; P.lost++; W.scene.remove(q.sp); sfx('dry'); W.toast('😱 Колесом по следу! ' + q.name + ' стёрт навсегда'); } }
+  for (const q of P.tg) { if (q.done || q.gone) continue; const d = Math.hypot(q.x - R.x, q.z - R.z); if (d < nd) { nd = d; near = q; } if (inFrame(q) > 0) can = true; if (q.fragile && d < 3.5) { q.gone = true; P.lost++; W.scene.remove(q.sp); sfx('dry'); W.toast('😱 ' + (W.rd4 ? 'Наступила на след! ' : 'Колесом по следу! ') + q.name + ' стёрт навсегда'); } }
   pb.style.display = can ? 'block' : 'none'; fr.style.display = nd < 45 ? 'block' : 'none'; fr.style.borderColor = can ? '#7aff8a' : '#fff8';
   if (near && W.obj) { W.obj.x = near.x; W.obj.z = near.z; }
   const left = P.tg.filter((q) => !q.done && !q.gone).length; $('wdObj').innerHTML = '📷 Снимки: <b>' + P.got + ' из ' + P.need + '</b> · 🌍 свет Земли ещё <b>' + Math.max(0, Math.round(P.t)) + ' с</b>' + (P.lost ? ' · стёрто ' + P.lost : '') + ' · не наезжай на следы';
@@ -314,7 +314,7 @@ VEH.boat = (() => { const old = VEH.boat; return () => { const g = old(); const 
 
 W.ride4 = function (o) { W.rideEnd4(); const V = W.rd4 = Object.assign({ park: { x: R.x, z: R.z, h: R.h, y: R.y } }, o); V.m = typeof o.mesh === 'string' ? VEH[o.mesh]() : o.mesh; W.scene.add(V.m);
   if (o.parked) { V.car = new THREE.Group(); V.car.add(W.roverG.clone()); V.car.position.set(R.x, R.y, R.z); V.car.rotation.y = R.h; W.scene.add(V.car); }
-  W.foot = 1; W.camK = o.cam || ({ granny: 0.55, suit: 0.55, cat: 0.5, jet: 0.6, camel: 0.8, boat: 0.75, drone: 0.9, glider: 1.1, balloon: 1.3, heli: 1.1, rocket: 1.2, saucer: 1 })[o.mesh] || 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; W.hover = /^(heli|drone|jet|balloon|cat|granny|suit|camel)$/.test(o.mesh) ? 1 : 0; return V; };
+  W.foot = 1; W.camK = o.cam || ({ granny: 0.55, suit: 0.55, cat: 0.5, jet: 0.6, camel: 0.8, boat: 0.75, drone: 0.9, glider: 1.1, balloon: 1.3, heli: 1.1, rocket: 1.2, saucer: 1 })[o.mesh] || 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; W.hover = /^(heli|drone|jet|balloon|cat|granny|suit)$/.test(o.mesh) ? 1 : 0; return V; };
 W.rideEnd4 = function (back) { const V = W.rd4; if (!V) return; W.scene.remove(V.m); if (V.car) W.scene.remove(V.car); W.rd4 = null; W.foot = 0; W.camK = 0; W.hover = 0; W.flyMode = 0; W.flyAlt = W.flyK = undefined; W.flyY = undefined; W.vmaxCap = 0; W.glide = 0; W.swimK = 0; if (V.noFire) W.noFire = 0;
   if (back) { R.x = V.park.x; R.z = V.park.z; R.h = V.park.h; } R.y = W.H(R.x, R.z); R.v = 0; R.vy = 0; R.mx = R.mz = 0; };
 clear4.push(() => W.rideEnd4());
@@ -860,10 +860,10 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
    ===================================================================== */
 (function ch12() { const S = A.CHAPTERS[12]; if (!S) return; const mi = S.findIndex((s) => s.id === 'mirror'), ji = S.findIndex((s) => s.id === 'jump'), ri = S.findIndex((s) => s.id === 'robot'); if (mi < 0 || ji < 0 || ri < 0) return;
   const photo = { id: 'photo12', start() { A.setObj('Море Спокойствия: следы «Аполлона-11»', byId('apollo')); }, arrive: 'apollo',
-    onArrive() { W.talk([['pip', 'Здесь в 1969 году высадились Армстронг и Олдрин. Ветра на Луне нет — их следы лежат уже больше 50 лет, как вчера.'], ['vp', 'Земля просит снимки: отражатель и следы. По ним поймут, куда светить лазером, — и найдут станцию.'], ['pip', 'Наведи «Буханку» прямо на цель, остановись и жми 📷. И не наезжай на следы — сотрёшь историю!'], ['ded', 'Таня, я буду в кадре. Сзади. Помашу.']], () => run()); } };
-  function run() { const ap = byId('apollo'); W.photo4({ need: 4, time: 150, tg: [{ x: ap.x + 20, z: ap.z - 18, e: '🪞', name: 'Отражатель «Аполлона»', y: 1.2 }, { x: ap.x - 26, z: ap.z + 6, e: '👣', name: 'След Армстронга', fragile: 1, y: 0.8 }, { x: ap.x - 8, z: ap.z + 30, e: '👣', name: 'След Олдрина', fragile: 1, y: 0.8 }, { x: ap.x + 34, z: ap.z + 26, e: '👣', name: 'Колея ровера', fragile: 1, y: 0.8 }, { x: ap.x - 40, z: ap.z - 30, e: '🚩', name: 'Флаг экспедиции', y: 2.5 }],
-      onWin() { W.give('money', 900); W.st.fuel = Math.max(W.st.fuel, 80); W.talk([['gena', '<b>Марс-ФМ</b> с Земли: «Видим снимки! Лазер нашёл отражатель — станция на связи!»'], ['vp', 'Нас видят! Теперь «Луноход-1» в Море Дождей: его аккумуляторы нужны шаттлу.']], () => A.adv()); },
-      onFail(why) { W.talk([['vp', why === 'time' ? 'Земля ушла за горизонт кратера… Подождём следующего окна — снимай быстрее.' : 'Ой, следы стёрты. Ничего, рядом есть ещё — Пип нашёл. Попробуй снова, аккуратнее.']], () => run()); } });
+    onArrive() { W.talk([['pip', 'Здесь в 1969 году высадились Армстронг и Олдрин. Ветра на Луне нет — их следы лежат уже больше 50 лет, как вчера.'], ['vp', 'Земля просит снимки: отражатель и следы. По ним поймут, куда светить лазером, — и найдут станцию.'], ['pip', 'Колёсами тут нельзя — сотрём историю. Бабуля, скафандр! Прыгай, как астронавты «Аполлона», наведи камеру и жми 📷. На следы не наступай!'], ['ded', 'Таня, я буду в кадре. Сзади. Помашу.']], () => run()); } };
+  function run() { const ap = byId('apollo'); W.rideEnd4(); W.ride4({ mesh: 'suit', parked: 1, vmax: 6, noFire: 1, tick(dt, V) { V.dy = Math.abs(R.v) > 1 ? Math.abs(Math.sin(W.t * 3.2)) * 1.6 : 0; } }); W.photo4({ need: 4, time: 150, tg: [{ x: ap.x + 20, z: ap.z - 18, e: '🪞', name: 'Отражатель «Аполлона»', y: 1.2 }, { x: ap.x - 26, z: ap.z + 6, e: '👣', name: 'След Армстронга', fragile: 1, y: 0.8 }, { x: ap.x - 8, z: ap.z + 30, e: '👣', name: 'След Олдрина', fragile: 1, y: 0.8 }, { x: ap.x + 34, z: ap.z + 26, e: '👣', name: 'Колея ровера', fragile: 1, y: 0.8 }, { x: ap.x - 40, z: ap.z - 30, e: '🚩', name: 'Флаг экспедиции', y: 2.5 }],
+      onWin() { W.rideEnd4(true); W.give('money', 900); W.st.fuel = Math.max(W.st.fuel, 80); W.talk([['gena', '<b>Марс-ФМ</b> с Земли: «Видим снимки! Лазер нашёл отражатель — станция на связи!»'], ['vp', 'Нас видят! Теперь «Луноход-1» в Море Дождей: его аккумуляторы нужны шаттлу.']], () => A.adv()); },
+      onFail(why) { W.rideEnd4(true); W.talk([['vp', why === 'time' ? 'Земля ушла за горизонт кратера… Подождём следующего окна — снимай быстрее.' : 'Ой, следы стёрты. Ничего, рядом есть ещё — Пип нашёл. Попробуй снова, аккуратнее.']], () => run()); } });
     A.setObj('Сними отражатель и следы: наведи, остановись, 📷', { x: ap.x, z: ap.z }); }
   const code = { id: 'code12', start() { A.setObj('Кратер Коперник: старая база «Заря»', byId('copern')); }, arrive: 'copern',
     onArrive() { W.talk([['pip', 'Кратер Коперник — 93 километра в поперечнике, его видно с Земли в бинокль. На дне — старая база «Заря». Там запасной прожектор для прыжка через борозду.'], ['vzysk', '<i>(робот-охранник базы)</i> ВВЕДИТЕ КОД. Я ПОКАЖУ. ПОВТОРИТЕ. ТРИ ОШИБКИ — ТРЕВОГА.']], () => run2()); } };
@@ -901,6 +901,15 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       okSay: ['Асель: «Верно!»', 'Дед: «Таня, ты космический профессор»', 'Внуки: «Бабуля знает!»', 'Гоша: «Мяу» (одобрительно)'] },
     () => { W.give('money', 1200); W.give('parts', 3); W.talk([['asel', 'Сдано! Значок «Почётный космонавт» — ваш. И сувенирные баурсаки.'], ['asel', 'А теперь — аул у колодца: ата Нурлан звонил, к нему прибежали ваши зверушки.']], () => A.adv()); },
     () => W.talk([['asel', 'Пересдача! Не страшно — Гагарин тоже учился. Давайте ещё раз.']], () => run())); }
+  const rk = S13.find((s) => s.id === 'rocket'), hd = S13.find((s) => s.id === 'herd');
+  if (rk) { const ot = rk.tick; rk.tick = function (dt) { ot.call(this, dt); const T = W.train13; if (T && !T.up) { const px = T.px === undefined ? T.x : T.px, pz = T.pz === undefined ? T.z : T.pz, dx = T.x - px, dz = T.z - pz, dl = Math.hypot(dx, dz); if (dl > 0.01) T.dir = Math.atan2(dx, dz); T.px = T.x; T.pz = T.z; const a = T.dir || 0; R.x = T.x - Math.sin(a) * 26; R.z = T.z - Math.cos(a) * 26; R.v = 0; W.lockY = W.H(R.x, R.z) + 2.6; W.onTrain = 1;
+        const J = BM.JOY; if (J && J.id != null) R.h -= J.x * dt * 1.8; if (W.keys) { if (W.keys.has('ArrowLeft') || W.keys.has('KeyA')) R.h += dt * 1.8; if (W.keys.has('ArrowRight') || W.keys.has('KeyD')) R.h -= dt * 1.8; } }
+      else if (W.onTrain) { W.onTrain = 0; W.lockY = undefined; R.x += 14; R.y = W.H(R.x, R.z); } };
+    const oa = rk.onArrive; rk.onArrive = function () { oa.call(this); W.toast('🚂 «Буханка» на платформе поезда! Крути башню джойстиком'); }; }
+  clear4.push(() => { if (W.onTrain) { W.onTrain = 0; W.lockY = undefined; } });
+  if (hd) { const oa = hd.onArrive, ot = hd.tick; hd.onArrive = function () { W.talk([['nurlan', 'Зверушки пугаются мотора. Садись на мою ламу — подарок друга из Перу. Она упрямая, но зверушки её любят.'], ['tanya', 'Лама так лама. В 1975-м я на ишаке в Бухаре каталась.']], () => { oa.call(this); W.ride4({ mesh: 'camel', parked: 1, vmax: 12, noFire: 1 }); W.ll13 = { t: 6 }; W.calm = 1; W.EN.forEach((e) => { if (!e.keep && !e.pet) e.dead = true; }); }); };
+    hd.tick = function (dt) { const L = W.ll13; if (L && W.herd13 && !W.paused) { L.t -= dt; if (L.t <= 0 && !L.on) { L.on = 1; L.t = rnd(12, 16); L.dir = Math.random() < 0.5 ? -1 : 1; W.toast('🦙 Лама увидела колючку и тянет в сторону!'); } if (L.on > 0) { L.on -= dt; R.h += L.dir * dt * 1.4; if (L.on <= 0) L.on = 0; } }
+      ot.call(this, dt); if (!W.herd13 && W.rd4) { W.rideEnd4(true); W.ll13 = null; W.calm = 0; } }; }
   S13.splice(hi, 0, quiz); })();
 
 /* =====================================================================
@@ -930,6 +939,18 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       onWin() { W.setNight(0); W.give('money', 1200); W.give('parts', 4); W.talk([['lida', 'Ушли тихо! Эхолот показывает: омут Сома — у песчаной косы. Рыбакам сети вернём утром.'], ['ded', 'Таня, я первый раз в жизни что-то украл. И то — обратно.']], () => A.adv()); } });
     A.setObj('Тихо забери 2 сети и эхолот', { x: b.x, z: b.z }); }
   clear4.push(() => { if (W.setNight && W.ch === 14) W.setNight(0); });
+  // арбузы — на моторке по Волге: волны от барж бьют арбузы
+  const ml = S14.find((s) => s.id === 'melon');
+  if (ml) { ml.onArrive = function () { W.talk([['mikh', 'Грузим десять штук в мою моторку — по Волге до пристани Камышина быстрее. Волны от барж — арбуз бьётся. Довези хотя бы семь.'], ['ded', 'Таня, я держу арбузы. Двумя руками. Ты рули.']], () => boatGo()); };
+    ml.tick = function (dt) { const M = W.melon14; if (!M) return; M.cd -= dt; M.wt -= dt; if (M.wt <= 0 && !W.paused) { M.wt = rnd(2.4, 3.6); const a = R.h + rnd(-0.5, 0.5), d = Math.max(18, Math.abs(R.v) * 2), x = R.x + Math.sin(a) * d, z = R.z + Math.cos(a) * d; A.drop11(x, z, { r: 5, dmg: 4, col: '#bfe8ff', why: 'волна от баржи', t: 1.6, t0: 1.6 }); }
+      A.hits11Step(dt); let lost = 0; if (W.st.hull < M.hull - 0.5) lost = 1; M.hull = W.st.hull; if (!W.swim && Math.abs(R.v) > 2) { R.v *= 0.85; if ((M.mt = (M.mt || 0) - dt) <= 0) { M.mt = 2; W.toast('⚓ Мель! Держись воды'); } }
+      if (lost && M.cd <= 0) { M.cd = 0.8; M.n--; sfx('pot', { vol: 0.6 }); burst(W.scene, R.x, R.y + 2, R.z, 'smoke', '#ff4a6a', 3, 0.5); W.toast('🍉 Арбуз разбился о волну! Осталось ' + M.n); }
+      const pr = M.pier; if (W.obj) { W.obj.x = pr.x; W.obj.z = pr.z; } $('wdObj').innerHTML = '🚤 Арбузы: <b>' + M.n + ' из 10</b> · нужно 7 · до пристани ' + Math.round(Math.hypot(R.x - pr.x, R.z - pr.z)) + ' м · волны — в обход';
+      if (M.n < 7) { W.melon14 = null; W.rideEnd4(); W.talk([['mikh', 'Слишком много разбилось… Ничего, на бахче ещё есть. Грузим заново.']], () => boatGo()); return; }
+      if (Math.hypot(R.x - pr.x, R.z - pr.z) < 16) { const n = M.n; W.melon14 = null; W.rideEnd4(); const km = byId('kam'); R.x = km.x + 30; R.z = km.z + 20; R.y = W.H(R.x, R.z); W.give('money', 300 * n); W.give('food', 3); sfx('j_win1'); confetti && confetti();
+        W.talk([['mikh', 'Довезли ' + n + ' штук! А «Буханку» мой племянник пригнал по берегу. Праздник спасён!'], ['tanya', 'Михалыч, а праздник-то когда?'], ['mikh', 'Да прямо сейчас, на площади! Только помоги с лентой.']], () => A.adv()); } }; }
+  function boatGo() { const zs = -160, x0 = W.riverX14(zs) - 60, zp = 140, pier = { x: W.riverX14(zp) - 62, z: zp }; R.x = x0; R.z = zs; R.y = W.H(R.x, R.z); R.h = 0; R.v = 0; W.ride4({ mesh: 'boat', vmax: 15, swimK: 1.1, noFire: 1, cam: 0.8 }); W.melon14 = { n: 10, air: 0, hull: W.st.hull, vy: 0, cd: 0, wt: 3, pier }; W.calm = 1; A.setObj('Довези арбузы на моторке до пристани Камышина', pier); }
+  clear4.push(() => { if (W.melon14 && W.rd4) W.rideEnd4(); });
   if (bi >= 0) S14.splice(bi, 1, nets); const fi = S14.findIndex((s) => s.id === 'ferry'); S14.splice(fi, 0, sortStep);
 })();
 
