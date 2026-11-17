@@ -384,6 +384,7 @@ function buildTerrain() {
     if (CHC.clouds) { t.set('#f2d48e').lerp(new THREE.Color('#a8763a'), sstep(-36, -58, y) * 0.8).lerp(new THREE.Color('#fff0c8'), sstep(-34, -24, y) * 0.6); C.push(t.r, t.g, t.b); continue; }
     const rd = roadDist(x, z); if (rd < 7) t.lerp(cRoad, (1 - sstep(3, 7, rd)) * 0.75);
     for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color(W.ch === 13 || W.ch === 14 ? '#a8a070' : W.ch === 8 || W.ch === 12 ? '#5a5a62' : W.ch === 10 ? '#8a9aac' : W.ch === 11 ? '#6a4a30' : '#8a5048'), 0.35 * (1 - d / p.r)); }
+    { const l = t.r * 0.3 + t.g * 0.59 + t.b * 0.11; t.r += (l - t.r) * 0.2; t.g += (l - t.g) * 0.2; t.b += (l - t.b) * 0.2; } // фон чуть приглушён — яркими остаются цели и свет
     C.push(t.r, t.g, t.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); if (!CHC.cloud) MG = MGn;
   terrain = new THREE.Mesh(g, (typeof lowEnd !== 'undefined' && lowEnd) ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, specular: 0x000000 })); S.add(terrain); // попиксельный свет — без видимых треугольников рельефа
@@ -395,7 +396,10 @@ function autoColl(m, x, z, s, ry) { if (!W.COLL || NOCOLL.test(m)) return; const
   const cx = (bb.max.x + bb.min.x) / 2 * s, cz = (bb.max.z + bb.min.z) / 2 * s, c = Math.cos(ry), sn = Math.sin(ry), px = x + cx * c + cz * sn, pz = z - cx * sn + cz * c, soft = h < 6, long = Math.max(w, d), short = Math.max(0.6, Math.min(w, d)), r = short / 2 * 0.9;
   if (long / short < 1.6) { W.COLL.push({ x: px, z: pz, r: Math.max(w, d) / 2 * 0.82 * (/Spaceship|craft_cargo|hangar_large|spacetruck/.test(m) ? 0.55 : 1), soft }); return; }
   const ax = w > d ? c : sn, az = w > d ? -sn : c, n = Math.ceil(long / short), kk = /Spaceship|craft_cargo|hangar_large|spacetruck/.test(m) ? 0.55 : 1; for (let k = 0; k < n; k++) { const t = (k + 0.5) / n - 0.5; W.COLL.push({ x: px + ax * t * long * kk, z: pz + az * t * long * kk, r: r * kk, soft }); } }
-function place(B, m, x, z, s, ry = 0, dy = 0) { if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { crease: 0.6, vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
+let GLOWT = null; function glowTex() { if (GLOWT) return GLOWT; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,230,180,1)'); gr.addColorStop(0.25, 'rgba(255,190,110,0.55)'); gr.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); GLOWT = new THREE.CanvasTexture(c); return GLOWT; }
+function glowAt(x, y, z, sc, col) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: col || '#ffd29a', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.8 })); sp.position.set(x, y, z); sp.scale.setScalar(sc); S.add(sp); return sp; }
+W.glowAt = glowAt;
+function place(B, m, x, z, s, ry = 0, dy = 0) { if (/^lights$|campfire/.test(m) && MODELS && MODELS[m]) glowAt(x, H(x, z) + dy + (m === 'lights' ? s * 1.1 : s * 0.4), z, s * (m === 'lights' ? 1.6 : 2.2), m === 'lights' ? '#fff0c0' : '#ffa050'); if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { crease: 0.6, vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
 function buildPOIs() {
   const B = new Builder([]); W.COLL = []; const addC = (x, z, r) => W.COLL.push({ x, z, r }), byId = (id) => POI.find((p) => p.id === id);
   if (W.ch === 1) {
@@ -792,6 +796,7 @@ function buildUI() {
   #wdXp{position:absolute;left:0;right:0;top:0;height:4px;background:rgba(0,0,0,.4)}#wdXp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fe8ff,#b07aff);box-shadow:0 0 8px #7fe8ff}
   #wdBtns{position:absolute;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));display:grid;gap:10px;pointer-events:auto}#wdBtns button{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(30,14,22,.62);font-size:24px;color:#fff;touch-action:manipulation}
   #wdCross.lock{border-color:#ff4a3a;box-shadow:0 0 12px #ff4a3a,0 0 0 1px #000 inset;transform:scale(.8)}#wdCross{transition:transform .12s}#wdCross.lock:before,#wdCross.lock:after{background:#ff4a3a}
+  #wdVig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 48%,rgba(0,0,0,0) 55%,rgba(10,6,4,.42) 100%)}
   #wdFire{position:absolute;right:84px;bottom:calc(30px + env(safe-area-inset-bottom));width:96px;height:96px;border-radius:50%;border:3px solid #ffd27a;background:radial-gradient(circle at 50% 40%,#ff7a3a,#b8281a);color:#fff;font:900 15px system-ui;text-shadow:0 1px 2px #000;pointer-events:auto;touch-action:none;display:none;box-shadow:0 6px 20px rgba(255,90,40,.5);user-select:none;-webkit-user-select:none}#wdFire b{display:block;font-size:30px;line-height:1}#wdFire.on{transform:scale(.92);background:radial-gradient(circle at 50% 40%,#ffb03a,#e0401a)}
   #wdCross{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border:2px solid rgba(255,240,200,.85);border-radius:50%;display:none;box-shadow:0 0 0 1px #000 inset}#wdCross:before,#wdCross:after{content:'';position:absolute;background:rgba(255,240,200,.9)}#wdCross:before{left:50%;top:-10px;bottom:-10px;width:2px;margin-left:-1px}#wdCross:after{top:50%;left:-10px;right:-10px;height:2px;margin-top:-1px}
   #wdDash{position:absolute;left:0;right:0;bottom:0;height:32vh;display:none;background:linear-gradient(180deg,rgba(0,0,0,0),#1a1014 18%,#2a1a20);border-top:3px solid #3a2a30}body.wdcab #wdDash{display:block}
@@ -804,7 +809,7 @@ function buildUI() {
   `; document.head.appendChild(css);
   const h = document.createElement('div'); h.id = 'wdHud'; h.innerHTML = `<div id="wdXp"><i></i></div>
     <div id="wdTop"><div class="wdBars"><div class="wdBar"><i id="wbHull" style="background:linear-gradient(90deg,#ff7a4a,#ffd24a)"></i><b>🛠 корпус</b></div><div class="wdBar"><i id="wbNerv" style="background:linear-gradient(90deg,#ff4a8a,#ff9ad5)"></i><b>❤ нервы бабули</b></div></div><div id="wdRes"></div></div>
-    <div id="wdObj"></div><div id="wdComp"></div><div id="wdCross"></div><button id="wdFire"><b>🎯</b>ОГОНЬ</button>
+    <div id="wdVig"></div><div id="wdObj"></div><div id="wdComp"></div><div id="wdCross"></div><button id="wdFire"><b>🎯</b>ОГОНЬ</button>
     <svg id="wdCrack" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M70 20 L64 30 L72 38 L60 52 M64 30 L54 28 M72 38 L84 44" stroke="rgba(255,255,255,.7)" stroke-width=".4" fill="none"/><path d="M22 34 L30 42 L24 50 L34 60" stroke="rgba(255,255,255,.6)" stroke-width=".35" fill="none"/></svg>
     <div id="wdDash"><div class="glass"></div><div id="wdPie">🥟</div><div id="wdWheel"></div><div class="dial" id="dSpd"><div><b id="dSpdV">0</b><small>км/ч</small></div></div><div class="dial" id="dFuel"><div><b id="dFuelV">0</b><small>⛽ %</small></div></div></div>
     <div id="wdBtns"><button id="wdView">🎥</button><button id="wdJam">🫙</button><button id="wdMapB">🗺</button></div>`;

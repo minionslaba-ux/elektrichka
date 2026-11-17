@@ -962,5 +962,6 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       p.beam.visible = isT || city; p.beam.scale.set(isT ? 2.2 : 1, 1, isT ? 2.2 : 1);
       if (!isT && !W.paused && later[p.id] && Math.hypot(R.x - p.x, R.z - p.z) < p.r * 0.75 && !told[W.ch + p.id]) { told[W.ch + p.id] = 1; W.toast('🔒 ' + p.e + ' ' + p.name.split(' —')[0] + ': сюда — позже (миссия ' + later[p.id] + '). Сейчас цель — ' + (cur && cur.arrive ? '🎯 на стрелке' : 'на экране')); } } };
   W.beamsGlow = 1; })();
+(function hintFix() { const d0 = W.director; let ht = 0; W.director = function (dt) { d0 && d0(dt); const h = document.getElementById('hint'); if (!h || !h.classList.contains('on')) { ht = 0; return; } ht += dt; if (W.foot || W.mini.cur() || ht > 9) h.classList.remove('on'); }; })();
 
 };
