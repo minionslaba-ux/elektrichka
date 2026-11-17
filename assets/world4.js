@@ -759,4 +759,14 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   clear4.push(() => { if (W.setNight && W.ch === 14) W.setNight(0); });
   if (bi >= 0) S14.splice(bi, 1, nets); const fi = S14.findIndex((s) => s.id === 'ferry'); S14.splice(fi, 0, sortStep);
 })();
+
+/* ---------- световые столбы: яркий — только над текущей целью; города — тусклые; остальные спрятаны ---------- */
+(function beams4() { const d0 = W.director; let bt = 0; const told = {};
+  W.director = function (dt) { d0 && d0(dt); bt -= dt; if (bt > 0) return; bt = 0.25;
+    const L = A.STEPSC || [], si = A.stepI, cur = L[si], tgt = W.side ? null : cur && cur.arrive, later = {}; L.forEach((q, i) => { if (q.arrive && i > si) later[q.arrive] = i + 1; });
+    for (const p of W.POI) { if (!p.beam) continue; const isT = p.id === tgt && !cur.arrived, city = p.kind === 'city';
+      p.beam.visible = isT || city; p.beam.scale.set(isT ? 2.2 : 1, 1, isT ? 2.2 : 1);
+      if (!isT && !W.paused && later[p.id] && Math.hypot(R.x - p.x, R.z - p.z) < p.r * 0.75 && !told[W.ch + p.id]) { told[W.ch + p.id] = 1; W.toast('🔒 ' + p.e + ' ' + p.name.split(' —')[0] + ': сюда — позже (миссия ' + later[p.id] + '). Сейчас цель — ' + (cur && cur.arrive ? '🎯 на стрелке' : 'на экране')); } } };
+  W.beamsGlow = 1; })();
+
 };
