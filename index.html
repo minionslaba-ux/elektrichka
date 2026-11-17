@@ -294,12 +294,21 @@ const soft = (v) => (v < 0.82 ? v : 0.82 + 0.18 * (1 - Math.exp(-(v - 0.82) * 4)
 const TC = new THREE.Color(), C = (h) => new THREE.Color(h);
 
 /* сборщик геометрии с запечённым светом (цвет по вершинам) */
+// сглаживание с сохранением острых рёбер: соседние грани под углом меньше crease получают общую нормаль (без видимых треугольников)
+function creased(geo, ang) { geo.userData.cr = geo.userData.cr || {}; if (geo.userData.cr[ang]) return geo.userData.cr[ang];
+  const g = geo.index ? geo.toNonIndexed() : geo.clone(); g.deleteAttribute('normal'); const P = g.attributes.position, n = P.count, F = new Float32Array(n), cos = Math.cos(ang), N = new Float32Array(n * 3), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), fn = new Float32Array(n);
+  const FN = new Float32Array(n); const fnv = []; for (let i = 0; i < n; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); const v = c.sub(b).cross(a.sub(b)).normalize(); fnv.push(v.x, v.y, v.z); }
+  const map = new Map(), key = (i) => Math.round(P.getX(i) * 1000) + ',' + Math.round(P.getY(i) * 1000) + ',' + Math.round(P.getZ(i) * 1000);
+  for (let i = 0; i < n; i++) { const k = key(i); let L = map.get(k); if (!L) map.set(k, (L = [])); L.push(i); }
+  for (const L of map.values()) for (const i of L) { const fi = Math.floor(i / 3) * 3, ax = fnv[fi], ay = fnv[fi + 1], az = fnv[fi + 2]; let sx = 0, sy = 0, sz = 0; for (const j of L) { const fj = Math.floor(j / 3) * 3, bx = fnv[fj], by = fnv[fj + 1], bz = fnv[fj + 2]; if (ax * bx + ay * by + az * bz >= cos) { sx += bx; sy += by; sz += bz; } } const l = Math.hypot(sx, sy, sz) || 1; N[i * 3] = sx / l; N[i * 3 + 1] = sy / l; N[i * 3 + 2] = sz / l; }
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); geo.userData.cr[ang] = g; return g; }
 class Builder {
   constructor(lamps, keepN) { this.lamps = lamps || []; this.p = []; this.c = []; this.n = keepN ? [] : null; }
   add(geo, m, col, o = {}) {
     let g;
     // нормали всегда пересчитываем во Float32: у сжатых моделей (Int8) .array хранит сырые числа до 127, и свет «выгорал»
-    if (o.flat === false) { g = geo.clone(); if (m) g.applyMatrix4(m); g.deleteAttribute('normal'); g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
+    if (o.crease) { g = creased(geo, o.crease).clone(); if (m) g.applyMatrix4(m); }
+    else if (o.flat === false) { g = geo.clone(); if (m) g.applyMatrix4(m); g.deleteAttribute('normal'); g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
     else { g = geo.index ? geo.toNonIndexed() : geo.clone(); if (m) g.applyMatrix4(m); g.deleteAttribute('normal'); g.computeVertexNormals(); }
     const P = g.attributes.position.array, N = g.attributes.normal.array, fixed = typeof col !== 'function' ? new THREE.Color(col) : null;
     for (let i = 0; i < P.length; i += 9) {

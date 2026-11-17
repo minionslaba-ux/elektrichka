@@ -386,7 +386,7 @@ function buildTerrain() {
     for (const p of POI) { const d = Math.hypot(x - p.x, z - p.z); if (d < p.r) t.lerp(new THREE.Color(W.ch === 13 || W.ch === 14 ? '#a8a070' : W.ch === 8 || W.ch === 12 ? '#5a5a62' : W.ch === 10 ? '#8a9aac' : W.ch === 11 ? '#6a4a30' : '#8a5048'), 0.35 * (1 - d / p.r)); }
     C.push(t.r, t.g, t.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); if (!CHC.cloud) MG = MGn;
-  terrain = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true })); S.add(terrain);
+  terrain = new THREE.Mesh(g, (typeof lowEnd !== 'undefined' && lowEnd) ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, specular: 0x000000 })); S.add(terrain); // попиксельный свет — без видимых треугольников рельефа
 }
 // столкновения у всего крупного: по габаритам модели (длинное — цепочкой кругов); трава, грядки, мелочь, площадки и трамплины — проходимы
 const NOCOLL = /roundGlass|grass|crop|Crop|flower|path|planter|plant|_[1-4]$|mushroom|^o_|^m_(apple|banana|beet|bread|cabbage|carrot|corn|fish|honey|pumpkin|strawberry|tomato|can)|lights|crater|landingpad|platform|ramp|astronaut|alien|bench|chair|table|bucket|tool|^s_fish|campfire|signpost|solarpanel|Spaceship5|cone|stump/;
@@ -395,7 +395,7 @@ function autoColl(m, x, z, s, ry) { if (!W.COLL || NOCOLL.test(m)) return; const
   const cx = (bb.max.x + bb.min.x) / 2 * s, cz = (bb.max.z + bb.min.z) / 2 * s, c = Math.cos(ry), sn = Math.sin(ry), px = x + cx * c + cz * sn, pz = z - cx * sn + cz * c, soft = h < 6, long = Math.max(w, d), short = Math.max(0.6, Math.min(w, d)), r = short / 2 * 0.9;
   if (long / short < 1.6) { W.COLL.push({ x: px, z: pz, r: Math.max(w, d) / 2 * 0.82 * (/Spaceship|craft_cargo|hangar_large|spacetruck/.test(m) ? 0.55 : 1), soft }); return; }
   const ax = w > d ? c : sn, az = w > d ? -sn : c, n = Math.ceil(long / short), kk = /Spaceship|craft_cargo|hangar_large|spacetruck/.test(m) ? 0.55 : 1; for (let k = 0; k < n; k++) { const t = (k + 0.5) / n - 0.5; W.COLL.push({ x: px + ax * t * long * kk, z: pz + az * t * long * kk, r: r * kk, soft }); } }
-function place(B, m, x, z, s, ry = 0, dy = 0) { if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
+function place(B, m, x, z, s, ry = 0, dy = 0) { if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { crease: 0.6, vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
 function buildPOIs() {
   const B = new Builder([]); W.COLL = []; const addC = (x, z, r) => W.COLL.push({ x, z, r }), byId = (id) => POI.find((p) => p.id === id);
   if (W.ch === 1) {
@@ -599,7 +599,7 @@ function buildPOIs() {
     place(B, W.ch >= 13 ? (r < 0.4 ? 'n_grass_large' : r < 0.7 ? 'n_plant_bush' : r < 0.85 ? 'n_rock_smallA' : 'n_plant_bushLarge') : W.ch === 10 ? (r < 0.6 ? 'k_rock_crystals' : 'k_rock_crystalsLargeA') : r < 0.45 ? 'rocks_A' : r < 0.7 ? 'rocks_B' : r < 0.85 ? 'k_rock_largeA' : r < 0.95 ? 'k_rocks_smallA' : 'k_meteor_detailed', x, z, 3 + hash(k, 31) * 6, hash(k, 37) * 6.28, -0.3); }
   if (B.p.length) S.add(new THREE.Mesh(B.build(), bakedMat));
   // россыпь камней (по одной сетке на вид камня — один вызов отрисовки)
-  [['rock_A', 600, 2, 7], ['rocks_A', 240, 2, 5]].forEach(([m, n, s0, s1], q) => { if (!MODELS || !MODELS[m] || CHC.clouds || W.ch >= 10) return; const b = new Builder([]); b.add(MODELS[m], null, null, { vcol: true, vk: CHC.dark ? 0.5 : 0.95 }); const im = new THREE.InstancedMesh(b.build(), bakedMat, CHC.dark ? n >> 2 : n); let c2 = 0;
+  [['rock_A', 600, 2, 7], ['rocks_A', 240, 2, 5]].forEach(([m, n, s0, s1], q) => { if (!MODELS || !MODELS[m] || CHC.clouds || W.ch >= 10) return; const b = new Builder([]); b.add(MODELS[m], null, null, { crease: 0.9, vcol: true, vk: CHC.dark ? 0.5 : 0.95 }); const im = new THREE.InstancedMesh(b.build(), bakedMat, CHC.dark ? n >> 2 : n); let c2 = 0;
     for (let k = 0; k < n * 2 && c2 < im.count; k++) { const x = (hash(k, 41 + q) - 0.5) * SIZE * 0.96, z = (hash(k, 43 + q) - 0.5) * SIZE * 0.96; if (roadDist(x, z) < 8 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r * 0.8) || (CHC.dark && cave4(x, z) < 0.6)) continue; const sc = s0 + hash(k, 47) * (s1 - s0); im.setMatrixAt(c2++, mat(x, H(x, z) - 0.15 * sc, z, sc, sc * (0.6 + hash(k, 53)), sc, hash(k, 59) * 6.28)); if (sc > 4 && W.COLL) W.COLL.push({ x, z, r: sc * 0.35, soft: true }); }
     im.count = c2; S.add(im); });
   // световые столбы над местами

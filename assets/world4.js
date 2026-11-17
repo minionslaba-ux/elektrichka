@@ -297,7 +297,7 @@ const VEH = {
 };
 W.VEH = VEH;
 // настоящие модели вместо самоделок: бабуля (Quaternius), кот Гоша (герой с «Буханки»), лама, аппараты Kenney
-function kmodel(name, sc, ry = 0, dy = 0) { if (!MODELS || !MODELS[name]) return null; const b = new Builder([]); b.add(MODELS[name], mat(0, dy, 0, sc, sc, sc, ry), null, { vcol: true, vk: 1.05 }); return new THREE.Mesh(b.build(), bakedMat); }
+function kmodel(name, sc, ry = 0, dy = 0) { if (!MODELS || !MODELS[name]) return null; const b = new Builder([]); b.add(MODELS[name], mat(0, dy, 0, sc, sc, sc, ry), null, { crease: 0.6, vcol: true, vk: 1.05 }); return new THREE.Mesh(b.build(), bakedMat); }
 function animModel(g, name, h, fallback, dy = 0) { const fb = fallback; if (fb) g.add(fb); if (!BM.monster) return g; BM.monster(name, h).then((r) => { if (!g.parent) return; if (fb) g.remove(fb); r.position.y = dy; g.add(r); g.anim = r; const A2 = r.userData.acts, pickC = (re) => Object.keys(A2).find((k) => re.test(k)); g.clipWalk = pickC(/walk/i) || pickC(/run/i); g.clipIdle = pickC(/idle/i) || g.clipWalk; if (g.clipIdle) r.userData.play(g.clipIdle, 0); }).catch(() => {}); return g; }
 const oldGranny = VEH.granny, oldCat = VEH.cat, oldCamel = VEH.camel;
 VEH.granny = () => animModel(new THREE.Group(), 'h_oldclassy_female', 1.75, oldGranny());
@@ -744,13 +744,25 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   const tail = { id: 'tail9', start() { A.setObj('Причал дирижаблей: курьер Зины', byId('port')); }, arrive: 'port',
     onArrive() { W.talk([['pip', 'Вон курьер с баллонами. Едь следом, но не близко. Когда он оглядывается 👀 — замри: на мосту не спрячешься.'], ['ded', 'Таня, как в кино про шпионов. Я — в шляпе.']], () => run2()); } };
   function courier() { let mesh; if (MODELS.k_rover) { const b = new Builder([]); b.add(MODELS.k_rover, mat(0, 0, 0, 4.5, 4.5, 4.5), null, { vcol: true, vk: 0.8 }); mesh = new THREE.Mesh(b.build(), bakedMat); } else mesh = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 5), new THREE.MeshLambertMaterial({ color: '#6a4a8a' })); const g = new THREE.Group(); g.add(mesh); const sp = emojiSprite('🎈', 2.4); sp.position.y = 5; g.add(sp); return g; }
-  function run2() { const pt = byId('port'), m = byId('meteo'); R.x = pt.x - 10; R.z = pt.z - 10; R.y = W.H(R.x, R.z); R.v = 0;
-    W.tail4({ label: 'Курьер Зины', path: [[pt.x - 30, pt.z - 25], [0, 0], [m.x, m.z]], sp: 8.5, see: 60, near: 22, far: 110, lostMax: 6, mesh: courier,
-      onWin() { W.give('money', 1200); W.give('parts', 4); W.talk([['pip', 'Курьер привёл на метеостанцию! Там газовоз пиратов — он перекачивает газ Аэрограда.'], ['ded', 'Таня, мы его выследили. Теперь — догнать.']], () => A.adv()); },
-      onFail(why) { W.talk([['pip', why === 'seen' ? 'Он нас заметил и удрал обратно на причал! Подождём, пока выедет снова.' : 'Потеряли! Он вернулся на причал. Ещё раз, ближе держись.']], () => run2()); } });
+  let run2 = function () { const pt = byId('port'), m = byId('meteo'); R.x = pt.x - 10; R.z = pt.z - 10; R.y = W.H(R.x, R.z); R.v = 0;
+    W.tail4({ label: 'Курьер Зины', path: [[pt.x - 30, pt.z - 25], [0, 0], [m.x, m.z]], sp: 7, see: 60, near: 10, far: 120, lostMax: 9, mesh: courier,
+      onWin() { const x = R.x, z = R.z; W.rideEnd4(); R.x = x; R.z = z; W.bal9b = null; ab.style.display = 'none'; W.calm = 0; W.give('money', 1200); W.give('parts', 4); W.talk([['ded', 'Сели. «Буханку» Пип пригнал по мосту.'], ['pip', 'Курьер привёл на метеостанцию! Там газовоз пиратов — он перекачивает газ Аэрограда.'], ['ded', 'Таня, мы его выследили. Теперь — догнать.']], () => A.adv()); },
+      onFail(why) { W.rideEnd4(true); W.bal9b = null; ab.style.display = 'none'; W.calm = 0; W.talk([['pip', why === 'seen' ? 'Он нас заметил и удрал обратно на причал! Подождём, пока выедет снова.' : 'Потеряли! Он вернулся на причал. Ещё раз, ближе держись.']], () => run2()); } });
     A.setObj('Следи за курьером', { x: pt.x, z: pt.z }); }
-  tail.tick = (dt) => W.tl4 && W.tailStep4(dt);
+  const ab = document.createElement('div'); ab.style.cssText = 'position:fixed;right:16px;bottom:140px;z-index:40;display:none;flex-direction:column;gap:8px'; ab.innerHTML = '<button data-d="1" style="min-width:96px;min-height:56px;border-radius:28px;border:3px solid #fff;background:#3a8aff;color:#fff;font:inherit;font-size:16px">⬆ выше</button><button data-d="-1" style="min-width:96px;min-height:56px;border-radius:28px;border:3px solid #fff;background:#3a6a9a;color:#fff;font:inherit;font-size:16px">⬇ ниже</button>'; document.body.appendChild(ab);
+  const WL = [{ y: 12, x: -4.5, z: -4.5, n: 'низ: на юго-запад ↙' }, { y: 24, x: -6.5, z: 1, n: 'середина: на запад ←' }, { y: 36, x: 1, z: -6.5, n: 'верх: на юг ↓' }];
+  ab.querySelectorAll('button').forEach((b) => (b.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); const B = W.bal9b; if (!B) return; B.lv = Math.max(0, Math.min(2, B.lv + +b.dataset.d)); sfx('click'); W.toast('🎈 Слой ветра — ' + WL[B.lv].n); }));
+  addEventListener('keydown', (e) => { const B = W.bal9b; if (!B) return; if (e.code === 'KeyQ') B.lv = Math.min(2, B.lv + 1); if (e.code === 'KeyZ') B.lv = Math.max(0, B.lv - 1); });
+  clear4.push(() => { ab.style.display = 'none'; W.bal9b = null; });
+  const r2 = run2; run2 = function () { W.rideEnd4(); r2(); W.ride4({ mesh: 'balloon', fly: 1, alt: 24, flyK: 1, vmax: 4, parked: 1, noFire: 1 }); W.bal9b = { lv: 1 }; W.calm = 1; ab.style.display = 'flex'; W.toast('🎈 Воздушный шар! Сам он почти не рулит — выбирай слой ветра ⬆⬇'); };
+  tail.tick = function (dt) { const B = W.bal9b; if (B && !W.paused) { const L = WL[B.lv]; W.flyAlt += (L.y - W.flyAlt) * Math.min(1, dt * 0.8); R.x += L.x * dt; R.z += L.z * dt; }
+    if (!W.tl4) { if (B) { W.bal9b = null; ab.style.display = 'none'; W.calm = 0; } return; } W.tailStep4(dt); if (W.tl4 && B) $('wdObj').innerHTML += ' · 🎈 ' + WL[B.lv].n; };
+  const tw = tail.onArrive; tail.onArrive = function () { W.talk([['pip', 'Курьер на причале. Поедем следом — заметит. Полетим на шаре! Ветер на Венере на разной высоте дует в разные стороны — выбирай слой.'], ['ded', 'Таня, это как на даче флюгер. Только флюгер — это мы.']], () => run2()); };
+
   S.splice(ci, 0, tail);
+  // погоня за газовозом — на тарелке над облаками
+  const chs = S.find((s) => s.id === 'chase'); if (chs) { const oa = chs.onArrive, ot = chs.tick; chs.onArrive = function () { oa.call(this); setTimeout(() => { if (W.tank9) { W.ride4({ mesh: 'saucer', fly: 1, alt: 14, flyK: 1.25, parked: 0 }); W.toast('🛸 Тарелка метеорологов! Газовоз — внизу, молнии — вокруг'); } }, 0); };
+    chs.tick = function (dt) { ot.call(this, dt); if (!W.tank9 && W.rd4) W.rideEnd4(); }; }
   // погоня начинается там, где закончилась слежка — метеостанция; переписываем «прибытие», чтобы не ждать
 })();
 
