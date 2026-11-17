@@ -386,7 +386,7 @@ function coneMesh(L, half) { const n = 12, pos = [0, 0, 0]; for (let i = 0; i <=
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
   return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#fff27a', transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide })); }
 W.stealth4 = function (o) { W.stealthEnd4(); const S = W.st4 = Object.assign({ sus: 0, L: 28, half: 0.5, got: 0, hold: 0 }, o);
-  S.guards = o.guards.map((gd, gi) => { const m = animModel(new THREE.Group(), gi % 2 ? 'h_worker_male' : 'h_cowboy_male', 1.85, personMesh(gd.col || '#5a6a3a')); const lamp = new THREE.PointLight('#fff3a0', 1.2, 22); lamp.position.set(0.4, 1.4, 0.8); m.add(lamp); c = coneMesh(S.L, S.half); W.scene.add(m); W.scene.add(c); const [x, z] = gd.path[0]; return Object.assign({ x, z, h: 0, wi: 1, wait: 0, m, c, sp: 2.4, look: 0 }, gd); });
+  S.guards = o.guards.map((gd, gi) => { const m = animModel(new THREE.Group(), gi % 2 ? 'h_worker_male' : 'h_cowboy_male', 1.85, personMesh(gd.col || '#5a6a3a')); const lamp = new THREE.PointLight('#fff3a0', 1.2, 22); lamp.position.set(0.4, 1.4, 0.8); m.add(lamp); const c = coneMesh(S.L, S.half); W.scene.add(m); W.scene.add(c); const [x, z] = gd.path[0]; return Object.assign({ x, z, h: 0, wi: 1, wait: 0, m, c, sp: 2.4, look: 0 }, gd); });
   S.items.forEach((it) => { it.sp = emojiSprite(it.e, 2.6); it.sp.position.set(it.x, W.H(it.x, it.z) + 2.2, it.z); W.scene.add(it.sp); it.done = false; });
   W.calm = 1; W.noFire = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); return S; };
 W.stealthEnd4 = function () { const S = W.st4; if (!S) return; S.guards.forEach((g) => { W.scene.remove(g.m); W.scene.remove(g.c); }); S.items.forEach((it) => W.scene.remove(it.sp)); W.st4 = null; W.calm = 0; W.noFire = 0; };
@@ -401,7 +401,7 @@ function guardStep(g, dt, S) { const P = g.path;
   if (loud && g.look <= 0) { g.look = 2.2; W.toast('👂 Сторож слышит мотор — тише! (меньше газа)'); }
   if (loud) S.sus += dt * (sp > 12 ? 22 : 10); g.c.material.color.set(seen ? '#ff5a3a' : g.look > 0 ? '#ffb03a' : '#fff27a'); return seen ? (1.2 - d / S.L * 0.7) * (sp > S.quiet ? 3 : 1) : 0; }
 W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S.guards.forEach((g) => (see += guardStep(g, dt, S))); S.sus = Math.max(0, Math.min(100, S.sus + (see > 0 ? see * 60 * dt : -14 * dt)));
-  let near = null; for (const it of S.items) if (!it.done && Math.hypot(it.x - R.x, it.z - R.z) < 6) near = it;
+  let near = null; for (const it of S.items) if (!it.done && Math.hypot(it.x - R.x, it.z - R.z) < (S.pickR || 6)) near = it;
   if (near && Math.abs(R.v) < 2.5) { S.hold += dt; if (S.hold > S.take) { near.done = true; S.got++; S.hold = 0; W.scene.remove(near.sp); sfx('coin'); W.toast(near.e + ' ' + near.name + ' — у нас!'); } } else S.hold = Math.max(0, S.hold - dt * 2);
   const left = S.items.filter((it) => !it.done), go = left[0] ? left.slice().sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0] : S.exit;
   if (W.obj) { W.obj.x = go.x; W.obj.z = go.z; }
@@ -963,5 +963,71 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       if (!isT && !W.paused && later[p.id] && Math.hypot(R.x - p.x, R.z - p.z) < p.r * 0.75 && !told[W.ch + p.id]) { told[W.ch + p.id] = 1; W.toast('🔒 ' + p.e + ' ' + p.name.split(' —')[0] + ': сюда — позже (миссия ' + later[p.id] + '). Сейчас цель — ' + (cur && cur.arrive ? '🎯 на стрелке' : 'на экране')); } } };
   W.beamsGlow = 1; })();
 (function hintFix() { const d0 = W.director; let ht = 0; W.director = function (dt) { d0 && d0(dt); const h = document.getElementById('hint'); if (!h || !h.classList.contains('on')) { ht = 0; return; } ht += dt; if (W.foot || W.mini.cur() || ht > 9) h.classList.remove('on'); }; })();
+
+/* =====================================================================
+   МИССИИ КОТА ГОШИ (гл. 1, 6, 9, 13) + дым и искры у огня
+   ===================================================================== */
+(function gosha4() {
+  const insertAfter = (S, id, step) => { const i = S.findIndex((s) => s.id === id); if (i >= 0) S.splice(i + 1, 0, step); else S.splice(S.length - 1, 0, step); };
+  const catRide = (o) => W.ride4(Object.assign({ mesh: 'cat', parked: 1, vmax: 13, noFire: 1 }, o || {}));
+  // --- гл.1: стелс в караване Коляна
+  const S1 = A.CHAPTERS[1]; if (S1) { const cv = { id: 'cat1', start() { A.setObj('Привал каравана Коляна', byId('caravan1')); }, arrive: 'caravan1',
+      onArrive() { W.talk([['petr', '<i>(по рации)</i> Таня, караван Коляна встал на привал. У них в клетке — рассада всей колонии!'], ['ded', 'На «Буханке» не подъедешь — услышат. А кот пролезет.'], ['gosha', 'Мяу. (Гоша вытянул лапы и надел невидимую маску ниндзя.)']], () => run1()); } };
+    function run1() { const c = byId('caravan1'); W.stealthEnd4(); W.rideEnd4(); if (!W.cv1m) { const g = new THREE.Group(); [['k_craft_cargoA', 0, 0, 6, 0.3], ['containers_A', -22, 14, 5, 1], ['containers_B', 20, -16, 5, 2], ['k_barrels', -14, -22, 5, 0], ['cargo_B_stacked', 26, 18, 5, 1.2]].forEach(([m, x, z, sc, ry]) => { const k = kmodel(m, sc, ry); if (k) { k.position.set(c.x + x, W.H(c.x + x, c.z + z), c.z + z); g.add(k); } }); W.scene.add(g); W.cv1m = g; }
+      { const dx = R.x - c.x, dz = R.z - c.z, dl = Math.hypot(dx, dz) || 1; R.x = c.x + dx / dl * 62; R.z = c.z + dz / dl * 62; R.y = W.H(R.x, R.z); R.h = Math.atan2(-dx, -dz); R.v = 0; } const pk = { x: R.x, z: R.z }; catRide({ vmax: 11 });
+      W.stealth4({ label: '🔑 Ключ от клетки', quiet: 7.5, take: 1.5, pickR: 9, guards: [{ path: [[c.x - 34, c.z - 26], [c.x + 34, c.z - 26], [c.x + 34, c.z + 28], [c.x - 34, c.z + 28]], sp: 2.4, pause: 2 }, { path: [[c.x - 20, c.z - 40], [c.x - 20, c.z + 40]], sp: 2, pause: 3 }],
+        items: [{ x: c.x + 4, z: c.z + 2, e: '🔑', name: 'Ключ от клетки' }], exit: { x: pk.x, z: pk.z },
+        onCaught() { W.talk([['kolyan', '<i>(издалека)</i> Эй! Кот! Держи кота!'], ['gosha', 'Мяу! (Гоша удрал и сделал вид, что спал.)']], () => { W.stealthEnd4(); W.rideEnd4(true); run1(); }); },
+        onWin() { W.rideEnd4(true); W.give('money', 700); W.give('food', 3); W.talk([['tanya', 'Гоша принёс ключ! В зубах! Рассада спасена — колония будет с огурцами.'], ['ded', 'Котам — медаль. Мне — пирожок за то, что не мешал.']], () => A.adv()); } });
+      A.setObj('🐱 Ты — Гоша: укради ключ, не попадись в свет фонарей', { x: c.x, z: c.z }); }
+    cv.tick = (dt) => { if (W.st4) W.stealthStep4(dt); };
+    clear4.push(() => { if (W.cv1m) { W.scene.remove(W.cv1m); W.cv1m = null; } });
+    insertAfter(S1, 'nest1', cv); }
+  // --- гл.6: невесомость у отсека флагмана
+  const S6 = A.CHAPTERS[6]; if (S6) { const md = { id: 'cat6', start() { A.setObj('Отсек, оторванный от флагмана', byId('module6')); }, arrive: 'module6',
+      onArrive() { W.talk([['pip', 'Это отсек флагмана — его оторвало и закинуло сюда. Внутри — схема ангара тарелок. Но люк заклинило изнутри.'], ['tanya', 'Гоша, ты же у нас всё открываешь. Холодильник, например.'], ['gosha', 'Мрр. (Гоша оттолкнулся лапами — и поплыл. На Фобосе почти нет тяжести.)']], () => run6()); } };
+    function run6() { const c = byId('module6'); W.rideEnd4(); if (!W.md6m) { const g = new THREE.Group(); const k = kmodel('k_hangar_largeA', 9, 0.6) || kmodel('basemodule_A', 9); if (k) { k.position.set(c.x, W.H(c.x, c.z) + 2, c.z); k.rotation.z = 0.25; g.add(k); } W.scene.add(g); W.md6m = g; }
+      const pts = [[c.x + 30, c.z - 10, 6], [c.x + 10, c.z + 28, 12], [c.x - 26, c.z + 16, 8], [c.x - 20, c.z - 24, 14], [c.x + 4, c.z - 6, 5]];
+      W.c6 = { pts, i: 0, rings: pts.map(([x, z, y], k) => { const m = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.35, 10, 28), new THREE.MeshBasicMaterial({ color: k === pts.length - 1 ? '#7aff8a' : '#9ad0ff', transparent: true, opacity: 0.35 })); m.position.set(x, W.H(x, z) + y, z); W.scene.add(m); return m; }) };
+      catRide({ fly: 1, alt: 5, flyK: 0.8, glide: 0.9, vmax: 10 }); A.setObj('🐱 Плыви сквозь кольца к люку · отталкивайся и тормози заранее', { x: pts[0][0], z: pts[0][1] }); }
+    function end6() { if (W.c6) W.c6.rings.forEach((m) => W.scene.remove(m)); W.c6 = null; }
+    clear4.push(() => { end6(); if (W.md6m) { W.scene.remove(W.md6m); W.md6m = null; } });
+    md.tick = function (dt) { const C = W.c6; if (!C || W.paused) return; const [x, z, y] = C.pts[C.i]; W.flyAlt += (y - W.flyAlt) * Math.min(1, dt * 0.9); C.rings.forEach((m, k) => { m.material.opacity = k === C.i ? 0.95 : k > C.i ? 0.3 : 0; m.rotation.y += dt * 0.5; }); if (W.obj) { W.obj.x = x; W.obj.z = z; }
+      $('wdObj').innerHTML = '🐱 Невесомость: кольцо <b>' + (C.i + 1) + ' из ' + C.pts.length + '</b> · Гоша летит, пока не затормозит';
+      if (Math.hypot(R.x - x, R.z - z) < 4.5) { sfx('j_found', { vol: 0.5 }); C.i++; if (C.i >= C.pts.length) { end6(); W.rideEnd4(true); W.give('money', 800); W.give('parts', 4); W.talk([['gosha', 'Мяу! (Щёлк. Люк открыт. Гоша сидит на схеме ангара — как на коврике.)'], ['pip', 'Схема! Ангар тарелок — на юго-востоке. Тарелка нас довезёт до флагмана.']], () => A.adv()); } } };
+    insertAfter(S6, 'comet', md); }
+  // --- гл.9: паркур по тросам между крышами
+  const S9 = A.CHAPTERS[9]; if (S9) { const rf = { id: 'cat9', start() { A.setObj('Крыши Нижнего Аэрограда', byId('roofs9')); }, arrive: 'roofs9',
+      onArrive() { W.talk([['vnuki', 'Бабуль! Облачная чайка утащила твой пирожок — вон, по крышам!'], ['tanya', 'Мой пирожок?! С капустой?! Гоша, фас!'], ['gosha', 'Мяу! (Гоша уже на тросе.)']], () => run9()); } };
+    function run9() { const c = byId('roofs9'); end9(); const P = []; for (let k = 0; k < 8; k++) { const a = k * 0.8, r = 22 + k * 9; P.push({ x: c.x + Math.sin(a) * r, z: c.z + Math.cos(a) * r - 10, y: 6 + k * 2.5 }); }
+      const g = new THREE.Group(); P.forEach((p, k) => { const t = new THREE.Mesh(new THREE.CylinderGeometry(5, 5.4, 2, 16), new THREE.MeshLambertMaterial({ color: k % 2 ? '#d88a5a' : '#e8b07a' })); t.position.set(p.x, p.y - 1, p.z); g.add(t); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 60, 8), LM('#a8a0b0')); st.position.set(p.x, p.y - 32, p.z); g.add(st); if (k) { const q = P[k - 1], L = Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z), cab = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, L, 6), LM('#3a3a44')); cab.position.set((p.x + q.x) / 2, (p.y + q.y) / 2, (p.z + q.z) / 2); cab.lookAt(p.x, p.y, p.z); cab.rotateX(Math.PI / 2); g.add(cab); } }); W.scene.add(g);
+      const bird = emojiSprite('🐦', 3); W.scene.add(bird); W.r9 = { P, g, i: 0, bird }; catRide({ fly: 1, flyK: 0.75, vmax: 11 }); R.x = P[0].x; R.z = P[0].z; R.h = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z); W.flyY = P[0].y; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); A.setObj('🐱 Беги по тросу за чайкой', { x: P[1].x, z: P[1].z }); }
+    function end9() { if (W.r9) { W.scene.remove(W.r9.g); W.scene.remove(W.r9.bird); W.r9 = null; W.calm = 0; } W.flyY = undefined; }
+    clear4.push(end9);
+    rf.tick = function (dt) { const Q = W.r9; if (!Q || W.paused) return; const a = Q.P[Q.i], b = Q.P[Math.min(Q.i + 1, Q.P.length - 1)], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((R.x - a.x) * dx + (R.z - a.z) * dz) / L2)), cx = a.x + dx * t, cz = a.z + dz * t, off = Math.hypot(R.x - cx, R.z - cz);
+      const onRoof = Math.hypot(R.x - a.x, R.z - a.z) < 5 || Math.hypot(R.x - b.x, R.z - b.z) < 5; W.flyY = a.y + (b.y - a.y) * t + 0.3; Q.bird.position.set(b.x, b.y + 3 + Math.sin(W.t * 6) * 0.5, b.z); if (W.obj) { W.obj.x = b.x; W.obj.z = b.z; }
+      $('wdObj').innerHTML = '🐱 Крыша <b>' + (Q.i + 1) + ' из ' + Q.P.length + '</b> · держись троса · до чайки ' + Math.round(Math.hypot(R.x - b.x, R.z - b.z)) + ' м';
+      if (!onRoof && off > 2.2) { sfx('dry'); W.toast('😿 Сорвался с троса! Обратно на крышу'); R.x = a.x; R.z = a.z; R.v = 0; R.h = Math.atan2(dx, dz); return; }
+      if (Math.hypot(R.x - b.x, R.z - b.z) < 4 && Q.i < Q.P.length - 1) { Q.i++; sfx('j_found', { vol: 0.4 }); if (Q.i >= Q.P.length - 1) { end9(); W.rideEnd4(true); W.give('money', 800); W.give('food', 2); W.talk([['gosha', 'Мяу! (Чайка уронила пирожок. Гоша поймал. Откусил ровно половину — по-честному.)'], ['tanya', 'Половину вернул! Ну хоть так.']], () => A.adv()); } } };
+    insertAfter(S9, 'chase', rf); }
+  // --- гл.13: охота на сусликов
+  const S13 = A.CHAPTERS[13]; if (S13) { const su = { id: 'cat13', start() { A.setObj('Сусличья степь', byId('suslik13')); }, arrive: 'suslik13',
+      onArrive() { W.talk([['nurlan', '<i>(по рации)</i> Суслики подрыли рельсы — поезд с ракетой не пройдёт! Их надо распугать.'], ['gosha', 'Мяу. (Гоша прижал уши. Это его работа.)'], ['pip', 'Суслик выглядывает из норы на пару секунд — успей добежать!']], () => run13()); } };
+    function rodent() { const g = new THREE.Group(), c = '#c8a064', b = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 12), LM(c)); b.scale.set(0.9, 1.3, 0.8); b.position.y = 0.9; g.add(b); const h = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), LM(c)); h.position.set(0, 1.9, 0.15); g.add(h); for (const x of [-0.25, 0.25]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), LM('#a87a44')); e.position.set(x, 2.25, 0.05); g.add(e); const ey = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), LM('#1a1a1a')); ey.position.set(x * 0.6, 2, 0.52); g.add(ey); } const bl = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 10), LM('#efd8b0')); bl.scale.set(0.8, 1.1, 0.5); bl.position.set(0, 0.9, 0.42); g.add(bl); g.scale.setScalar(1.6); return g; }
+    function run13() { const c = byId('suslik13'); end13(); const holes = []; for (let k = 0; k < 8; k++) { const a = k * 0.785 + 0.2, r = 22 + (k % 3) * 10, x = c.x + Math.sin(a) * r, z = c.z + Math.cos(a) * r, y = W.H(x, z); const m = new THREE.Mesh(new THREE.CircleGeometry(1.4, 18), new THREE.MeshBasicMaterial({ color: '#2a1c10' })); m.rotation.x = -Math.PI / 2; m.position.set(x, y + 0.08, z); W.scene.add(m); const mound = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.45, 8, 20), LM('#a8824a')); mound.rotation.x = Math.PI / 2; mound.position.set(x, y + 0.1, z); W.scene.add(mound); const s = rodent(); s.position.set(x, y - 3, z); W.scene.add(s); holes.push({ x, z, y, m, mound, s, up: 0 }); }
+      W.h13 = { holes, t: 1.5, got: 0, T: 90 }; catRide({ vmax: 13 }); A.setObj('🐱 Лови сусликов, пока выглядывают', c); }
+    function end13() { const Hh = W.h13; if (!Hh) return; Hh.holes.forEach((h) => { W.scene.remove(h.m); W.scene.remove(h.mound); W.scene.remove(h.s); }); W.h13 = null; }
+    clear4.push(end13);
+    su.tick = function (dt) { const Hh = W.h13; if (!Hh || W.paused) return; Hh.T -= dt; Hh.t -= dt; if (Hh.t <= 0) { Hh.t = rnd(0.9, 1.6); const free = Hh.holes.filter((h) => h.up <= 0); const h = free[Math.floor(Math.random() * free.length)]; if (h) { h.up = rnd(2.2, 3); sfx('pick', { vol: 0.3 }); } }
+      let tgt = null, td = 1e9; for (const h of Hh.holes) { if (h.up > 0) { h.up -= dt; const d = Math.hypot(R.x - h.x, R.z - h.z); if (d < 3.6) { h.up = 0; Hh.got++; sfx('j_found', { vol: 0.5 }); W.toast('🐹 Суслик пойман… и отпущен подальше от рельсов! ' + Hh.got + ' из 8'); } else if (d < td) { td = d; tgt = h; } } const ty = h.y + (h.up > 0 ? -0.3 : -3.5); h.s.position.y += (ty - h.s.position.y) * Math.min(1, dt * 10); h.s.rotation.y = Math.atan2(R.x - h.x, R.z - h.z); }
+      if (W.obj) { const t = tgt || byId('suslik13'); W.obj.x = t.x; W.obj.z = t.z; } $('wdObj').innerHTML = '🐹 Сусликов: <b>' + Hh.got + ' из 8</b> · ⏱ ' + Math.max(0, Math.ceil(Hh.T)) + ' с · беги к тому, кто выглянул';
+      if (Hh.got >= 8) { end13(); W.rideEnd4(true); W.give('money', 700); W.give('food', 2); W.talk([['nurlan', 'Рельсы целы, суслики переехали в соседний овраг. Кот у вас — богатырь!'], ['asel', 'Теперь — монтажный корпус: поезд с ракетой готов.']], () => A.adv()); }
+      else if (Hh.T <= 0) { end13(); W.rideEnd4(true); W.talk([['gosha', 'Мяу… (Гоша устал. Попьёт молока — и снова.)']], () => run13()); } };
+    insertAfter(S13, 'town', su); }
+  // --- дым и искры у огня: костры, вершины вулканов, факелы
+  (function smoke() { const d0 = W.director; let t = 0; W.director = function (dt) { d0 && d0(dt); t -= dt; if (t > 0 || W.paused) return; t = 0.12; const L = W.EMIT || []; for (const e of L) { const d = Math.hypot(e.x - R.x, e.z - R.z); if (d > (e.k === 'vol' ? 600 : 140)) continue;
+        if (e.k === 'fire') { if (Math.random() < 0.6) burst(W.scene, e.x + rnd(-0.4, 0.4), e.y + 1.2, e.z + rnd(-0.4, 0.4), 'smoke', '#5a5048', 1.6, 1.4); if (Math.random() < 0.5) burst(W.scene, e.x, e.y + 0.8, e.z, 'spark', '#ffb04a', 0.9, 0.6); }
+        else if (e.k === 'vol' && Math.random() < 0.5) burst(W.scene, e.x + rnd(-6, 6), e.y + rnd(0, 6), e.z + rnd(-6, 6), 'smoke', '#6a5a50', 9, 3); } }; })();
+})();
 
 };

@@ -132,6 +132,7 @@ const CH = W.CH = {
       { id: 'liner', name: 'Лайнер «Комсомолец-7»', e: '🛸', x: -330, z: 300, r: 55, col: '#7fe8ff', kind: 'wreck' },
       { id: 'nest', name: 'Гнездо клопов', e: '🪲', x: 330, z: -300, r: 45, col: '#ff6ad5', kind: 'lair' },
       { id: 'rzhav', name: 'Ржавобург', e: '🏭', x: -400, z: -260, r: 75, col: '#ffb04a', kind: 'city' },
+      { id: 'caravan1', name: 'Привал каравана Коляна', e: '🐫', x: 0, z: 380, r: 40, col: '#ffb04a', kind: 'view' },
       { id: 'camp', name: 'Логово Бешеного Коляна', e: '🏴‍☠️', x: 470, z: 440, r: 60, col: '#ff4a3a', kind: 'boss' }],
     roads: [[[0, 0], [-60, 70], [-150, 120]], [[0, 0], [120, 60], [260, 170]], [[0, 0], [-180, -90], [-400, -260]], [[260, 170], [380, 330], [470, 440]], [[-150, 120], [-260, 230], [-330, 300]], [[0, 0], [170, -150], [330, -300]]],
     start: [6, 50, Math.PI],
@@ -213,6 +214,7 @@ const CH = W.CH = {
       { id: 'tourist6', name: 'Старый маяк — космотурист', e: '🧳', x: -300, z: -250, r: 45, col: '#ffd24a', kind: 'view' },
       { id: 'hangar', name: 'Ангар тарелок', e: '🛸', x: 300, z: -350, r: 40, col: '#9aff6a', kind: 'hangar' },
       { id: 'tail', name: 'Под хвостом кометы', e: '☄️', x: 380, z: 300, r: 90, col: '#7fe8ff', kind: 'comet' },
+      { id: 'module6', name: 'Отсек, оторванный от флагмана', e: '🛰', x: -20, z: 400, r: 40, col: '#9ad0ff', kind: 'view' },
       { id: 'stickney', name: 'Кратер Стикни — флагман', e: '🏴‍☠️', x: STK6.x, z: STK6.z, r: 175, col: '#ff4a3a', kind: 'boss', flat: 0 }],
     roads: [[[0, -40], [170, -150]], [[0, -40], [150, 120], [380, 300]], [[0, -40], [-120, 80], [-90, 210]], [[0, -40], [-300, -250]], [[0, -40], [300, -350]]],
     start: [10, 20, Math.PI],
@@ -250,6 +252,7 @@ const CH = W.CH = {
       { id: 'garden', name: 'Висячие сады', e: '🌱', x: -330, z: 230, r: 60, col: '#9aff6a', kind: 'farm' },
       { id: 'port', name: 'Причал дирижаблей', e: '🎈', x: 320, z: 260, r: 55, col: '#ffd24a', kind: 'city' },
       { id: 'meteo', name: 'Метеостанция «Ветер»', e: '⚡', x: -320, z: -300, r: 55, col: '#7fe8ff', kind: 'meteo' },
+      { id: 'roofs9', name: 'Крыши Нижнего Аэрограда', e: '🏘', x: 0, z: -360, r: 40, col: '#ffd24a', kind: 'view' },
       { id: 'zina', name: 'Пиратская платформа мамаши Зины', e: '🏴‍☠️', x: 330, z: -320, r: 85, col: '#ff4a3a', kind: 'boss' }],
     roads: [[[0, 0], [-330, 230]], [[0, 0], [320, 260]], [[0, 0], [-320, -300]], [[0, 0], [330, -320]], [[-320, -300], [0, -330], [330, -320]]],
     start: [0, 40, Math.PI],
@@ -299,6 +302,7 @@ const CH = W.CH = {
     pois: [
       { id: 'capsule', name: 'Место посадки капсулы', e: '🪂', x: -330, z: 300, r: 60, col: '#ffd24a', kind: 'view' },
       { id: 'town', name: 'Город Байконур', e: '🏙', x: 0, z: 80, r: 75, col: '#7aff8a', kind: 'city' },
+      { id: 'suslik13', name: 'Сусличья степь', e: '🐹', x: 0, z: 320, r: 45, col: '#c8a064', kind: 'view' },
       { id: 'mik', name: 'Монтажный корпус', e: '🏭', x: RAIL13[0][0], z: RAIL13[0][1], r: 55, col: '#c8c8d0', kind: 'view' },
       { id: 'gagarin', name: 'Гагаринский старт', e: '🚀', x: RAIL13[2][0], z: RAIL13[2][1], r: 70, col: '#ff9a4a', kind: 'view' },
       { id: 'aul', name: 'Аул у колодца', e: '⛺', x: 340, z: 260, r: 70, col: '#ffd24a', kind: 'farm' },
@@ -399,9 +403,9 @@ function autoColl(m, x, z, s, ry) { if (!W.COLL || NOCOLL.test(m)) return; const
 let GLOWT = null; function glowTex() { if (GLOWT) return GLOWT; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,230,180,1)'); gr.addColorStop(0.25, 'rgba(255,190,110,0.55)'); gr.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); GLOWT = new THREE.CanvasTexture(c); return GLOWT; }
 function glowAt(x, y, z, sc, col) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: col || '#ffd29a', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.8 })); sp.position.set(x, y, z); sp.scale.setScalar(sc); S.add(sp); return sp; }
 W.glowAt = glowAt;
-function place(B, m, x, z, s, ry = 0, dy = 0) { if (/^lights$|campfire/.test(m) && MODELS && MODELS[m]) glowAt(x, H(x, z) + dy + (m === 'lights' ? s * 1.1 : s * 0.4), z, s * (m === 'lights' ? 1.6 : 2.2), m === 'lights' ? '#fff0c0' : '#ffa050'); if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { crease: 0.6, vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
+function place(B, m, x, z, s, ry = 0, dy = 0) { if (/campfire/.test(m) && MODELS && MODELS[m] && W.EMIT) W.EMIT.push({ x, z, y: H(x, z) + dy, k: 'fire' }); if (/^lights$|campfire/.test(m) && MODELS && MODELS[m]) glowAt(x, H(x, z) + dy + (m === 'lights' ? s * 1.1 : s * 0.4), z, s * (m === 'lights' ? 1.6 : 2.2), m === 'lights' ? '#fff0c0' : '#ffa050'); if (!MODELS || !MODELS[m]) return; autoColl(m, x, z, s, ry); B.add(MODELS[m], mat(x, H(x, z) + dy, z, s, s, s, ry), null, { crease: 0.6, vcol: true, vk: CHC.dark && !/crystal|mushroom|lights|^o_|crops/.test(m) ? 0.55 : CHC.dark ? 1.35 : 1.08 }); }
 function buildPOIs() {
-  const B = new Builder([]); W.COLL = []; const addC = (x, z, r) => W.COLL.push({ x, z, r }), byId = (id) => POI.find((p) => p.id === id);
+  const B = new Builder([]); W.COLL = []; W.EMIT = POI.filter((p) => p.kind === 'peak').map((p) => ({ x: p.x, z: p.z, y: H(p.x, p.z) + 4, k: 'vol' })); const addC = (x, z, r) => W.COLL.push({ x, z, r }), byId = (id) => POI.find((p) => p.id === id);
   if (W.ch === 1) {
   // колония: купола, ангары, ветряки, площадка
     const c = POI[0];
