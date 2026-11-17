@@ -329,6 +329,36 @@ W.dive4 = function (cfg, onWin, onFail) {
       const winNow = c.need ? o.got >= c.need : o.depth >= c.goal; if (winNow) { o.done = 1; o.say(c.okSay); setTimeout(() => o.win(), 900); return; }
       if (o.hull <= 0 || c.meterBad(o.meter, true)) { o.done = 1; o.say(c.failSay); setTimeout(() => o.fail(), 1200); } } }); };
 
+/* ---------- вагонетка: схема штреков, стрелки на развилках, завалы; забрать шахтёров и вывезти ---------- */
+W.cart4 = function (cfg, onWin, onFail) {
+  return W.mini({ title: cfg.title, rules: cfg.rules, onWin, onFail, build(o) { o.cfg = cfg; const N = o.N = cfg.nodes, E = o.E = cfg.edges; o.adj = {}; E.forEach(([a, b]) => { (o.adj[a] = o.adj[a] || []).push(b); (o.adj[b] = o.adj[b] || []).push(a); });
+    o.sw = {}; Object.keys(o.adj).forEach((k) => { if (o.adj[k].length >= 3) o.sw[k] = 0; }); o.from = cfg.start; o.to = o.adj[cfg.start][0]; o.k = 0; o.carry = 0; o.saved = 0; o.t = cfg.time; o.miners = {}; cfg.stations.forEach((k) => (o.miners[k] = 1)); o.block = {}; o.bt = 4; o.wait = 0;
+    o.cv = document.createElement('canvas'); o.cv.width = 360; o.cv.height = 420; o.cv.style.cssText = 'position:relative;inset:auto;height:min(46vh,420px);width:auto;max-width:100%;margin:0 auto;background:#1e1630;border-radius:12px;display:block;touch-action:none'; o.body.appendChild(o.cv); o.g = o.cv.getContext('2d');
+    o.st = document.createElement('div'); o.st.className = 'st'; o.body.appendChild(o.st);
+    o.opts = (n, came) => o.adj[n].filter((x) => x !== came);
+    o.cv.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); const r = o.cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 360, y = (e.clientY - r.top) / r.height * 420; for (const k in o.sw) { const [nx, ny] = N[k]; if (Math.hypot(nx - x, ny - y) < 34) { o.toggle(k); return; } } };
+    o.toggle = (k) => { o.sw[k] = (o.sw[k] + 1) % 2; sfx('click'); };
+    o.say(cfg.hello); },
+    tick(dt) { const o = this, c = o.cfg, N = o.N, g = o.g; if (o.done) return; o.t -= dt;
+      o.bt -= dt; if (o.bt <= 0) { o.bt = c.collapse; const cand = o.E.filter(([a, b]) => !(a === c.start || b === c.start)); const [a, b] = cand[Math.floor(Math.random() * cand.length)]; o.block[a + '-' + b] = o.block[b + '-' + a] = 6; sfx('thud'); o.say('💥 Обвал на штреке! Красный путь закрыт на 6 с'); }
+      for (const k in o.block) { o.block[k] -= dt; if (o.block[k] <= 0) delete o.block[k]; }
+      if (o.wait > 0) o.wait -= dt; else if (o.block[o.from + '-' + o.to] && o.k < 0.05) { o.wait = 0.3; } else {
+        const [ax, ay] = N[o.from], [bx, by] = N[o.to], L = Math.hypot(bx - ax, by - ay); o.k += c.speed * dt / L;
+        if (o.k >= 1) { const n = o.to, came = o.from; o.k = 0; o.from = n;
+          if (o.miners[n]) { o.miners[n] = 0; o.carry++; sfx('coin'); o.say('⛑ Шахтёр в вагонетке! Везём к выходу'); }
+          if (n === c.start && o.carry) { o.saved += o.carry; o.carry = 0; sfx('j_found'); o.say('🚪 Шахтёры спасены: ' + o.saved + ' из ' + c.stations.length); if (o.saved >= c.stations.length) { o.done = 1; setTimeout(() => o.win(), 800); return; } }
+          const op = o.opts(n, came); o.to = op.length === 0 ? came : op.length === 1 ? op[0] : op[o.sw[n] % op.length]; } }
+      // рисуем
+      g.clearRect(0, 0, 360, 420); g.lineWidth = 8; g.lineCap = 'round'; for (const [a, b] of o.E) { g.strokeStyle = o.block[a + '-' + b] ? '#ff4a3a' : '#8a7a9a'; g.beginPath(); g.moveTo(...N[a]); g.lineTo(...N[b]); g.stroke(); }
+      g.font = '24px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      for (const k in N) { const [x, y] = N[k]; if (k === c.start) g.fillText('🚪', x, y + 2); else if (c.stations.includes(k)) g.fillText(o.miners[k] ? '⛑' : '✅', x, y); }
+      for (const k in o.sw) { const [x, y] = N[k], op = o.opts(k, null); g.fillStyle = '#2e3a5c'; g.beginPath(); g.arc(x, y, 18, 0, 6.3); g.fill(); g.strokeStyle = '#ffd27a'; g.lineWidth = 4; const cameNow = o.from === k ? null : null; const all = o.adj[k], sel = all[(o.sw[k]) % all.length]; }
+      // стрелки: показываем, куда уйдёт вагонетка из развилки (относительно пути, откуда она приедет)
+      for (const k in o.sw) { const [x, y] = N[k]; const came = o.to === k ? o.from : o.adj[k][0]; const op = o.opts(k, came), nx = op[o.sw[k] % op.length], [tx, ty] = N[nx], a = Math.atan2(ty - y, tx - x); g.strokeStyle = '#ffd27a'; g.lineWidth = 4; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * 26, y + Math.sin(a) * 26); g.stroke(); g.fillStyle = '#ffd27a'; g.font = '12px sans-serif'; g.fillText('⇄', x, y); }
+      const [ax, ay] = N[o.from], [bx, by] = N[o.to]; g.font = '26px serif'; g.fillText('🛒', ax + (bx - ax) * o.k, ay + (by - ay) * o.k - 4); if (o.carry) { g.font = '13px sans-serif'; g.fillStyle = '#fff'; g.fillText('⛑×' + o.carry, ax + (bx - ax) * o.k, ay + (by - ay) * o.k - 24); }
+      o.st.innerHTML = '⛑ Спасено <b>' + o.saved + ' из ' + c.stations.length + '</b> · в вагонетке ' + o.carry + ' · ⏱ <b style="color:' + (o.t < 20 ? '#ff6a4a' : '#9f9') + '">' + Math.max(0, Math.ceil(o.t)) + ' с</b> · жми на стрелки ⇄';
+      if (o.t <= 0) { o.done = 1; o.say('⏱ Своды рушатся — назад к выходу!'); setTimeout(() => o.fail(), 1200); } } }); };
+
 /* ---------- стелс: охрана с фонарями и конусами обзора ---------- */
 function personMesh(col) { const g = new THREE.Group(), m = (c) => new THREE.MeshLambertMaterial({ color: c });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.9, 8), m(col)); body.position.y = 1.15; g.add(body);
@@ -458,11 +488,14 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
    ===================================================================== */
 (function ch3() { const S = A.CHAPTERS[3]; if (!S) return; const mu = S.find((s) => s.id === 'museum'), fa = S.find((s) => s.id === 'face'), an = S.find((s) => s.id === 'antennas'); if (!mu || !fa || !an) return;
   function van() { let mesh; if (MODELS.spacetruck || MODELS.k_rover) { const b = new Builder([]); b.add(MODELS.spacetruck || MODELS.k_rover, mat(0, 0, 0, 5, 5, 5), null, { vcol: true, vk: 0.9 }); mesh = new THREE.Mesh(b.build(), bakedMat); } else mesh = new THREE.Mesh(new THREE.BoxGeometry(3, 2.4, 6), new THREE.MeshLambertMaterial({ color: '#4a6a8a' })); const g = new THREE.Group(); g.add(mesh); const sp = emojiSprite('🥕', 2.4); sp.position.y = 5; g.add(sp); return g; }
-  mu.onArrive = function () { W.talk([['tanya', 'Здравствуйте. Это мой огород. Верните, пожалуйста.'], ['pip', 'Смотритель говорит: «Экспонат упал с неба — значит, подарок».'], ['ksar', '<b>Ксар-ФМ</b>: Ограбление в Музее землян! Фургон с огородом уходит!'], ['pip', 'Не стреляй! Проследим — узнаем, кто заказчик. Держись подальше, а когда водитель оглядывается 👀 — замри.']], () => run()); };
-  function run() { const m = byId('museum'); W.tail4({ label: 'Фургон похитителей', path: [[m.x + 10, m.z - 10], [-120, 200], [-200, 150], [-290, 30], [-380, -80]], sp: 8, see: 55, near: 20, far: 100, lostMax: 7, mesh: van,
-      onWin() { W.give('money', 600); W.give('parts', 3); W.talk([['tanya', 'Остановились у кратера-смайлика. Открываю… А где огород?! Тут только пугало. В моём халате. И записка.'], ['none', '<i>«Огород — у меня. Хотите обратно — сначала помойте мой портрет в Кидонии. Тёща Зурга.»</i>'], ['pip', 'Ой! Клопы лезут грызть смайлик — это гордость Ксар-Талы! Там есть вышка — защищай с неё!']], () => A.adv()); },
-      onFail(why) { W.talk([['pip', why === 'seen' ? 'Водитель нас заметил и вернулся к музею! Ждём, пока поедет снова.' : 'Потеряли! Он опять у музея — пробуй ещё.']], () => run()); } }); A.setObj('Следи за фургоном', m); }
-  mu.tick = (dt) => W.tl4 && W.tailStep4(dt);
+  mu.onArrive = function () { W.talk([['tanya', 'Здравствуйте. Это мой огород. Верните, пожалуйста.'], ['pip', 'Смотритель говорит: «Экспонат упал с неба — значит, подарок».'], ['ksar', '<b>Ксар-ФМ</b>: Ограбление в Музее землян! Фургон с огородом уходит!'], ['pip', 'Не стреляй! Запускаю дрон — проследим сверху, узнаем заказчика. Держись подальше, а когда водитель оглядывается 👀 — зависни.']], () => run()); };
+  function dronePads(m) { (W.pads3 || []).forEach((q) => W.scene.remove(q.ring)); W.pads3 = [[-110, 225], [-190, 175], [-250, 80], [-330, -20]].map(([x, z]) => ({ x, z, ring: A.ring11(x, z, '#ffd24a', 7) })); }
+  clear4.push(() => { (W.pads3 || []).forEach((q) => W.scene.remove(q.ring)); W.pads3 = null; W.bat3 = null; });
+  function run() { const m = byId('museum'); W.rideEnd4(); W.ride4({ mesh: 'drone', fly: 1, alt: 24, flyK: 1.05, parked: 1, noFire: 1, bank: 0.3 }); W.bat3 = 100; dronePads(m); W.toast('🛸 Ты ведёшь дрон Пипа! Батарея садится — подзаряжайся над 🟡 солнечными крышами');
+    W.tail4({ label: 'Фургон похитителей', path: [[m.x + 10, m.z - 10], [-120, 200], [-200, 150], [-290, 30], [-380, -80]], sp: 8, see: 55, near: 20, far: 100, lostMax: 7, mesh: van,
+      onWin() { const tx = R.x, tz = R.z; W.rideEnd4(); R.x = tx + 10; R.z = tz + 10; R.y = W.H(R.x, R.z); (W.pads3 || []).forEach((q) => W.scene.remove(q.ring)); W.pads3 = null; W.bat3 = null; W.give('money', 600); W.give('parts', 3); W.talk([['ded', 'Дрон сел, я подогнал «Буханку» следом.'], ['tanya', 'Остановились у кратера-смайлика. Открываю… А где огород?! Тут только пугало. В моём халате. И записка.'], ['none', '<i>«Огород — у меня. Хотите обратно — сначала помойте мой портрет в Кидонии. Тёща Зурга.»</i>'], ['pip', 'Ой! Клопы лезут грызть смайлик — это гордость Ксар-Талы! Там есть вышка — защищай с неё!']], () => A.adv()); },
+      onFail(why) { W.rideEnd4(true); W.talk([['pip', why === 'battery' ? 'Батарея села — дрон спланировал к музею. Заряжаем и снова!' : why === 'seen' ? 'Водитель нас заметил и вернулся к музею! Ждём, пока поедет снова.' : 'Потеряли! Он опять у музея — пробуй ещё.']], () => run()); } }); A.setObj('Следи за фургоном', m); }
+  mu.tick = function (dt) { if (!W.tl4) return; if (W.bat3 != null) { const pad = (W.pads3 || []).find((q) => Math.hypot(q.x - R.x, q.z - R.z) < 10); W.bat3 = Math.max(0, Math.min(100, W.bat3 + (pad ? 18 : -1.6) * dt)); if (W.bat3 <= 0) { const f = W.tl4.onFail; W.tailEnd4(); f('battery'); return; } } W.tailStep4(dt); if (W.tl4 && W.bat3 != null) $('wdObj').innerHTML += ' · 🔋 <b style="color:' + (W.bat3 < 25 ? '#ff6a4a' : '#9f9') + '">' + Math.round(W.bat3) + '%</b>'; };
   const smile = { id: 'smile3', start() { A.setObj('Кратер-смайлик: вышка', byId('smile')); }, arrive: 'smile',
     onArrive() { W.talk([['pip', 'Кратер-смайлик настоящий — на Марсе есть кратер Галле, он улыбается! Клопы лезут грызть «зубы». Заезжай на вышку: клопы прячутся за куполами, бей, когда грызут.']], () => run2()); } };
   function run2() { const c = byId('smile'), y = W.H(c.x, c.z); if (!W.tw3m) { const g = new THREE.Group(); for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6.4, 0.8), new THREE.MeshLambertMaterial({ color: '#8a6a5a' })); l.position.set(c.x + dx, y + 3.2, c.z + dz); g.add(l); } const pl = new THREE.Mesh(new THREE.BoxGeometry(11, 0.4, 11), new THREE.MeshLambertMaterial({ color: '#d8a43a' })); pl.position.set(c.x, y + 6.2, c.z); g.add(pl);
@@ -518,10 +551,26 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     $('wdObj').innerHTML = '🛶 Плот: <b style="color:' + (F.hp < 35 ? '#ff6a4a' : '#9f9') + '">' + Math.round(F.hp) + '%</b> · до маяка ' + Math.round(dl) + ' м' + (bit ? ' · <b>акула грызёт канат — отгони!</b>' : '');
     if (dl <= 2) { raftEnd(); W.give('money', 900); W.talk([['moh', 'Доплыли! Семьи на острове. Спасибо, бабушка!'], ['pip', 'Старый маяк. Тут журнал смотрителя: «Червь боится света. Любит картошку. Главный тоннель к нему завален».'], ['gosha', 'Мяу. (Гоша нюхает воздух. Гоша что-то знает. Гоша уже на том берегу.)']], () => A.adv()); }
     else if (F.hp <= 0) { raftEnd(); W.talk([['moh', 'Плот развалился! Гномы на брёвнах доплыли обратно. Новый плот готов — давай снова, акул отгоняй раньше.']], () => run2()); } };
-  // кот Гоша: в гроте кристаллы поют — повтори мелодию, иначе проход не откроется
-  const gt = go.tick; go.tick = function (dt) { const c = W.cat; if (c && !c.sang && Math.hypot(c.x - 430, c.z + 330) < 24) { c.sang = 1; R.v = 0; W.talk([['pip', 'Поющие кристаллы! Проход откроется, если повторить их мелодию.'], ['tanya', 'Я в хоре пела. В 1974 году. Помню всё.']], () => sing()); return; } if (c && c.sang === 1) return; gt.call(this, dt); };
+  // играешь за кота Гошу: щель, куда «Буханка» не пролезет; в гроте поют кристаллы
+  go.start = function () { W.talk([['gosha', 'Мяу. (Гоша нашёл щель в скале. Узкую. Пахнет картошкой.)'], ['ded', 'Таня, «Буханка» туда не пролезет. А кот пролезет. Пусть ведёт — а мы по его следу объедем.'], ['pip', 'Теперь ты — Гоша! Беги по запаху 🟡, в тёмном гроте кошачьи глаза видят.']], () => catGo()); };
+  function catGo() { const pts = [[285, 105], [430, -330], [560, -170], [610, 60], [580, 260], [470, 395]]; W.ride4({ mesh: 'cat', parked: 1, vmax: 14, noFire: 1, bob: 1 }); const pa = Math.atan2(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]); R.x = pts[0][0] + Math.sin(pa) * 12; R.z = pts[0][1] + Math.cos(pa) * 12; R.h = pa; R.y = W.H(R.x, R.z); W.noColl = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; });
+    W.cat4 = { pts, i: 1, ring: A.ring11(pts[1][0], pts[1][1], '#ffd24a', 6) }; A.setObj('🐱 Беги по запаху картошки', { x: pts[1][0], z: pts[1][1] }); }
+  function catEnd() { const C = W.cat4; if (!C) return; if (C.ring) W.scene.remove(C.ring); W.cat4 = null; W.noColl = 0; W.calm = 0; }
+  clear4.push(catEnd);
+  go.tick = function (dt) { const C = W.cat4; if (!C || W.paused) return; const p = C.pts[C.i], d = Math.hypot(p[0] - R.x, p[1] - R.z); if (W.obj) { W.obj.x = p[0]; W.obj.z = p[1]; }
+    $('wdObj').innerHTML = '🐱 Ты — Гоша: запах картошки <b>' + Math.round(d) + ' м</b>' + (W.dark2 > 0 ? ' · 🌑 темно — кошачьи глаза видят' : '');
+    if (d < 9) { if (C.i === 1 && !C.sang) { C.sang = 1; W.dark2 = 12; R.v = 0; W.talk([['pip', 'Грот! Темно — фары тут не нужны, у Гоши глаза светятся. Слышишь? Кристаллы поют.'], ['tanya', '<i>(по рации)</i> Гоша, повтори за ними — я в хоре пела, подскажу!']], () => sing()); return; } if (C.sang === 1) return;
+      W.scene.remove(C.ring); C.i++; if (C.i >= C.pts.length) { const x = R.x, z = R.z; catEnd(); W.rideEnd4(); R.x = x - 8; R.z = z - 8; R.y = W.H(R.x, R.z); W.give('parts', 3); W.talk([['gosha', 'Мяу! (Гоша сидит у входа в огромную пещеру. Изнутри пахнет картошкой.)'], ['ded', 'Догнали по следу! Умница, Гоша. Вечером — сметана. Двойная.']], () => A.adv()); return; }
+      C.ring = A.ring11(C.pts[C.i][0], C.pts[C.i][1], '#ffd24a', 6); sfx('pick', { vol: 0.5 }); } };
   function sing() { W.simon4({ title: '💎 Поющие кристаллы', rules: 'Кристаллы звенят по очереди — повтори мелодию. Каждый раз она длиннее.', keys: ['💎 до', '🔷 ре', '🔶 ми', '🟣 фа', '🟢 соль', '🔴 ля'], len0: 3, rounds: 3, ms: 680, dms: 60, minMs: 420, maxErr: 3, who: 'Кристаллы', alarm: 'Кристаллы обиделись и замолчали' },
-    () => { W.cat.sang = 2; W.give('money', 700); W.toast('💎 Проход в кристаллах открылся!'); }, () => W.talk([['ded', 'Таня, фальшиво. Давай ещё раз — кристаллы терпеливые.']], () => sing())); }
+    () => { if (W.cat4) W.cat4.sang = 2; W.give('money', 700); W.toast('💎 Проход в кристаллах открылся!'); }, () => W.talk([['ded', 'Таня, фальшиво. Давай ещё раз — кристаллы терпеливые.']], () => sing())); }
+  // штреки — на вагонетке со стрелками
+  const sht = S.find((s) => s.id === 'shtrek'); if (sht) { sht.onArrive = function () { W.talk([['kirka', '<i>(из-за завала)</i> Эй! Мы тут! Нас четверо, в разных штреках!'], ['moh', '«Буханка» в штреки не пролезет — садитесь в вагонетку! Стрелки переводите на ходу, своды трещат.'], ['ded', 'Таня, я толкаю, ты рулишь стрелками.']], () => runC()); }; sht.tick = () => {}; }
+  function runC() { W.cart4({ title: '🛒 Вагонетка по штрекам', rules: 'Вагонетка едет сама. Жми на развилки ⇄ — стрелка покажет, куда она свернёт. Собери 4 шахтёров ⛑ и привези к выходу 🚪. Красный путь — обвал, вагонетка ждёт.', time: 110, speed: 75, collapse: 7, start: 'E', stations: ['A', 'B', 'C', 'D'],
+      nodes: { E: [180, 395], J1: [180, 315], J2: [95, 245], J3: [265, 245], A: [40, 140], B: [140, 120], C: [225, 110], D: [325, 150], J4: [150, 200] },
+      edges: [['E', 'J1'], ['J1', 'J2'], ['J1', 'J3'], ['J2', 'A'], ['J2', 'J4'], ['J4', 'B'], ['J4', 'C'], ['J3', 'C'], ['J3', 'D']], hello: 'Кирка: «Я в штреке слева! Тюбик — справа, Лом — где-то посередине…»' },
+    () => { W.give('money', 500); W.give('parts', 5); W.give('fuel', 30); W.talk([['kirka', 'Все живы! Бабушка, вы — легенда шахты. Вот вам бочка топлива и детали.'], ['moh', 'Червь живёт за Подземным морем. Наши семьи как раз плывут туда на плоту — проводите?']], () => A.adv()); },
+    () => W.talk([['kirka', 'Не успели — завалило! Мы откопались, вагонетка цела. Давай снова!']], () => runC())); }
   S.splice(di + 1, 0, foot); S.splice(S.findIndex((s) => s.id === 'sea'), 1, raft);
 })();
 
