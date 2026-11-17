@@ -232,7 +232,7 @@ W.tap = function (x, y) { if (W.view === 2) return; // тап по твари �
 /* ---------- кадр боя ---------- */
 // ручной прицел: игрок наводит пальцем, «магнит» помогает поймать тварь рядом с перекрестьем
 const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-function aimStep(dt) { const cr = document.getElementById('wdCross'), fb = document.getElementById('wdFire'); if (!cr) return;
+function aimStep(dt) { const cr = document.getElementById('wdCross'), fb = document.getElementById('wdFire'); if (!cr) return; if (W.noFire) { cr.style.display = 'none'; fb.style.display = 'none'; W.firing = false; return; }
   let best = null, bs = 0.36; const yaw = R.h + W.aimYaw; for (const e of EN) { if (e.dead || e.st === 'buried') continue; const dx = e.x - R.x, dz = e.z - R.z, d = Math.hypot(dx, dz); if (d > 60 || d < 1) continue; const da = Math.abs(wrapA(Math.atan2(dx, dz) - yaw)) - (e === W.focus ? 0.08 : 0); if (da < bs) { bs = da; best = e; } }
   W.lock = W.autoFire ? null : best; if (!W.autoFire && W.st.ammo < 25 && !W.st.dead) { W.st.ammo += dt * 3; if (!W.saltTip && W.st.ammo < 5) { W.saltTip = 1; W.say && W.say('<b>Дед:</b> Таня, соль на донышке! Подсыпаю из запасов по щепотке. Ищи ящики 🧂'); } } /* соль не кончается насовсем: бой не застрянет */ const near = nearest(55), show = !W.autoFire && !W.paused && !W.st.dead && !!(near || W.boss); W.aimOn = show;
   if (!show) { cr.style.display = 'none'; fb.style.display = 'none'; W.firing = W.firing && W.aimId != null; return; } fb.style.display = 'block'; if (W.flags && !W.flags.aimTip) { W.flags.aimTip = 1; W.toast && W.toast('🎯 Твари рядом! Держи <b>ОГОНЬ</b>, веди пальцем справа — целься'); }
@@ -242,7 +242,7 @@ function aimStep(dt) { const cr = document.getElementById('wdCross'), fb = docum
   if (best) { const t = aimDir(best); W.aimPitch += (Math.asin(Math.max(-0.35, Math.min(0.6, t.y))) - W.aimPitch) * Math.min(1, dt * 6); P.set(best.x, best.y + best.t.h * 0.5, best.z); }
   else { const m = muzzle(), y2 = R.h + W.aimYaw; P.set(m.x + Math.sin(y2) * 26, m.y + Math.sin(W.aimPitch) * 26, m.z + Math.cos(y2) * 26); }
   P.project(camera); const on = P.z < 1, sx = Math.max(30, Math.min(innerWidth - 30, (P.x + 1) / 2 * innerWidth)), sy = Math.max(120, Math.min(innerHeight - 60, (1 - P.y) / 2 * innerHeight));
-  cr.style.display = on ? 'block' : 'none'; cr.style.left = sx + 'px'; cr.style.top = sy + 'px'; cr.classList.toggle('lock', !!best); fb.classList.toggle('on', !!W.firing); }
+  cr.style.display = on && !W.noFire ? 'block' : 'none'; cr.style.left = sx + 'px'; cr.style.top = sy + 'px'; cr.classList.toggle('lock', !!best); fb.classList.toggle('on', !!W.firing); }
 W.combat = function (dt) { if (W.manual > 0) W.manual -= dt; aimStep(dt); W.iframe = (W.iframe || 0) - dt; if (W.spore > 0) { W.spore -= dt; W.sxs = -1; } else W.sxs = 1;
   if (W.focus && (W.focus.dead || Math.hypot(W.focus.x - R.x, W.focus.z - R.z) > 40)) W.focus = null;
   fire(dt); stepPrj(dt); stepEnemies(dt); stepGems(dt); if (W.director) W.director(dt);

@@ -764,9 +764,9 @@ const camP = new THREE.Vector3(), camL = new THREE.Vector3(), tmpV = new THREE.V
 W.aimYaw = 0; W.aimPitch = 0.05;
 function cameraStep(dt) {
   const cam = camera, port = innerWidth < innerHeight; cam.near = 0.15; cam.far = CHC.far || 650;
-  if (W.view === 0) { const back = port ? 13 : 11, up = port ? 6.5 : 5; tmpV.set(R.x - Math.sin(R.h) * back, Math.max(H(R.x - Math.sin(R.h) * back, R.z - Math.cos(R.h) * back) + 2.5, R.y + up), R.z - Math.cos(R.h) * back);
+  if (W.view === 0) { const ck = W.camK || 1, back = (port ? 13 : 11) * ck, up = (port ? 6.5 : 5) * ck; tmpV.set(R.x - Math.sin(R.h) * back, Math.max(H(R.x - Math.sin(R.h) * back, R.z - Math.cos(R.h) * back) + 2.5, R.y + up), R.z - Math.cos(R.h) * back);
     for (const c of W.COLL) if (Math.hypot(tmpV.x - c.x, tmpV.z - c.z) < c.r + 2.5) tmpV.y = Math.max(tmpV.y, R.y + 11); // не залезаем в постройки
-    camP.lerp(tmpV, 1 - Math.exp(-dt * 5)); cam.position.copy(camP); camL.set(R.x + Math.sin(R.h) * 6, R.y + 1.6, R.z + Math.cos(R.h) * 6); cam.lookAt(camL); cam.fov += ((port ? 70 : 58) - cam.fov) * 0.1; }
+    camP.lerp(tmpV, 1 - Math.exp(-dt * 5)); cam.position.copy(camP); camL.set(R.x + Math.sin(R.h) * 6, R.y + 1.6 * (W.camK || 1), R.z + Math.cos(R.h) * 6); cam.lookAt(camL); cam.fov += ((port ? 70 : 58) - cam.fov) * 0.1; }
   else if (W.view === 1) { roverG.updateMatrixWorld(); tmpV.set(-0.5, 2.15, 1.55).applyMatrix4(roverG.matrixWorld); cam.position.copy(tmpV); tmpV.set(-0.5, 1.6, 30).applyMatrix4(roverG.matrixWorld); cam.lookAt(tmpV); cam.fov += ((port ? 80 : 68) - cam.fov) * 0.15;
     cam.position.y += Math.sin(W.t * 20) * Math.min(0.03, Math.abs(R.v) * 0.002); }
   else { roverG.updateMatrixWorld(); dedT.updateMatrixWorld(); tmpV.set(0, 1.55, 0.1).applyMatrix4(dedT.matrixWorld); if (W.dedFig) W.dedFig.visible = false; cam.position.copy(tmpV); const yaw = R.h + W.aimYaw; tmpV.set(cam.position.x + Math.sin(yaw) * Math.cos(W.aimPitch) * 20, cam.position.y + Math.sin(W.aimPitch) * 20, cam.position.z + Math.cos(yaw) * Math.cos(W.aimPitch) * 20); cam.lookAt(tmpV); cam.fov += ((port ? 75 : 62) - cam.fov) * 0.15; }

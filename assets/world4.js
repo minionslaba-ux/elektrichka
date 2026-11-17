@@ -137,14 +137,14 @@ W.chaseStep4 = function (dt) { const C = W.ch4; if (!C) return; C.s = Math.min(C
 
 /* ---------- пешая вылазка: «Буханка» стоит, бабуля идёт сама; тепло кончается, греться у тёплых камней ---------- */
 W.foot4 = function (o) { W.footEnd4(true); const F = W.ft4 = Object.assign({ warm: 100, park: { x: R.x, z: R.z, h: R.h } }, o);
-  F.g = personMesh('#c84a6a'); F.g.scale.setScalar(1.2); W.scene.add(F.g); F.lamp = new THREE.PointLight('#fff2c0', 1.4, 26); W.scene.add(F.lamp);
+  F.g = VEH.granny(); W.scene.add(F.g); F.lamp = new THREE.PointLight('#fff2c0', 1.4, 26); W.scene.add(F.lamp);
   F.car = new THREE.Group(); const cm = W.roverG.clone(); F.car.add(cm); F.car.position.set(R.x, R.y, R.z); F.car.rotation.y = R.h; W.scene.add(F.car);
   F.spots.forEach((q) => { q.ring = A.ring11(q.x, q.z, '#ff9a4a', 5); }); F.goalSp = emojiSprite(o.goalE, 3); F.goalSp.position.set(o.goal.x, W.H(o.goal.x, o.goal.z) + 2.5, o.goal.z); W.scene.add(F.goalSp);
-  W.foot = 1; W.vmaxCap = 5.5; W.noFire = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); R.x += Math.sin(R.h + 1.57) * 4; R.z += Math.cos(R.h + 1.57) * 4; R.v = 0; return F; };
-W.footEnd4 = function (stay) { const F = W.ft4; if (!F) return; W.scene.remove(F.g); W.scene.remove(F.lamp); W.scene.remove(F.car); W.scene.remove(F.goalSp); F.spots.forEach((q) => q.ring && W.scene.remove(q.ring)); W.ft4 = null; W.foot = 0; W.vmaxCap = 0; W.noFire = 0; W.calm = 0;
+  W.foot = 1; W.camK = 0.55; W.vmaxCap = 5.5; W.noFire = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); R.x += Math.sin(R.h + 1.57) * 4; R.z += Math.cos(R.h + 1.57) * 4; R.v = 0; return F; };
+W.footEnd4 = function (stay) { const F = W.ft4; if (!F) return; W.scene.remove(F.g); W.scene.remove(F.lamp); W.scene.remove(F.car); W.scene.remove(F.goalSp); F.spots.forEach((q) => q.ring && W.scene.remove(q.ring)); W.ft4 = null; W.foot = 0; W.camK = 0; W.vmaxCap = 0; W.noFire = 0; W.calm = 0;
   if (!stay) { R.x = F.park.x; R.z = F.park.z; R.h = F.park.h; R.y = W.H(R.x, R.z); R.v = 0; } };
 clear4.push(() => W.footEnd4());
-W.footStep4 = function (dt) { const F = W.ft4; if (!F) return; const y = W.H(R.x, R.z); F.g.position.set(R.x, y + Math.abs(Math.sin(W.t * 8)) * 0.25 * Math.min(1, Math.abs(R.v) / 3), R.z); F.g.rotation.y = R.h; F.lamp.position.set(R.x + Math.sin(R.h) * 3, y + 3, R.z + Math.cos(R.h) * 3);
+W.footStep4 = function (dt) { const F = W.ft4; if (!F) return; const y = W.H(R.x, R.z); if (F.g.anim) { F.g.anim.userData.mixer.update(dt); const w = Math.abs(R.v) > 1.2 ? F.g.clipWalk : F.g.clipIdle; if (w) F.g.anim.userData.play(w); } F.g.position.set(R.x, y + Math.abs(Math.sin(W.t * 8)) * 0.25 * Math.min(1, Math.abs(R.v) / 3), R.z); F.g.rotation.y = R.h; F.lamp.position.set(R.x + Math.sin(R.h) * 3, y + 3, R.z + Math.cos(R.h) * 3);
   let hot = null; for (const q of F.spots) if (Math.hypot(q.x - R.x, q.z - R.z) < 6) hot = q; F.warm = Math.max(0, Math.min(100, F.warm + (hot ? 30 : -F.drain) * dt));
   const gd = Math.hypot(F.goal.x - R.x, F.goal.z - R.z), near = F.spots.filter((q) => Math.hypot(q.x - F.goal.x, q.z - F.goal.z) < gd - 4).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0];
   if (W.obj) { const t = F.warm < 45 && near ? near : F.goal; W.obj.x = t.x; W.obj.z = t.z; }
@@ -296,14 +296,30 @@ const VEH = {
   boat() { const g = new THREE.Group(), h = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 7), LM('#e8e8f0')); h.position.y = 0.4; g.add(h); const n = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.4, 4), LM('#e8e8f0')); n.rotation.x = Math.PI / 2; n.rotation.y = Math.PI / 4; n.position.set(0, 0.4, 4.6); g.add(n); const s = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.3, 7.1), LM('#3a6aff')); s.position.y = 0.9; g.add(s); const m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.8), LM('#3a3a44')); m.position.set(0, 1.2, -3.6); g.add(m); const p = personMesh('#c84a6a'); p.scale.setScalar(0.55); p.position.set(0, 1, -2); g.add(p); for (let k = 0; k < 6; k++) { const w = emojiSprite('🍉', 1); w.position.set((k % 3 - 1) * 0.8, 1.6, 0.5 + Math.floor(k / 3) * 1); g.add(w); } return g; },
 };
 W.VEH = VEH;
+// настоящие модели вместо самоделок: бабуля (Quaternius), кот Гоша (герой с «Буханки»), лама, аппараты Kenney
+function kmodel(name, sc, ry = 0, dy = 0) { if (!MODELS || !MODELS[name]) return null; const b = new Builder([]); b.add(MODELS[name], mat(0, dy, 0, sc, sc, sc, ry), null, { vcol: true, vk: 1.05 }); return new THREE.Mesh(b.build(), bakedMat); }
+function animModel(g, name, h, fallback, dy = 0) { const fb = fallback; if (fb) g.add(fb); if (!BM.monster) return g; BM.monster(name, h).then((r) => { if (!g.parent) return; if (fb) g.remove(fb); r.position.y = dy; g.add(r); g.anim = r; const A2 = r.userData.acts, pickC = (re) => Object.keys(A2).find((k) => re.test(k)); g.clipWalk = pickC(/walk/i) || pickC(/run/i); g.clipIdle = pickC(/idle/i) || g.clipWalk; if (g.clipIdle) r.userData.play(g.clipIdle, 0); }).catch(() => {}); return g; }
+const oldGranny = VEH.granny, oldCat = VEH.cat, oldCamel = VEH.camel;
+VEH.granny = () => animModel(new THREE.Group(), 'h_oldclassy_female', 1.75, oldGranny());
+VEH.suit = () => { const g = VEH.granny(); const h = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), new THREE.MeshLambertMaterial({ color: '#cfefff', transparent: true, opacity: 0.35 })); h.position.y = 1.55; g.add(h); const pk = kmodel('k_rocket_fuelA', 0.35, 0, 0.7); if (pk) { pk.position.z = -0.35; g.add(pk); } return g; };
+VEH.jet = () => { const g = VEH.suit(); const f = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.9, 10), new THREE.MeshBasicMaterial({ color: '#7fe8ff', transparent: true, opacity: 0.85 })); f.rotation.x = Math.PI; f.position.set(0, 0.3, -0.38); g.add(f); g.flame = f; return g; };
+VEH.cat = () => { const g = new THREE.Group(); const src = BM.FX && BM.FX.cat; if (src) { const c = src.clone(true); c.position.set(0, 0, 0); c.rotation.set(0, Math.PI, 0); c.scale.setScalar(5.5); g.add(c); g.bob = 1; return g; } return oldCat(); };
+VEH.camel = () => { const g = animModel(new THREE.Group(), 'llama', 2.6, oldCamel()); BM.monster && BM.monster('h_oldclassy_female', 1.6).then((r) => { if (!g.parent) return; r.position.set(0, 1.55, -0.2); g.add(r); const A2 = r.userData.acts, k = Object.keys(A2).find((q) => /sit/i.test(q)) || Object.keys(A2).find((q) => /idle/i.test(q)); if (k) r.userData.play(k, 0); g.rider = r; }).catch(() => {}); return g; };
+VEH.drone = (() => { const old = VEH.drone; return () => { const m = kmodel('r_craft_speederD', 1.6) || kmodel('r_craft_racer', 1.4); if (!m) return old(); const g = new THREE.Group(); g.add(m); const e = new THREE.PointLight('#7aff8a', 0.8, 12); e.position.y = -1; g.add(e); return g; }; })();
+VEH.saucer = (() => { const old = VEH.saucer; return () => { const m = kmodel('s_Spaceship', 1.6); if (!m) return old(); const g = new THREE.Group(); g.add(m); return g; }; })();
+VEH.balloon = (() => { const old = VEH.balloon; return () => { const bag = kmodel('p_gasbag', 3.2); if (!bag) return old(); const g = new THREE.Group(); bag.position.y = 7; g.add(bag); for (let k = 0; k < 4; k++) { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 5, 4), LM('#5a4a3a')); st.position.set(Math.sin(k * 1.57 + 0.78) * 1.1, 3.2, Math.cos(k * 1.57 + 0.78) * 1.1); g.add(st); } const bk = kmodel('o_crate', 1.2) || new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2, 2.2), LM('#a8743a')); bk.position.y = 0.3; g.add(bk); const gr = VEH.granny(); gr.scale.setScalar(0.9); gr.position.y = 0.9; g.add(gr); g.sub = gr; return g; }; })();
+VEH.heli = (() => { const old = VEH.heli; return () => { const m = kmodel('k_craft_cargoA', 2.2) || kmodel('r_craft_cargoB', 2.2); if (!m) return old(); const g = new THREE.Group(); g.add(m); g.rotors = []; for (const [x, z] of [[-2.6, -2.2], [2.6, -2.2], [-2.6, 2.2], [2.6, 2.2]]) { const r = new THREE.Mesh(new THREE.BoxGeometry(3, 0.06, 0.3), LM('#2a2a34')); r.position.set(x, 2.6, z); g.add(r); g.rotors.push(r); const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 6), LM('#8a8a94')); hub.position.set(x, 2.1, z); g.add(hub); } return g; }; })();
+VEH.glider = (() => { const old = VEH.glider; return () => { const g = old(); g.children.filter((c) => c !== g.children[0]).forEach((c) => g.remove(c)); const gr = VEH.granny(); gr.position.y = -4.6; g.add(gr); g.sub = gr; return g; }; })();
+VEH.boat = (() => { const old = VEH.boat; return () => { const g = old(); const p = g.children.find((c) => c.isGroup); if (p) g.remove(p); const gr = VEH.granny(); gr.scale.setScalar(0.85); gr.position.set(0, 0.6, -2); g.add(gr); g.sub = gr; return g; }; })();
+
 W.ride4 = function (o) { W.rideEnd4(); const V = W.rd4 = Object.assign({ park: { x: R.x, z: R.z, h: R.h, y: R.y } }, o); V.m = typeof o.mesh === 'string' ? VEH[o.mesh]() : o.mesh; W.scene.add(V.m);
   if (o.parked) { V.car = new THREE.Group(); V.car.add(W.roverG.clone()); V.car.position.set(R.x, R.y, R.z); V.car.rotation.y = R.h; W.scene.add(V.car); }
-  W.foot = 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; return V; };
-W.rideEnd4 = function (back) { const V = W.rd4; if (!V) return; W.scene.remove(V.m); if (V.car) W.scene.remove(V.car); W.rd4 = null; W.foot = 0; W.flyMode = 0; W.flyAlt = W.flyK = undefined; W.flyY = undefined; W.vmaxCap = 0; W.glide = 0; W.swimK = 0; if (V.noFire) W.noFire = 0;
+  W.foot = 1; W.camK = o.cam || ({ granny: 0.55, suit: 0.55, cat: 0.5, jet: 0.6, camel: 0.8, boat: 0.75, drone: 0.9, glider: 1.1, balloon: 1.3, heli: 1.1, rocket: 1.2, saucer: 1 })[o.mesh] || 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; return V; };
+W.rideEnd4 = function (back) { const V = W.rd4; if (!V) return; W.scene.remove(V.m); if (V.car) W.scene.remove(V.car); W.rd4 = null; W.foot = 0; W.camK = 0; W.flyMode = 0; W.flyAlt = W.flyK = undefined; W.flyY = undefined; W.vmaxCap = 0; W.glide = 0; W.swimK = 0; if (V.noFire) W.noFire = 0;
   if (back) { R.x = V.park.x; R.z = V.park.z; R.h = V.park.h; } R.y = W.H(R.x, R.z); R.v = 0; R.vy = 0; R.mx = R.mz = 0; };
 clear4.push(() => W.rideEnd4());
 (function rideFrame() { const d0 = W.director; W.director = function (dt) { d0 && d0(dt); const V = W.rd4; if (!V) return; const m = V.m; m.position.set(R.x, R.y + (V.dy || 0) + (V.bob ? Math.abs(Math.sin(W.t * 8)) * 0.25 * Math.min(1, Math.abs(R.v) / 3) : 0), R.z); m.rotation.y = R.h + (V.spin ? W.t * V.spin : 0); if (V.bank) m.rotation.z = -(R.steer || 0) * V.bank;
-  if (m.rotors) m.rotors.forEach((r, k) => (r.rotation.y += dt * 30 * (k % 2 ? 1 : -1))); if (m.flame) m.flame.visible = !!V.burn; if (V.tick) V.tick(dt, V); }; })();
+  if (m.rotors) m.rotors.forEach((r, k) => (r.rotation.y += dt * 30 * (k % 2 ? 1 : -1))); for (const q of [m, m.sub, m.rider]) { const an = q && (q.anim || (q.isGroup && q.userData && q.userData.mixer ? q : null)); if (q && q.anim) { q.anim.userData.mixer.update(dt); const want = Math.abs(R.v) > 1.2 && q === m && !V.fly ? q.clipWalk : q.clipIdle; if (want) q.anim.userData.play(want); } } if (m.rider) m.rider.userData.mixer.update(dt); if (m.flame) m.flame.visible = !!V.burn; if (V.tick) V.tick(dt, V); }; })();
 
 /* ---------- спуск в разрезе (бур в недрах, батискаф подо льдом): ◀ ▶ — в сторону, глубина растёт сама ---------- */
 W.dive4 = function (cfg, onWin, onFail) {
@@ -370,7 +386,7 @@ function coneMesh(L, half) { const n = 12, pos = [0, 0, 0]; for (let i = 0; i <=
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
   return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#fff27a', transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide })); }
 W.stealth4 = function (o) { W.stealthEnd4(); const S = W.st4 = Object.assign({ sus: 0, L: 28, half: 0.5, got: 0, hold: 0 }, o);
-  S.guards = o.guards.map((gd) => { const m = personMesh(gd.col || '#5a6a3a'), c = coneMesh(S.L, S.half); W.scene.add(m); W.scene.add(c); const [x, z] = gd.path[0]; return Object.assign({ x, z, h: 0, wi: 1, wait: 0, m, c, sp: 2.4, look: 0 }, gd); });
+  S.guards = o.guards.map((gd, gi) => { const m = animModel(new THREE.Group(), gi % 2 ? 'h_worker_male' : 'h_cowboy_male', 1.85, personMesh(gd.col || '#5a6a3a')); const lamp = new THREE.PointLight('#fff3a0', 1.2, 22); lamp.position.set(0.4, 1.4, 0.8); m.add(lamp); c = coneMesh(S.L, S.half); W.scene.add(m); W.scene.add(c); const [x, z] = gd.path[0]; return Object.assign({ x, z, h: 0, wi: 1, wait: 0, m, c, sp: 2.4, look: 0 }, gd); });
   S.items.forEach((it) => { it.sp = emojiSprite(it.e, 2.6); it.sp.position.set(it.x, W.H(it.x, it.z) + 2.2, it.z); W.scene.add(it.sp); it.done = false; });
   W.calm = 1; W.noFire = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); return S; };
 W.stealthEnd4 = function () { const S = W.st4; if (!S) return; S.guards.forEach((g) => { W.scene.remove(g.m); W.scene.remove(g.c); }); S.items.forEach((it) => W.scene.remove(it.sp)); W.st4 = null; W.calm = 0; W.noFire = 0; };
@@ -379,7 +395,7 @@ function guardStep(g, dt, S) { const P = g.path;
   if (g.look > 0) { g.look -= dt; const want = Math.atan2(R.x - g.x, R.z - g.z); g.h += Math.atan2(Math.sin(want - g.h), Math.cos(want - g.h)) * Math.min(1, dt * 3); }
   else if (g.wait > 0) { g.wait -= dt; g.h = g.h0 + Math.sin((g.wait) * 1.6) * 0.9; }
   else { const [tx, tz] = P[g.wi], dx = tx - g.x, dz = tz - g.z, d = Math.hypot(dx, dz); if (d < 1) { g.wi = (g.wi + 1) % P.length; g.wait = g.pause || 2; g.h0 = g.h; } else { g.x += dx / d * g.sp * dt; g.z += dz / d * g.sp * dt; const want = Math.atan2(dx, dz); g.h += Math.atan2(Math.sin(want - g.h), Math.cos(want - g.h)) * Math.min(1, dt * 4); } }
-  const y = W.H(g.x, g.z); g.m.position.set(g.x, y, g.z); g.m.rotation.y = g.h; g.c.position.set(g.x, y + 0.9, g.z); g.c.rotation.y = g.h;
+  const y = W.H(g.x, g.z); g.m.position.set(g.x, y, g.z); g.m.rotation.y = g.h; if (g.m.anim) { g.m.anim.userData.mixer.update(dt); const w = g.wait > 0 || g.look > 0 ? g.m.clipIdle : g.m.clipWalk; if (w) g.m.anim.userData.play(w); } g.c.position.set(g.x, y + 0.9, g.z); g.c.rotation.y = g.h;
   const rx = R.x - g.x, rz = R.z - g.z, d = Math.hypot(rx, rz), da = Math.abs(Math.atan2(Math.sin(Math.atan2(rx, rz) - g.h), Math.cos(Math.atan2(rx, rz) - g.h)));
   const sp = Math.abs(R.v), seen = d < S.L && da < S.half + 0.08, loud = sp > S.quiet && d < (sp > 12 ? 40 : 26);
   if (loud && g.look <= 0) { g.look = 2.2; W.toast('👂 Сторож слышит мотор — тише! (меньше газа)'); }
@@ -527,10 +543,10 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
 (function ch4() { const S = A.CHAPTERS[4]; if (!S) return; const di = S.findIndex((s) => s.id === 'descent'), se = S.findIndex((s) => s.id === 'sea'), go = S.find((s) => s.id === 'gosha'); if (di < 0 || se < 0 || !go) return;
   const foot = { id: 'foot4', start() { A.setObj('Грибоград: тайник с картой штреков', byId('grib')); }, arrive: 'grib',
     onArrive() { W.talk([['moh', 'Карта штреков — в старом тайнике. Туда «Буханка» не пролезет: только пешком, за проводником. Не отставай — в темноте заблудишься!'], ['tanya', 'Ваня, сторожи машину. Я с фонариком.']], () => run()); } };
-  function run() { const P = [[-215, -175], [-170, -150], [-140, -130], [-110, -100], [-80, -75], [-60, -60]]; const g = { x: 0, z: 0, i: 0, sp: emojiSprite('🧔', 2.6), far: 0 }; W.scene.add(g.sp);
+  function run() { const P = [[-215, -175], [-170, -150], [-140, -130], [-110, -100], [-80, -75], [-60, -60]]; const g = { x: 0, z: 0, i: 0, sp: animModel(new THREE.Group(), 'h_worker_male', 1.3, personMesh('#6a4a2a')), far: 0 }; W.scene.add(g.sp);
     W.foot4({ label: 'За гномом-проводником 🧔', goal: { x: P[P.length - 1][0], z: P[P.length - 1][1] }, goalE: '🗺', spots: [], drain: 0, noWarm: 1,
       extra(dt, F) { if (!g.init) { g.init = 1; g.x = R.x + 5; g.z = R.z + 5; } const d = Math.hypot(g.x - R.x, g.z - R.z), tg = P[g.i]; if (tg && d < 16) { const tx = tg[0] - g.x, tz = tg[1] - g.z, tl = Math.hypot(tx, tz); if (tl < 1) g.i++; else { g.x += tx / tl * 4.2 * dt; g.z += tz / tl * 4.2 * dt; } }
-        g.sp.position.set(g.x, W.H(g.x, g.z) + 1.6 + Math.abs(Math.sin(W.t * 7)) * 0.3, g.z); g.far = d > 32 ? g.far + dt : 0; if (W.obj) { W.obj.x = g.x; W.obj.z = g.z; }
+        g.sp.position.set(g.x, W.H(g.x, g.z), g.z); if (tg) g.sp.rotation.y = Math.atan2(tg[0] - g.x, tg[1] - g.z); if (g.sp.anim) { g.sp.anim.userData.mixer.update(dt); const w = d < 16 && tg ? g.sp.clipWalk : g.sp.clipIdle; if (w) g.sp.anim.userData.play(w); } g.far = d > 32 ? g.far + dt : 0; if (W.obj) { W.obj.x = g.x; W.obj.z = g.z; }
         $('wdObj').innerHTML = '🧔 Иди за гномом: <b>' + Math.round(d) + ' м</b>' + (g.far > 0 ? ' · <b style="color:#ff6a4a">теряешь его! ' + Math.ceil(8 - g.far) + ' с</b>' : ' · не отставай, в темноте легко заблудиться'); if (g.far > 8) F.dead = 1; },
       onWin() { W.scene.remove(g.sp); W.give('money', 600); W.give('parts', 2); W.talk([['moh', 'Карта штреков! Теперь знаем, где наши застряли.'], ['moh', 'В штреках «Глубинной-3» остались четверо. Своды трещат. Вытащите их и вагонетки с рудой — и мы покажем дорогу к червю.']], () => A.adv()); },
       onFail() { W.scene.remove(g.sp); W.talk([['gosha', 'Мяу! (Гоша нашёл бабулю по запаху пирожков и привёл к «Буханке».)'], ['moh', 'Заблудилась? Бывает. Проводник подождёт — держись ближе.']], () => run()); } });
@@ -601,6 +617,13 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     $('wdObj').innerHTML = '🐻 Медведи: <b>' + (10 - n) + ' из 10</b> · ' + (W.sleepT > 0 ? '💤 спят ещё <b>' + Math.ceil(W.sleepT) + ' с</b> — тарань!' : '⚠ <b>проснулись!</b> отъезжай, дед вдыхает');
     if (!n) { W.ram5 = null; W.calm = 0; W.give('money', 600); W.talk([['ded', 'Все растолканы! Спят в сугробе, как дети.'], ['pip', 'Вершина купола свободна. Оттуда — спуск по спирали.']], () => A.adv()); } };
   clear4.push(() => { if (W.ram5) { W.ram5.list.forEach((e) => (e.dead = true)); W.ram5 = null; } });
+  // хоккей — бабуля на коньках; спуск по спирали — на параплане
+  const hk = S.find((s) => s.id === 'hockey'), sp = S.find((s) => s.id === 'spiral');
+  if (hk) { hk.onArrive = function () { W.talk([['valera', 'Я — судья Валерий. Шайба — замороженная банка варенья. Ворота медведей — справа, ваши — слева. 90 секунд.'], ['tanya', 'Ваня, давай коньки. Я в 1971-м в «Золотой шайбе» за вратаря стояла.'], ['ded', 'Таня, на льду не затормозишь — разгоняйся заранее!']], () => { A.hockey5(); W.ride4({ mesh: 'granny', parked: 1, vmax: 14, glide: 1.3, noFire: 1, bank: 0.25 }); W.toast('⛸ Бабуля на коньках! Скользит — тормози заранее'); }); };
+    hk.tick = function (dt) { if (W.hk) A.hockeyStep5(dt); else if (W.rd4) W.rideEnd4(true); }; }
+  if (sp) { sp.onArrive = function () { W.talk([['pip', 'Отсюда вниз ведёт спиральная долина — её прорезал ветер, стекая с купола. Внизу — каньон Северный и… пар.'], ['valera', 'Десять колец, сто тридцать секунд. Вниз — на параплане! Ветер сдувает к краю.'], ['ded', 'Таня, я держу «Буханку» на тросе снизу. Ты лети.']], () => { A.race5(); W.ride4({ mesh: 'glider', fly: 1, alt: 30, flyK: 1.05, bank: 0.5 }); W.toast('🪂 Параплан! Кольца ведут вниз по спирали'); }); };
+    sp.tick = function (dt) { if (W.race) { A.raceStep5(dt); if (W.rd4 && W.race) W.flyAlt = 7 + 23 * (1 - W.race.i / 10); } else if (W.rd4) { W.rideEnd4(); } }; }
+
 })();
 
 /* =====================================================================
@@ -623,6 +646,10 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     A.setObj('Сфотографируй туриста у 4 красот: наведи, остановись, 📷', { x: t.x, z: t.z }); }
   tour.tick = (dt) => W.ph4 && W.photoStep4(dt);
   S.splice(wi, 1, tour);
+  // хвост кометы — бабуля в скафандре с джетпаком, невесомость
+  const cm = S.find((s) => s.id === 'comet'); if (cm) { const oa = cm.onArrive, ot = cm.tick; cm.onArrive = function () { W.talk([['pip', 'Хвост кометы — в открытом космосе над Фобосом. «Буханка» туда не взлетит. Бабуля, скафандр и ранец — в багажнике!'], ['tanya', 'В невесомости я ещё не летала. Только в автобусе на кочках.']], () => { oa.call(this); W.ride4({ mesh: 'jet', parked: 1, fly: 1, alt: 5, flyK: 0.9, glide: 1.1, vmax: 13, noFire: 1 }); W.toast('🧑‍🚀 Невесомость! Толкнулась — летишь, пока не затормозишь'); }); };
+    cm.tick = function (dt) { if (W.rd4) W.rd4.burn = Math.abs(R.v) > 2; ot.call(this, dt); if (!W.ice6 && W.rd4) W.rideEnd4(true); }; }
+
   // тарелка: чистый воздушный бой — у картошки теперь нет задачи
   const sc = S.find((s) => s.id === 'saucer'); if (sc) { const oa = sc.onArrive, ot = sc.tick; sc.onArrive = oa;
     sc.tick = function (dt) { (W.pot6 || []).forEach((q) => { if (!q.done) { q.done = true; W.scene.remove(q.sp); } }); ot.call(this, dt); if (!W.pot6) return; const f = W.EN.filter((e) => !e.dead && e.fgt).sort((a, b) => Math.hypot(a.x - R.x, a.z - R.z) - Math.hypot(b.x - R.x, b.z - R.z))[0]; if (f && W.obj) { W.obj.x = f.x; W.obj.z = f.z; } $('wdObj').innerHTML = '🛸 Воздушный бой: ✈ сбито <b>' + Math.min(10, W.ftr) + ' из 10</b> · уходи от очередей, бей с хвоста'; }; }
@@ -642,6 +669,22 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     W.spot4({ x: pv.x, z: pv.z, L: 60, spd: 0.9, dmg: 5, gx: pv.x + 52, gz: pv.z - 30, onOff() { (W.gar7 || []).forEach((e) => (e.immune = false)); W.toast('🔦 Прожектор погас! Турели ослепли — бей!'); } });
     W.say && W.say('<b>Пип:</b> Прожектор наводит снайперов. Сначала выключи генератор 🔦 — постой у него две секунды!'); };
   const pt = p7.tick; p7.tick = function (dt) { if (W.sp4) { W.spotStep4(dt); if (W.obj && !W.paused) { W.obj.x = W.sp4.gx; W.obj.z = W.sp4.gz; } $('wdObj').innerHTML = '🔦 Выключи прожектор: постой у генератора' + (W.sp4 && W.sp4.hold > 0 ? ' · ' + Math.round(W.sp4.hold / 2 * 100) + '%' : '') + ' · в луче — по тебе стреляют'; return; } pt.call(this, dt); };
+  const cl = S.find((s) => s.id === 'cliff');
+  const tb = document.createElement('button'); tb.textContent = '🔥 Тяга'; tb.style.cssText = 'position:fixed;right:18px;bottom:150px;z-index:40;display:none;min-width:120px;min-height:72px;border-radius:36px;border:3px solid #fff;background:#ff7a2a;color:#fff;font:inherit;font-size:18px'; document.body.appendChild(tb);
+  const thr = { on: 0 }; tb.onpointerdown = (e) => { e.preventDefault(); e.stopPropagation(); thr.on = 1; }; tb.onpointerup = tb.onpointerleave = tb.onpointercancel = () => (thr.on = 0);
+  addEventListener('keydown', (e) => { if (W.rk7 && (e.code === 'Space' || e.code === 'KeyE')) thr.on = 1; }); addEventListener('keyup', (e) => { if (e.code === 'Space' || e.code === 'KeyE') thr.on = 0; });
+  W.rkThr = thr;
+  function rkStart() { const pd = byId('pad'); W.rideEnd4(); R.x = pd.x; R.z = pd.z; R.y = W.H(R.x, R.z); R.v = 0; R.h = Math.atan2(-40 - R.x, -125 - R.z); W.ride4({ mesh: 'rocket', fly: 1, flyK: 0.8, vmax: 14, noFire: 1 }); W.rk7 = { y: R.y, vy: 0, fuel: 100, up: 0 }; W.flyY = R.y; tb.style.display = 'block'; thr.on = 0;
+    W.rk7.ring = A.ring11(-40, -125, '#7aff8a', 16); A.setObj('Долети ракетой на край обрыва и сядь мягко', { x: -40, z: -125 }); }
+  function rkEnd() { tb.style.display = 'none'; if (W.rk7 && W.rk7.ring) W.scene.remove(W.rk7.ring); W.rk7 = null; }
+  clear4.push(() => { rkEnd(); });
+  if (cl) { cl.onArrive = function () { W.talk([['ded', 'Таня, обрыв. До верха — как до Луны. Ну, не до Луны. До Фобоса.'], ['pip', 'Ракета на «Буханке» больше не держится — садись в саму ракету! Держи 🔥 тягу — летишь вверх, отпустишь — падаешь. Топлива мало. Садись мягко на зелёный круг.'], ['tanya', 'Держись за Гошу. Ракета — пуск!']], () => rkStart()); };
+    cl.tick = function (dt) { const K = W.rk7; if (!K) return; const gy = W.H(R.x, R.z); const on = thr.on && K.fuel > 0; if (on) { K.fuel = Math.max(0, K.fuel - dt * 6.5); K.vy += 15 * dt; K.up = 1; } K.vy -= 6 * dt; K.vy = Math.max(-30, Math.min(14, K.vy)); K.y += K.vy * dt; if (W.rd4) W.rd4.burn = on;
+      if (K.y <= gy) { K.y = gy; const hard = K.vy < -10; K.vy = 0; if (K.up) { const d = Math.hypot(R.x + 40, R.z + 125); if (hard) { W.hurt(25, 'жёсткая посадка ракеты'); burst(W.scene, R.x, gy + 1, R.z, 'smoke', '#ffb04a', 10, 1.2); sfx('boom'); rkEnd(); W.rideEnd4(true); W.talk([['ded', 'Бум! Таня, мы целы, ракета — нет. Механики Петровича соберут новую.']], () => rkStart()); return; }
+          if (d < 18 && Math.abs(K.vy) < 9) { rkEnd(); W.rideEnd4(); R.y = gy; W.give('money', 900); sfx('j_win1'); W.say('<b>Дед:</b> Сели! Мягко! Таня, ты лётчик-испытатель. Шапку я уже на Фобосе оставил — тут нечего терять.'); W.toast('🫧 Воздуха почти нет: собирай пузыри!'); A.adv(); return; }
+          if (K.fuel <= 0) { rkEnd(); W.rideEnd4(true); W.talk([['pip', 'Топливо кончилось внизу. Заправляем — и снова, поднимайся раньше, а над кругом — отпускай.']], () => rkStart()); return; } } }
+      W.flyY = K.y; const d = Math.hypot(R.x + 40, R.z + 125);
+      $('wdObj').innerHTML = '🚀 Высота <b>' + Math.round(K.y - gy) + ' м</b> · скорость вниз <b style="color:' + (K.vy < -8 ? '#ff6a4a' : '#9f9') + '">' + Math.max(0, Math.round(-K.vy)) + '</b> · ⛽ <b>' + Math.round(K.fuel) + '%</b> · до круга ' + Math.round(d) + ' м · держи 🔥'; }; }
   s7.onArrive = function () { W.talk([['babka2', 'Пирожки! И ракетный двигатель — вчерашний, в разобранном виде. Чертёж — вот. Собирай, а Гоша поможет… или помешает.']], () => run3()); };
   function run3() { W.assemble4({ title: '🚀 Сборка ракетного двигателя', rules: 'На каждом шаге чертёж называет деталь — выбери именно её. Детали похожи! Гоша иногда подсовывает своё.', maxErr: 2, gosha: 0.4, goshaItem: '🐟 «деталь» от Гоши', okSay: ['Встала как родная', 'Дед: «Затянул!»', 'Щёлк!'],
       parts: [{ need: 'Сопло большое Ø3', ok: 'Сопло Ø3', bad: ['Сопло Ø2', 'Воронка'], e: '🔻' }, { need: 'Камера сгорания, двойная стенка', ok: 'Камера двойная', bad: ['Камера одинарная', 'Кастрюля'], e: '🛢' },

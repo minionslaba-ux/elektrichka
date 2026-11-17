@@ -1187,7 +1187,7 @@ const fresh = () => ({ hull: 150, hullMax: 150, nerves: 100, fuel: 100, food: 6,
 function save() { try { const w = {}, p = {}; for (const [k, v] of Object.entries(W.WEAP)) w[k] = v.lv; for (const [k, v] of Object.entries(W.PERK)) p[k] = v.lv; const old = W.visit ? load() : null; if (old) { localStorage.setItem('bm_world', JSON.stringify(Object.assign(old, { flags: W.flags, st: Object.assign({}, W.st, { dead: false }), w, p }))); return; } localStorage.setItem('bm_world', JSON.stringify({ ch: W.ch, step: stepI, flags: W.flags, st: Object.assign({}, W.st, { dead: false }), w, p, x: R.x, z: R.z })); } catch (e) {} }
 function load() { try { return JSON.parse(localStorage.getItem('bm_world') || 'null'); } catch (e) { return null; } }
 function applyWeapons(w, p) { for (const [k, v] of Object.entries(w || {})) if (W.WEAP[k]) W.WEAP[k].lv = v; for (const [k, v] of Object.entries(p || {})) if (W.PERK[k]) W.PERK[k].lv = v; }
-W.A = { setObj, adv, titleCard, curStep, mkPick, bossBar, bossK, chapterEnd, ring11, drop11, hits11Step, waves10Step, CHAPTERS, save, get stepI() { return stepI; }, set stepI(v) { stepI = v; }, get STEPSC() { return STEPSC; } };
+W.A = { hockey5: hockeyStart, hockeyStep5: hockeyStep, race5: raceStart, raceStep5: raceStep, setObj, adv, titleCard, curStep, mkPick, bossBar, bossK, chapterEnd, ring11, drop11, hits11Step, waves10Step, CHAPTERS, save, get stepI() { return stepI; }, set stepI(v) { stepI = v; }, get STEPSC() { return STEPSC; } };
 W.save = save; setInterval(() => W.active && !W.st.dead && save(), 15000);
 
 /* ---------- старт экспедиции ---------- */
