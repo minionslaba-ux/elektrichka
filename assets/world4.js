@@ -1041,6 +1041,67 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
 
 
 /* =====================================================================
+   ТРАНСПОРТ ПО МИССИЯМ (docs/transport-plan.md, согласовано владельцем 18.11.2026)
+   До столба миссии едем на «Буханке»; на месте (или с самого начала, если столба нет) —
+   пересадка на транспорт миссии; миссия засчитана — снова «Буханка». go — транспорт уже в дороге.
+   Бабуля сидит в каждом транспорте, дед — там, где он стреляет.
+   ===================================================================== */
+(function transport4() {
+  const PLAN = { 1: { rzhav: 'foot', boss: 'tractor' }, 2: { descent: { go: 'hover', at: 'foot' }, dock: 'shuttle' }, 3: { customs: 'foot', smile3: 'buggy', face: 'para', antennas: 'heli' },
+    4: { raft4: 'boat' }, 5: { arrive: 'foot', geyser: 'snowmo', aurora: 'icebreak' }, 6: { queue: 'foot', tour6: 'buggy' }, 7: { arsia: 'foot', ascraeus: 'rcart', evac: 'bus', caldera: 'heli' },
+    8: { valves8: 'foot', trade8: 'suit', rig: 'miner' }, 9: { patch: 'jet', seeds: 'foot' }, 10: { land: 'foot', tune10: 'snowmo', hunt10: 'cutter', tsar: 'iceboat' },
+    11: { race11: 'racer', kraken: 'catamaran' }, 12: { tow: 'buggy', code12: 'jet', tele12: 'saucer', boss: 'ship' }, 13: { land: 'hover', quiz13: 'foot' }, 14: { sort14: 'foot', nets14: 'raft' } };
+  const NAME = { foot: '🚶 пешком', tractor: '🚜 тягач Лёхи с ковшом', hover: '🏍 ховербайк', shuttle: '🛸 грузовой челнок', buggy: '🚙 багги', para: '🪂 параплан', heli: '🚁 винтокрыл', boat: '🚤 моторная лодка', snowmo: '🛷 снегоход', icebreak: '🚛 тягач-ледокол', rcart: '🚀 ракетная тележка', bus: '🚌 автобус с прицепом', suit: '👩‍🚀 в скафандре', miner: '⛏ шахтёрский комбайн', jet: '🎒 джетпак', cutter: '🚤 подлёдный катер', iceboat: '⛵ сани-буер', racer: '🏎 гоночный болид', catamaran: '⛵ катамаран', saucer: '🛸 тарелка', ship: '🚀 космический корабль', raft: '🪵 плот' };
+  const LMt = (c, o) => new THREE.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
+  const box = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), LMt(c)); m.position.set(x, y, z); g.add(m); return m; };
+  const cyl = (g, r1, r2, h, c, x, y, z, rx = 0, rz = 0) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 12), LMt(c)); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); g.add(m); return m; };
+  function kfit(name, len, ry = Math.PI) { if (!MODELS || !MODELS[name]) return null; const m = kmodel(name, 1, ry); if (!m) return null; const bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new THREE.Vector3()), k = len / Math.max(sz.x, sz.z, 0.01); m.scale.multiplyScalar(k); m.position.set(-(bb.min.x + bb.max.x) / 2 * k, -bb.min.y * k, -(bb.min.z + bb.max.z) / 2 * k); const g = new THREE.Group(); g.add(m); g.userData.h = sz.y * k; return g; }
+  function gran(sc = 0.6) { let o = { skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a' }; try { o = Object.assign(o, GRAN[granId()]); } catch (e) {} const p = personMesh(o); p.scale.setScalar(sc); return p; }
+  function ded(sc = 0.95) { if (typeof FX === 'undefined' || !FX.ded) return null; const d = FX.ded.clone(true); d.position.set(0, 0, 0); d.rotation.set(0, 0, 0); d.scale.setScalar(sc); return d; }
+  const put = (g, o, x, y, z) => { if (o) { o.position.set(x, y, z); g.add(o); } return o; };
+  const BUILD = {
+    foot() { const p = gran(1); p.userData.walk = 1; return p; },
+    hover() { const g = kfit('r_craft_speederA', 4.4) || (() => { const q = new THREE.Group(); box(q, 1.6, 0.6, 4, '#d84a3a', 0, 0.6, 0); return q; })(); put(g, gran(0.6), 0, 0.7, 0.2); put(g, ded(0.75), 0, 0.75, -1.1); g.userData.dy = 0.6; return g; },
+    tractor() { const g = kfit('spacetruck_large', 6.4, 0) || kfit('spacetruck', 6, 0) || new THREE.Group(); box(g, 3.2, 1.0, 0.4, '#e8b83a', 0, 0.6, 3.6).rotation.x = -0.3; box(g, 0.25, 0.25, 1.4, '#3a3a40', -1.2, 1, 3).rotation.x = 0.3; box(g, 0.25, 0.25, 1.4, '#3a3a40', 1.2, 1, 3).rotation.x = 0.3; put(g, ded(0.9), 0, (g.userData.h || 2.5) + 0.05, -0.8); return g; },
+    shuttle() { const g = kfit('k_craft_cargoA', 7.5) || new THREE.Group(); put(g, ded(1), 0, (g.userData.h || 2.5), -0.5); g.userData.dy = 3.2; return g; },
+    buggy() { const g = kfit('k_rover', 4.6) || new THREE.Group(); const h = g.userData.h || 1.8; put(g, gran(0.6), 0.45, h * 0.55, 0.3); put(g, ded(0.8), -0.4, h * 0.6, -0.9); return g; },
+    para() { const g = VEH.glider(); g.position.y = 0; const w = new THREE.Group(); g.position.y = 5.2; w.add(g); return w; },
+    heli() { const g = VEH.heli(); put(g, gran(0.55), 0, 1.6, 0.8); put(g, ded(0.8), 0, 1.6, -0.9); g.userData.dy = 3; return g; },
+    boat() { const g = VEH.boat(); put(g, ded(0.75), 0, 1, -0.4); return g; },
+    snowmo() { const g = kfit('r_craft_speederD', 4) || new THREE.Group(); for (const x of [-0.7, 0.7]) box(g, 0.25, 0.12, 4.2, '#e8eef4', x, 0.06, 0.2); box(g, 1.2, 0.15, 0.5, '#e8eef4', 0, 0.1, 2.3).rotation.x = -0.5; put(g, gran(0.6), 0, 0.7, 0); g.userData.dy = 0.25; return g; },
+    icebreak() { const g = kfit('spacetruck', 6, 0) || new THREE.Group(); const p = new THREE.Mesh(new THREE.ConeGeometry(1.8, 2.2, 4), LMt('#d0303a')); p.rotation.set(Math.PI / 2, Math.PI / 4, 0); p.scale.set(1, 1, 0.5); p.position.set(0, 0.8, 3.6); g.add(p); put(g, ded(0.9), 0, (g.userData.h || 2.5), -1); return g; },
+    rcart() { const g = kfit('r_craft_racer', 4.4) || new THREE.Group(); cyl(g, 0.45, 0.6, 1.6, '#8a8a94', 0, 0.9, -2.3, Math.PI / 2); const f = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2.4, 10), new THREE.MeshBasicMaterial({ color: '#ffb04a', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = -Math.PI / 2; f.position.set(0, 0.9, -4.2); g.add(f); g.flame = f; put(g, gran(0.6), 0, 0.6, 0.3); return g; },
+    bus() { const g = kfit('spacetruck_large', 6, 0) || new THREE.Group(); const t = new THREE.Group(); box(t, 2.4, 1.3, 4.2, '#e8c84a', 0, 1.15, 0); for (let k = 0; k < 3; k++) for (const x of [-1.21, 1.21]) box(t, 0.05, 0.5, 0.9, '#2a3a5a', x, 1.4, -1.4 + k * 1.4); for (const z of [-1.4, 1.4]) for (const x of [-1.1, 1.1]) cyl(t, 0.4, 0.4, 0.3, '#1a1a1e', x, 0.4, z, 0, Math.PI / 2); box(t, 0.3, 0.3, 1.4, '#3a3a40', 0, 0.6, 2.6); t.position.z = -5.6; g.add(t); return g; },
+    suit() { const g = VEH.suit(); try { const o = Object.assign({ skirt: '#e8e8ee', coat: '#e8e8ee', scarf: '#dcdce2', dots: '#dcdce2' }); if (g.userData.dress) g.userData.dress(o); } catch (e) {} g.userData.walk = 1; return g; },
+    miner() { const g = kfit('k_craft_miner', 6.5) || new THREE.Group(); put(g, ded(0.95), 0, (g.userData.h || 3), -1); return g; },
+    jet() { const g = VEH.jet(); return g; },
+    cutter() { const g = VEH.boat(); g.children.forEach((c) => { if (c.isSprite) c.visible = false; }); const pr = cyl(g, 1.2, 1.2, 0.15, '#3a3a44', 0, 2.6, -3.6, Math.PI / 2); g.rotors = [pr]; box(g, 3.2, 0.25, 7.4, '#7fd8ff', 0, 0.05, 0); return g; },
+    iceboat() { const g = new THREE.Group(); box(g, 1.4, 0.5, 4, '#b8463a', 0, 0.6, 0); box(g, 4.2, 0.15, 0.3, '#5a4a3a', 0, 0.4, -0.6); for (const x of [-2, 2]) box(g, 0.15, 0.15, 1.6, '#e8eef4', x, 0.15, -0.6); box(g, 0.15, 0.15, 1.6, '#e8eef4', 0, 0.15, 1.8); cyl(g, 0.07, 0.07, 6, '#5a4a3a', 0, 3.6, 0.6); const s = new THREE.Mesh(new THREE.ConeGeometry(1.8, 5, 3), LMt('#f4f0e4', { side: THREE.DoubleSide })); s.scale.set(1, 1, 0.08); s.position.set(0, 3.9, -0.4); g.add(s); put(g, gran(0.6), 0, 0.85, -1); return g; },
+    racer() { const g = kfit('r_craft_racer', 4.6) || new THREE.Group(); put(g, gran(0.6), 0, 0.55, -0.2); box(g, 2.6, 0.1, 0.6, '#ffd24a', 0, 1.4, -2.1); return g; },
+    catamaran() { const g = new THREE.Group(); for (const x of [-1.6, 1.6]) { cyl(g, 0.6, 0.6, 7, '#e8e8f0', x, 0.4, 0, Math.PI / 2); } box(g, 4, 0.25, 4.5, '#8a6a4a', 0, 1, 0); cyl(g, 0.08, 0.08, 6, '#5a4a3a', 0, 4, 0.5); const s = new THREE.Mesh(new THREE.ConeGeometry(2, 5.4, 3), LMt('#ff9a3a', { side: THREE.DoubleSide })); s.scale.set(1, 1, 0.08); s.position.set(0, 4.2, -0.3); g.add(s); put(g, gran(0.6), 0.8, 1.1, -1.4); put(g, ded(0.85), -0.8, 1.1, 0.9); return g; },
+    saucer() { return VEH.saucer(); },
+    ship() { const g = kfit('s_Spaceship3', 5.5) || kfit('s_Spaceship', 5.5) || new THREE.Group(); put(g, ded(0.9), 0, (g.userData.h || 2), -0.6); g.userData.dy = 1.6; return g; },
+    raft() { const g = new THREE.Group(); for (let k = 0; k < 6; k++) cyl(g, 0.32, 0.32, 5, k % 2 ? '#8a6a3a' : '#7a5a32', -1.6 + k * 0.64, 0.3, 0, Math.PI / 2); cyl(g, 0.05, 0.05, 4.5, '#5a4a3a', 1.2, 2.2, -1.6, 0, -0.3); put(g, gran(0.65), 0.3, 0.6, -0.8); return g; },
+  };
+  const CAM = { foot: 0.55, suit: 0.55, jet: 0.6, hover: 0.75, buggy: 0.85, snowmo: 0.75, racer: 0.8, rcart: 0.8, raft: 0.8, iceboat: 0.9, para: 1.1, heli: 1.1, saucer: 1, shuttle: 1.2, ship: 1.3, tractor: 1, icebreak: 1, bus: 1.5, miner: 1.1, boat: 0.85, cutter: 0.85, catamaran: 0.95 };
+  const VMAX = { foot: 8, suit: 7, jet: 10, raft: 9, iceboat: 15, bus: 14 };
+  let mine = null, mineKey = '';
+  const leg = (m, dt) => { const u = m.userData; if (!u || !u.legL) return; const k = Math.min(1, Math.abs(R.v) / 4), a = Math.sin(W.t * 9) * 0.6 * k; u.legL.rotation.x = a; u.legR.rotation.x = -a; if (u.armL) { u.armL.rotation.x = -a * 0.7; u.armR.rotation.x = a * 0.7; } };
+  function want() { const cur = A.curStep(); if (!cur || W.side || W.visit) return null; const P = (PLAN[W.ch] || {})[cur.id]; if (!P) return null; const o = typeof P === 'string' ? { at: P } : P; const arrived = !cur.arrive || cur.arrived; return arrived ? o.at || null : o.go || null; }
+  function on(kind) { const m = BUILD[kind] ? BUILD[kind]() : null; if (!m) return; const dy = m.userData.dy || 0;
+    mine = W.ride4({ mesh: m, parked: 0, hover: kind === 'foot' || kind === 'suit' || kind === 'jet' ? 1 : 0, cam: CAM[kind] || 0.9, vmax: VMAX[kind], tick(dt, V) { V.dy = dy + (dy ? Math.sin(W.t * 2) * 0.25 : 0); if (m.userData.walk) leg(m, dt); if (kind === 'rcart' || kind === 'jet') V.burn = Math.abs(R.v) > 2; } });
+    mine.kind = kind; W.toast('🔁 Пересадка: ' + NAME[kind]); sfx('click'); burst(W.scene, R.x, R.y + 1, R.z, 'smoke', '#e8d8c8', 4, 0.5); }
+  function off() { if (mine && W.rd4 === mine) W.rideEnd4(); mine = null; mineKey = ''; }
+  W.transport4 = { PLAN, NAME, BUILD, off };
+  const d0 = W.director; W.director = function (dt) { d0 && d0(dt); if (!W.active) return;
+    const k = want(), key = k ? W.ch + ':' + A.stepI + ':' + k : '';
+    if (key === mineKey && (!k || (mine && W.rd4 === mine))) return;
+    if (mine && W.rd4 === mine) W.rideEnd4(); mine = null; mineKey = key;
+    if (k && !W.rd4) on(k); else if (k) mineKey = ''; };
+  clear4.push(() => { mine = null; mineKey = ''; });
+})();
+
+/* =====================================================================
    КОНТРОЛЬ МИССИЙ: каждый светящийся столб — цель.
    Доехал до столба — «🎯 Цель достигнута» и награда; миссия засчитана — карточка «✅ Миссия выполнена»
    с тем, что получил; сверху — «Миссия 3 из 9» и кружки пройденных. Город со столбом — отметка и награда.
