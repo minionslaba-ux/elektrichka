@@ -1505,7 +1505,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 46); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 47); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 // заставка и при входе в экспедицию: там грузится ещё ~3 МБ
 const WD_TIPS = ['Заправляем «Буханку»…', 'Дед чистит ружьё…', 'Гоша занимает место у окна…', 'Бабуля прячет пирожки от деда…', 'Сверяемся с картой Марса…'];
 function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide', 'gone'); }
@@ -2290,7 +2290,7 @@ function catMesh() { // кот Гоша на своих четырёх
   const g = new THREE.Group(), B = new Builder(null, true), stripe = (cx, cy, cz) => TC.set(Math.round(cz * 14) % 2 ? '#e8892e' : '#c86a1e');
   B.add(BALL2, mat(0, 0.3, 0, 0.17, 0.15, 0.3), stripe, SMOOTH); B.add(BALL2, mat(0, 0.45, 0.3, 0.14, 0.13, 0.13), '#e8892e', SMOOTH);
   for (const sd of [-1, 1]) { B.add(new THREE.ConeGeometry(0.05, 0.1, 4), mat(sd * 0.08, 0.58, 0.3, 1, 1, 1, 0, 0, sd * -0.3), '#c86a1e'); B.add(CYL, mat(sd * 0.09, 0.1, 0.18, 0.06, 0.22, 0.06), '#e8892e'); B.add(CYL, mat(sd * 0.09, 0.1, -0.18, 0.06, 0.22, 0.06), '#e8892e'); }
-  B.add(BALL2, mat(0, 0.42, 0.42, 0.06, 0.045, 0.03), '#f4e0c8', SMOOTH); B.add(CYL, mat(0, 0.45, -0.38, 0.05, 0.4, 0.05, 0, -0.7), '#d87a26');
+  B.add(BALL2, mat(0, 0.42, 0.42, 0.06, 0.045, 0.03), '#f4e0c8', SMOOTH); B.add(CYL, mat(0, 0.36, -0.42, 0.05, 0.4, 0.05, 0, -1.25), '#d87a26'); B.add(BALL2, mat(0, 0.44, -0.6, 0.05, 0.05, 0.05), '#c86a1e');
   g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
   const E = new Builder(null); for (const sd of [-1, 1]) E.add(BALL2, mat(sd * 0.055, 0.48, 0.41, 0.025, 0.02, 0.01), '#9aff6a', { emit: true }); g.add(new THREE.Mesh(E.build(), bakedMat));
   return g;
