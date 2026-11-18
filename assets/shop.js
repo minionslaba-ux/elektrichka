@@ -8,7 +8,7 @@
 (function () {
   if (window.SHOP) return;
   const KEY = 'bm_shop';
-  const S = (() => { try { return Object.assign({ own: {}, eq: { paint: 'p_classic', exh: '', hat: '', roofcat: 0 }, lv: {}, help: {} }, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return { own: {}, eq: { paint: 'p_classic', exh: '', hat: '', roofcat: 0 }, lv: {}, help: {} }; } })();
+  const S = (() => { try { return Object.assign({ own: {}, eq: { paint: 'p_classic', exh: '', hat: '', roofcat: 0, outfit: 'o_classic' }, lv: {}, help: {} }, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return { own: {}, eq: { paint: 'p_classic', exh: '', hat: '', roofcat: 0, outfit: 'o_classic' }, lv: {}, help: {} }; } })();
   const saveS = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   const WD = () => window.WD;
   const inWorld = () => !!(WD() && WD().active && WD().st);
@@ -32,6 +32,15 @@
     { id: 'p_night', tab: 'look', grp: 'paint', name: 'Ночная', d: 'Чёрная с жёлтым флажком. Для поездок после заката', price: 1400 },
     { id: 'p_rust', tab: 'look', grp: 'paint', name: 'Ржавый шик', d: 'Медная, как старые марсианские корабли. Лёха одобряет', price: 1600 },
     { id: 'p_gold', tab: 'look', grp: 'paint', name: 'Золотая пенсия', d: 'Вся в золоте. Соседка Валя будет в ярости', price: 4500 },
+    { id: 'o_classic', tab: 'dress', grp: 'outfit', name: 'Кофта и платок', d: 'Любимая кофта и платок в горошек. В них Таня улетела с Земли', price: 0 },
+    { id: 'o_sport', tab: 'dress', grp: 'outfit', name: 'Олимпийка', d: 'Синий костюм с белыми лампасами. Для утренней зарядки на Фобосе', price: 800 },
+    { id: 'o_garden', tab: 'dress', grp: 'outfit', name: 'Дачница', d: 'Жёлтая кофта, фартук и соломенная шляпа с цветами. Картошка растёт быстрее (так говорят)', price: 1000 },
+    { id: 'o_party', tab: 'dress', grp: 'outfit', name: 'Платье на праздник', d: 'Красное в белый горох, бусы и брошка. На юбилей колонии', price: 1200 },
+    { id: 'o_winter', tab: 'dress', grp: 'outfit', name: 'Шуба и пуховый платок', d: 'Для Европы и полюсов. Дед говорит — «как в 78-м»', price: 1500 },
+    { id: 'o_pilot', tab: 'dress', grp: 'outfit', name: 'Лётчица', d: 'Кожаная куртка, шлем с очками и белый шарф. Как в кино', price: 1800 },
+    { id: 'o_cyber', tab: 'dress', grp: 'outfit', name: 'Кибер-бабуля', d: 'Чёрный костюм со светящимися полосками. Внуки в восторге', price: 2500 },
+    { id: 'o_space', tab: 'dress', grp: 'outfit', name: 'Скафандр', d: 'Белый, с шлемом-аквариумом и кнопками на груди. Настоящая космонавтка', price: 3000 },
+    { id: 'o_queen', tab: 'dress', grp: 'outfit', name: 'Царица колонии', d: 'Сарафан с золотом, кокошник и жемчуг в два ряда. Валя не переживёт', price: 5000 },
     { id: 'roofcat', tab: 'look', grp: 'cat', e: '🐈', name: 'Гоша на крыше', d: 'Гоша едет на крыше и смотрит вперёд. Можно надеть шапку', price: 500 },
     { id: 'h_ushanka', tab: 'look', grp: 'hat', e: '🧢', name: 'Ушанка для Гоши', d: 'Дедова, из кролика. Гоша не против', price: 600, need: 'roofcat' },
     { id: 'h_helm', tab: 'look', grp: 'hat', e: '👨‍🚀', name: 'Шлем космонавта', d: 'Настоящий, только маленький. Гоша — кот-космонавт', price: 1200, need: 'roofcat' },
@@ -56,9 +65,9 @@
     { id: 'hp_musya', tab: 'help', e: '🐈‍⬛', name: 'Кошка Муся', d: 'Подружка Гоши едет на багажнике и раз в минуту приносит находку: ₽ или деталь', price: 2000 },
     { id: 'hp_valera', tab: 'help', e: '🤖', name: 'Робот Валера', d: 'Стоит на багажнике и бьёт током ближайших тварей', price: 5000 },
   ];
-  const TABS = [['look', '🎨', 'Внешний вид'], ['up', '⚙', 'Улучшения'], ['cons', '🧺', 'Расходники'], ['help', '🤝', 'Помощники']];
+  const TABS = [['dress', '👗', 'Наряды'], ['look', '🎨', 'Внешний вид'], ['up', '⚙', 'Улучшения'], ['cons', '🧺', 'Расходники'], ['help', '🤝', 'Помощники']];
   const byId = (id) => ITEMS.find((i) => i.id === id);
-  S.own.p_classic = 1;
+  S.own.p_classic = 1; S.own.o_classic = 1; if (!S.eq.outfit) S.eq.outfit = 'o_classic';
 
   /* ---------- окно ---------- */
   const css = document.createElement('style'); css.textContent = `
@@ -102,9 +111,30 @@ body.world #shopB{display:block}body.world.wdcab #shopB,body.world.wdtur #shopB{
   btn.onclick = (e) => { e.stopPropagation(); open(); };
   el.addEventListener('click', (e) => { if (e.target === el) close(); });
   document.getElementById('shopX').onclick = (e) => { e.stopPropagation(); close(); };
-  let tab = 'look', wasPaused = null;
+  let tab = 'dress', wasPaused = null;
 
   function rover(P) { return `<svg viewBox="760 490 260 240"><g transform="translate(0,-22)"><rect x="782" y="676" width="214" height="14" rx="5" fill="#2a2428"/><path d="M776 690V612q0-20 20-20h152q18 0 26 14l24 44q4 8 4 18v22z" fill="${P[0]}"/><rect x="776" y="592" width="198" height="12" rx="6" fill="${P[1]}"/><rect x="800" y="610" width="40" height="28" rx="5" fill="#1a2a38"/><rect x="848" y="610" width="44" height="28" rx="5" fill="#1a2a38"/><path d="M904 610h48l20 36h-68z" fill="#1a2a38"/><circle cx="992" cy="664" r="6" fill="#fff4c8"/><rect x="800" y="582" width="70" height="10" rx="3" fill="#5a4a3a"/><path d="M790 592V512" stroke="#ccc" stroke-width="3"/><path d="M791 513h26l-6 8 6 8h-26z" fill="${P[2]}"/>${[806, 884, 962].map((x) => `<circle cx="${x}" cy="700" r="26" fill="#141012"/><circle cx="${x}" cy="700" r="9" fill="#d8a43a"/>`).join('')}</g></svg>`; }
+  const GP = { o_classic: ['#3a5a8a', '#7a3a6a', '#d8302a', '#ffe08a'], o_sport: ['#2a3a8a', '#2a3a8a', '#ffffff', '#d8302a'], o_garden: ['#4a6a3a', '#e8b83a', '#5ab84a', '#ffffff'], o_party: ['#c8303a', '#c8303a', '#ffffff', '#c8303a'], o_winter: ['#5a3a2a', '#7a5238', '#9a8aa8', '#f4ece0'], o_pilot: ['#3a4a3a', '#6a3a1e', '', '#5a3418'], o_cyber: ['#22222c', '#1a1a24', '#2a2a36', '#7fe8ff'], o_space: ['#e8e8ee', '#e8e8ee', '', '#dcdce2'], o_queen: ['#b8202a', '#b8202a', '', '#dcdce2'] };
+  function granSVG(id) { const [sk, co, sc, dt] = GP[id], x = id.slice(2); let h = '';
+    h += `<path d="M28 96 L36 62 H64 L72 96Z" fill="${sk}"/>`; if (x === 'party') h += [[40, 72], [56, 70], [48, 84], [36, 88], [62, 86], [52, 94]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="2.6" fill="#fff"/>`).join('');
+    if (x === 'queen') h += '<rect x="47" y="40" width="6" height="56" fill="#ffcf3a"/>';
+    h += `<path d="M35 64 L38 40 Q50 34 62 40 L65 64Z" fill="${co}"/><path d="M37 44 L26 62" stroke="${x === 'queen' ? '#f4efe4' : co}" stroke-width="8" stroke-linecap="round"/><path d="M63 44 L74 62" stroke="${x === 'queen' ? '#f4efe4' : co}" stroke-width="8" stroke-linecap="round"/><circle cx="26" cy="63" r="4" fill="#f0c8a8"/><circle cx="74" cy="63" r="4" fill="#f0c8a8"/>`;
+    if (x === 'sport') h += '<path d="M33 47 L24 63M67 47 L76 63M50 40V64" stroke="#fff" stroke-width="2"/>';
+    if (x === 'garden') h += '<rect x="41" y="44" width="18" height="24" rx="3" fill="#f4f0e0"/><rect x="45" y="54" width="10" height="7" fill="#5ab84a"/>';
+    if (x === 'winter') h += '<ellipse cx="50" cy="39" rx="15" ry="5" fill="#f4ece0"/><path d="M29 95 Q50 99 71 95" stroke="#f4ece0" stroke-width="5" fill="none"/>';
+    if (x === 'cyber') h += '<path d="M36 60 H64M30 92 H70M50 40V62" stroke="#7fe8ff" stroke-width="2"/><path d="M37 46 L27 60M63 46 L73 60" stroke="#ff4ad8" stroke-width="2"/>';
+    if (x === 'space') h += '<path d="M36 52 H64" stroke="#ff8a2a" stroke-width="3"/><rect x="54" y="45" width="6" height="4" fill="#4aff8a"/><rect x="40" y="45" width="6" height="4" fill="#d8302a"/>';
+    if (x === 'pilot') h += '<path d="M42 37 Q50 42 58 37 L66 30" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>';
+    if (x === 'party' || x === 'queen') h += '<path d="M40 40 Q50 48 60 40" stroke="#fff8ea" stroke-width="3" fill="none" stroke-dasharray="1 3" stroke-linecap="round"/>';
+    h += '<circle cx="50" cy="26" r="12" fill="#f0c8a8"/>';
+    if (sc) h += `<path d="M37 28 Q36 11 50 11 Q64 11 63 28 Q60 20 50 20 Q40 20 37 28Z" fill="${sc}"/><path d="M38 28 L50 38 L62 28" stroke="${sc}" stroke-width="3" fill="none"/>` + [[43, 15], [50, 13], [57, 15], [40, 22], [60, 22]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="1.6" fill="${dt}"/>`).join('');
+    else h += `<path d="M38 27 Q37 13 50 13 Q63 13 62 27 Q58 19 50 19 Q42 19 38 27Z" fill="${dt}"/>` + (x !== 'pilot' ? `<circle cx="50" cy="12" r="5" fill="${dt}"/>` : '');
+    if (x === 'pilot') h += '<path d="M37 30 V22 Q50 6 63 22 V30" fill="#5a3418"/><circle cx="45" cy="17" r="4" fill="#8ad8ff" stroke="#3a2a20" stroke-width="1.5"/><circle cx="55" cy="17" r="4" fill="#8ad8ff" stroke="#3a2a20" stroke-width="1.5"/>';
+    if (x === 'garden') h += '<ellipse cx="50" cy="14" rx="20" ry="4" fill="#e8c870"/><path d="M41 14 Q42 4 50 4 Q58 4 59 14Z" fill="#e8c870"/><rect x="41" y="10" width="18" height="3" fill="#d8302a"/><circle cx="40" cy="14" r="2.2" fill="#fff"/><circle cx="44" cy="15" r="2.2" fill="#ffd24a"/>';
+    if (x === 'queen') h += '<path d="M36 18 Q50 -6 64 18 Q50 12 36 18Z" fill="#ffc23a"/><circle cx="50" cy="8" r="2.6" fill="#ff3a5a"/><circle cx="43" cy="12" r="1.6" fill="#4ac8ff"/><circle cx="57" cy="12" r="1.6" fill="#4ac8ff"/>';
+    h += '<rect x="42" y="25" width="16" height="3" rx="1.5" fill="#7fe8ff"/>';
+    if (x === 'space') h += '<circle cx="50" cy="24" r="17" fill="rgba(207,233,255,.25)" stroke="#e8f4ff" stroke-width="1.5"/>';
+    return `<svg viewBox="0 0 100 100" style="width:76px;height:76px">${h}</svg>`; }
   function render() {
     const m = money(); document.getElementById('shopBal').textContent = m === null ? '₽ —' : '₽ ' + fmt(m);
     document.getElementById('shopTabs').innerHTML = TABS.map(([id, e, n]) => `<button data-t="${id}" class="${id === tab ? 'on' : ''}">${e} ${n}</button>`).join('');
@@ -112,31 +142,32 @@ body.world #shopB{display:block}body.world.wdcab #shopB,body.world.wdtur #shopB{
     let h = '';
     if (m === null) h += '<p class="note">Магазин работает в экспедиции. Отправься в первую поездку — там заработаешь первые рубли.</p>';
     if (tab === 'cons' && !inWorld()) h += '<p class="note">Расходники дрон привозит только в экспедиции — прямо к «Буханке».</p>';
+    if (tab === 'dress') h += '<p class="note">Бабулю видно в колонии: в турбо-кресле, на грядках, на рыбалке и на прогулках.</p>';
     if (tab === 'up') h += '<p class="note">Улучшения навсегда — работают во всех главах.</p>';
     if (tab === 'help') h += '<p class="note">Помощники ездят с вами во всех главах. Купленных можно отпускать и звать снова.</p>';
     let grp = '';
     for (const it of ITEMS.filter((i) => i.tab === tab)) {
       if (tab === 'look' && it.grp !== grp) { grp = it.grp; h += `<div class="gh">${{ paint: 'Покраска «Буханки»', cat: 'Гоша', hat: 'Шапки для Гоши', exh: 'Выхлоп' }[grp]}</div>`; }
       const own = !!S.own[it.id], lv = S.lv[it.id] || 0, eq = isEq(it);
-      let pv = it.grp === 'paint' ? rover(PAINT[it.id]) : it.e, b, extra = '';
+      let pv = it.grp === 'paint' ? rover(PAINT[it.id]) : it.grp === 'outfit' ? granSVG(it.id) : it.e, b, extra = '';
       if (it.prices) { const max = it.prices.length; extra = `<div class="lvl">${it.prices.map((_, k) => `<i class="${k < lv ? 'on' : ''}"></i>`).join('')}</div>`; if (lv >= max) b = `<button class="bt dis">Максимум</button>`; else { const p = it.prices[lv]; b = `<button class="bt${m === null || m < p ? ' dis' : ''}" data-buy="${it.id}">${lv ? 'Ур. ' + (lv + 1) + ' · ' : ''}${fmt(p)} ₽</button>`; } }
       else if (it.tab === 'cons') { const okk = inWorld() && (!it.ok || it.ok(WD().st)); b = `<button class="bt${!okk || m < it.price ? ' dis' : ''}" data-buy="${it.id}">${!inWorld() ? 'В экспедиции' : it.ok && !it.ok(WD().st) ? 'Не нужно' : fmt(it.price) + ' ₽'}</button>`; }
       else if (!own) { const needOk = !it.need || S.own[it.need]; b = `<button class="bt${!needOk || m === null || m < it.price ? ' dis' : ''}" data-buy="${it.id}">${needOk ? fmt(it.price) + ' ₽' : 'Сначала Гоша на крыше'}</button>`; }
       else if (it.tab === 'help') b = eq ? `<button class="bt off" data-eq="${it.id}">Отпустить</button>` : `<button class="bt eqb" data-eq="${it.id}">Позвать</button>`;
-      else b = eq ? (it.grp === 'paint' ? `<button class="bt dis">✓ Надето</button>` : `<button class="bt off" data-eq="${it.id}">Снять</button>`) : `<button class="bt eqb" data-eq="${it.id}">Надеть</button>`;
+      else b = eq ? (it.grp === 'paint' || it.grp === 'outfit' ? `<button class="bt dis">✓ Надето</button>` : `<button class="bt off" data-eq="${it.id}">Снять</button>`) : `<button class="bt eqb" data-eq="${it.id}">Надеть</button>`;
       h += `<div class="cd${eq ? ' eq' : ''}" data-id="${it.id}">${eq ? '<span class="tag">' + (it.tab === 'help' ? 'с вами' : 'надето') + '</span>' : ''}<div class="pv">${pv}</div><b>${it.name}</b><p>${it.d}</p>${extra}${b}</div>`;
     }
     const g = document.getElementById('shopGrid'); g.innerHTML = h;
     g.querySelectorAll('[data-buy]').forEach((x) => (x.onclick = (e) => { e.stopPropagation(); if (x.classList.contains('dis')) { snd('dry'); return; } buy(x.dataset.buy); }));
     g.querySelectorAll('[data-eq]').forEach((x) => (x.onclick = (e) => { e.stopPropagation(); toggle(x.dataset.eq); }));
   }
-  function isEq(it) { if (it.grp === 'paint') return S.eq.paint === it.id; if (it.grp === 'cat') return !!S.eq.roofcat; if (it.grp === 'hat') return S.eq.hat === it.id; if (it.grp === 'exh') return S.eq.exh === it.id; if (it.tab === 'help') return !!S.help[it.id]; return false; }
+  function isEq(it) { if (it.grp === 'paint') return S.eq.paint === it.id; if (it.grp === 'outfit') return S.eq.outfit === it.id; if (it.grp === 'cat') return !!S.eq.roofcat; if (it.grp === 'hat') return S.eq.hat === it.id; if (it.grp === 'exh') return S.eq.exh === it.id; if (it.tab === 'help') return !!S.help[it.id]; return false; }
   function toggle(id) { const it = byId(id); snd('click');
-    if (it.grp === 'paint') S.eq.paint = id; else if (it.grp === 'cat') S.eq.roofcat = S.eq.roofcat ? 0 : 1; else if (it.grp === 'hat') S.eq.hat = S.eq.hat === id ? '' : id; else if (it.grp === 'exh') S.eq.exh = S.eq.exh === id ? '' : id; else if (it.tab === 'help') S.help[id] = S.help[id] ? 0 : 1;
+    if (it.grp === 'outfit') S.eq.outfit = id; else if (it.grp === 'paint') S.eq.paint = id; else if (it.grp === 'cat') S.eq.roofcat = S.eq.roofcat ? 0 : 1; else if (it.grp === 'hat') S.eq.hat = S.eq.hat === id ? '' : id; else if (it.grp === 'exh') S.eq.exh = S.eq.exh === id ? '' : id; else if (it.tab === 'help') S.help[id] = S.help[id] ? 0 : 1;
     saveS(); apply(); render(); }
   function buy(id) { const it = byId(id); const lv = S.lv[id] || 0, price = it.prices ? it.prices[lv] : it.price;
     if (it.tab === 'cons' && !inWorld()) return; if (!pay(price)) { snd('dry'); return; }
-    if (it.tab === 'cons') { it.fn(WD()); } else if (it.prices) S.lv[id] = lv + 1; else { S.own[id] = 1; if (it.grp === 'paint') S.eq.paint = id; else if (it.grp === 'cat') S.eq.roofcat = 1; else if (it.grp === 'hat') S.eq.hat = id; else if (it.grp === 'exh') S.eq.exh = id; else if (it.tab === 'help') S.help[id] = 1; }
+    if (it.tab === 'cons') { it.fn(WD()); } else if (it.prices) S.lv[id] = lv + 1; else { S.own[id] = 1; if (it.grp === 'outfit') S.eq.outfit = id; else if (it.grp === 'paint') S.eq.paint = id; else if (it.grp === 'cat') S.eq.roofcat = 1; else if (it.grp === 'hat') S.eq.hat = id; else if (it.grp === 'exh') S.eq.exh = id; else if (it.tab === 'help') S.help[id] = 1; }
     saveS(); snd('coins'); apply(); render(); const c = document.querySelector(`#shopGrid .cd[data-id="${id}"]`); if (c) c.classList.add('got'); const bl = document.getElementById('shopBal'); bl.classList.remove('bump'); void bl.offsetWidth; bl.classList.add('bump');
     try { const W = WD(); if (W && W.toast && inWorld() && it.tab !== 'cons') W.toast('🛸 Дрон «Марсторга» привёз: ' + it.name); } catch (e) {} }
   function open() { const W = WD(); if (inWorld()) { wasPaused = W.paused; W.paused = true; } el.classList.add('on'); snd('open'); render(); }
@@ -155,7 +186,7 @@ body.world #shopB{display:block}body.world.wdcab #shopB,body.world.wdtur #shopB{
   function modelK(name, sc) { if (typeof MODELS === 'undefined' || !MODELS || !MODELS[name]) return null; const b = new Builder([]); b.add(MODELS[name], null, null, { crease: 0.6, vcol: true, vk: 1.05 }); const m = new THREE.Mesh(b.build(), bakedMat); m.scale.setScalar(sc); return m; }
   function droneMesh(name, col) { const g = new THREE.Group(); const m = modelK(name, 0.55); if (m) g.add(m); else { const b = HB(new THREE.CylinderGeometry(0.7, 0.45, 0.35, 16), '#c8ccd8'); g.add(b); const d = HB(new THREE.SphereGeometry(0.38, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), col, { op: 0.7 }); d.position.y = 0.17; g.add(d); } const l = HB(new THREE.SphereGeometry(0.16, 8, 6), col, { basic: true }); l.position.y = -0.35; g.add(l); return g; }
 
-  function apply() { const W = WD(); if (!W || !W.st) return;
+  function apply() { try { if (window.BM && BM.granDress) BM.granDress(S.eq.outfit); } catch (e) {} const W = WD(); if (!W || !W.st) return;
     const L = (k) => S.lv[k] || 0;
     W.shopV = 1 + L('u_turbo') * 0.06; W.shopMag = 1 + L('u_magnet') * 0.3; W.shopDmg = 1 + L('u_salt') * 0.1; W.shopFuel = 1 - L('u_tank') * 0.15;
     const ah = L('u_armor') * 40, had = W.st.shopHull || 0; if (ah > had) { W.st.hullMax += ah - had; W.st.hull += ah - had; W.st.shopHull = ah; }
