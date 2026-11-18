@@ -1057,8 +1057,8 @@ body.world #wdProg{display:block}
 #wdDone b{display:block;font-size:22px;font-weight:900;letter-spacing:.02em}#wdDone small{display:block;margin-top:4px;font-size:14px;color:#e8f0d8;font-weight:700}
 #wdDone .rw{margin-top:8px;font-size:18px;font-weight:900;color:#ffe08a}`;
   document.head.appendChild(css);
-  const hud = document.getElementById('wdHud') || document.getElementById('wdObj').parentNode;
-  const prog = document.createElement('div'); prog.id = 'wdProg'; hud.appendChild(prog);
+  const prog = document.createElement('div'); prog.id = 'wdProg';
+  const mountProg = () => { if (prog.parentNode) return true; const o = document.getElementById('wdObj'); if (!o) return false; o.parentNode.appendChild(prog); return true; };
   const card = document.createElement('div'); card.id = 'wdDone'; document.body.appendChild(card);
   let cardT = 0;
   function showCard(kind, title, sub, rw) { card.className = kind === 'goal' ? 'goal' : ''; card.innerHTML = '<b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + (rw ? '<div class="rw">' + rw + '</div>' : ''); void card.offsetWidth; card.classList.add('on'); cardT = kind === 'goal' ? 2.2 : 3.2; }
@@ -1084,7 +1084,7 @@ body.world #wdProg{display:block}
     // столб над городом: отметиться — награда (раз в главу)
     if (!W.paused && !W.side) for (const p of W.POI) { if (p.kind !== 'city' || Math.hypot(R.x - p.x, R.z - p.z) > p.r * 0.75) continue; const cv = W.flags.cityV = W.flags.cityV || {}, k = W.ch + ':' + p.id; if (cv[k]) continue; cv[k] = 1;
       W.give('money', 30); W.give('fuel', 25); W.give('food', 1); if (!cardT || cardT <= 0) showCard('goal', '🏙 ГОРОД ОТМЕЧЕН', p.e + ' ' + clean(p.name.split(' —')[0]) + ' · рынок 🏪 открыт', '+30 ₽ · +25% ⛽ · +1 🥟'); sfx('coins', { vol: 0.7 }); A.save && A.save(); }
-    upd -= dt; if (upd > 0) return; upd = 0.3;
+    upd -= dt; if (upd > 0) return; upd = 0.3; if (!mountProg()) return;
     if (!L.length || W.visit) { prog.style.display = 'none'; return; } prog.style.display = '';
     const n = L.length, done = Math.min(i, n); let dots = ''; for (let k = 0; k < n; k++) dots += '<i class="' + (k < done ? 'd' : k === done ? 'c' : '') + '"></i>';
     prog.innerHTML = (done >= n ? '🏆 Глава пройдена' : '📜 Миссия ' + (done + 1) + ' из ' + n) + dots; };
