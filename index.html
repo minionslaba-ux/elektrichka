@@ -6,6 +6,7 @@
 <title>Бабуля на Марсе</title>
 <meta name="description" content="Бабуля в турбо-кресле дрифтует по Марсу и везёт внукам картошку.">
 <meta name="theme-color" content="#2a1a2e">
+<link rel="preload" href="assets/ui/boot.webp" as="image">
 <link rel="preload" href="lib/three/three.min.js" as="script">
 <style>
 :root{--ink:#fff4ea;--dim:#e0c2b0;--hot:#ffb04a;--cyan:#7fe8ff;--glass:rgba(30,14,22,.55);--line:rgba(255,255,255,.14)}
@@ -13,16 +14,16 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#2a1a2e;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none}
 canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 #vig{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 80% 75% at 50% 45%,transparent 55%,rgba(20,6,12,.55) 100%)}
-#boot{position:fixed;inset:0;z-index:20;overflow:hidden;transition:opacity .7s;background:#1a0c1c}
+#boot{position:fixed;inset:0;z-index:20;overflow:hidden;transition:opacity .7s;background:#1a0c1c url(assets/ui/boot.webp) 50% 100%/cover no-repeat}
 #boot svg{position:absolute;inset:0;width:100%;height:100%}
 #boot .bt{position:absolute;left:0;right:0;top:calc(9vh + env(safe-area-inset-top));text-align:center;padding:0 16px}
-#boot h1{margin:0;font-size:clamp(30px,min(9vw,13vh),78px);font-weight:900;line-height:1.02;letter-spacing:-.01em;color:#ffd9a0;background:linear-gradient(#fff3d6 15%,#ffb35c 70%,#f07a3e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 18px rgba(40,6,20,.65));animation:btIn .9s cubic-bezier(.2,.8,.2,1) both}
+#boot h1{margin:0;font-size:clamp(30px,min(9vw,13vh),78px);font-weight:900;line-height:1.02;letter-spacing:-.01em;color:#ffd9a0;background:linear-gradient(#fff3d6 15%,#ffb35c 70%,#f07a3e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:btIn .9s cubic-bezier(.2,.8,.2,1) both}
 #boot .bsub{margin:10px 0 0;color:#f2c6b0;font-size:clamp(13px,3.4vw,17px);font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.85;animation:btIn .9s .15s cubic-bezier(.2,.8,.2,1) both}
 #boot .bbot{position:absolute;left:50%;bottom:calc(7vh + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(320px,70vw);text-align:center}
 #boot .bbar{height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;box-shadow:0 0 0 1px rgba(255,200,150,.15)}
 #boot .bbar i{display:block;height:100%;width:6%;border-radius:6px;background:linear-gradient(90deg,#ff8a4a,#ffd27a);box-shadow:0 0 12px #ffb35c;transition:width .5s ease-out}
 #boot .btip{margin:10px 0 0;color:#e8c0b0;font-size:14px;min-height:1.3em;transition:opacity .3s}
-#boot.hide{opacity:0;pointer-events:none}
+#boot.hide{opacity:0;pointer-events:none}#boot.gone{display:none}
 @keyframes btIn{from{opacity:0;transform:translateY(14px)}}
 @keyframes btTw{50%{opacity:.25}}
 @keyframes btSpin{to{transform:rotate(360deg)}}
@@ -243,31 +244,11 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
 <div id="vig"></div>
 <div id="boot"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
 <defs>
-<linearGradient id="bkS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120818"/><stop offset=".38" stop-color="#3c1632"/><stop offset=".6" stop-color="#8a3640"/><stop offset=".72" stop-color="#c8654a"/><stop offset=".8" stop-color="#e49060"/></linearGradient>
-<radialGradient id="bkSun" cx="1250" cy="588" r="330" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eaf6ff"/><stop offset=".07" stop-color="#b8dcf4" stop-opacity=".9"/><stop offset=".3" stop-color="#7fb0d8" stop-opacity=".38"/><stop offset="1" stop-color="#7fb0d8" stop-opacity="0"/></radialGradient>
 <radialGradient id="bkD" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#d8966c" stop-opacity=".7"/><stop offset="1" stop-color="#d8966c" stop-opacity="0"/></radialGradient>
-<radialGradient id="bkGl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffc06a" stop-opacity=".9"/><stop offset="1" stop-color="#ffc06a" stop-opacity="0"/></radialGradient>
-<linearGradient id="bkF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c1018"/><stop offset="1" stop-color="#0e0408"/></linearGradient>
-<linearGradient id="bkM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a2a34"/><stop offset="1" stop-color="#40161e"/></linearGradient>
 <linearGradient id="bkH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff0c0" stop-opacity=".5"/><stop offset="1" stop-color="#fff0c0" stop-opacity="0"/></linearGradient>
 <linearGradient id="bkR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1420"/><stop offset="1" stop-color="#12060c"/></linearGradient>
 </defs>
-<rect width="1600" height="900" fill="url(#bkS)"/>
-<g id="bkStars"></g>
-<path d="M300 158c14-12 40-14 56-4 14 9 16 28 6 40-12 14-40 18-58 8-16-9-17-31-4-44z" fill="#b69482"/><path d="M330 196c18 2 30-6 34-18 2 16-10 30-30 30-10 0-20-4-26-10 6 0 14-2 22-2z" fill="#7a5a52" opacity=".7"/><circle cx="318" cy="168" r="5" fill="#9a786a"/><circle cx="342" cy="180" r="3.5" fill="#9a786a"/>
-<circle cx="1420" cy="118" r="3" fill="#d8c0b0"/>
-<rect width="1600" height="900" fill="url(#bkSun)"/>
-<circle cx="1250" cy="588" r="13" fill="#f6fbff"/>
-<g class="tw" style="animation-duration:2.4s"><circle cx="1128" cy="420" r="11" fill="#8ec8ff" opacity=".28"/><circle cx="1128" cy="420" r="3.2" fill="#cfe9ff"/></g>
-<path d="M0 604Q250 470 560 598Z" fill="#9c5452" opacity=".75"/>
-<path d="M0 612C200 566 380 594 560 576C760 554 900 530 1100 566C1300 602 1450 576 1600 590V900H0Z" fill="#8a4044" opacity=".92"/>
-<path d="M0 662C180 632 300 652 460 642L520 608L650 610L700 646C850 656 1000 642 1180 652C1350 662 1480 640 1600 656V900H0Z" fill="url(#bkM)"/>
-<g fill="#33121c"><path d="M1150 654a42 36 0 0 1 84 0z"/><path d="M1246 654a30 26 0 0 1 60 0z"/><rect x="1236" y="640" width="14" height="14"/><rect x="1324" y="596" width="5" height="58"/><path d="M1312 600h29l-14-10z"/></g>
-<g><circle cx="1180" cy="640" r="14" fill="url(#bkGl)"/><circle cx="1206" cy="644" r="12" fill="url(#bkGl)"/><circle cx="1276" cy="644" r="11" fill="url(#bkGl)"/><rect x="1176" y="637" width="7" height="6" rx="1" fill="#ffd28a"/><rect x="1203" y="641" width="6" height="5" rx="1" fill="#ffd28a"/><rect x="1273" y="641" width="6" height="5" rx="1" fill="#ffd28a"/></g>
 <circle class="blk" cx="1326" cy="592" r="3.5" fill="#ff4a4a"/>
-<path d="M0 760C200 720 420 698 640 702C800 704 900 696 1050 706C1250 718 1420 762 1600 742V900H0Z" fill="url(#bkF)"/>
-<path d="M0 760C200 720 420 698 640 702C800 704 900 696 1050 706C1250 718 1420 762 1600 742" fill="none" stroke="#ff9a6a" stroke-opacity=".28" stroke-width="2"/>
-<g fill="#16070c"><path d="M180 748l18-14 22 6 8 12z"/><path d="M1380 752l12-10 16 4 6 8z"/><path d="M520 712l10-8 14 3 4 6z"/></g>
 <g transform="translate(-90,0)"><g fill="url(#bkD)"><circle class="dst" cx="780" cy="684" r="12"/><circle class="dst" cx="790" cy="680" r="10" style="animation-delay:-.5s"/><circle class="dst" cx="775" cy="690" r="14" style="animation-delay:-1s"/><circle class="dst" cx="770" cy="694" r="11" style="animation-delay:-.25s"/><circle class="dst" cx="786" cy="686" r="13" style="animation-delay:-.75s"/></g>
 <path d="M998 646L1420 560L1420 760Z" fill="url(#bkH)"/>
 <g class="rov">
@@ -287,10 +268,11 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
 <g class="whl"><circle cx="962" cy="700" r="26" fill="#0c0406"/><circle cx="962" cy="700" r="9" fill="#5a3438"/><path d="M962 678v44M943 689l38 22M943 711l38-22" stroke="#3a2228" stroke-width="4"/></g>
 </g></g>
 </svg>
+</svg>
 <div class="bt"><h1>Бабуля на Марсе</h1><p class="bsub">пенсия · картошка · турбо-кресло</p></div>
 <div class="bbot"><div class="bbar"><i id="bootI"></i></div><p class="btip" id="bootTip">Прогреваем турбину…</p></div>
 </div>
-<script>(function(){var g=document.getElementById('bkStars'),h='';for(var i=0;i<80;i++){var x=Math.random()*1600,y=Math.random()*Math.random()*520,r=(.5+Math.random()*1.2).toFixed(2);h+='<circle cx="'+x.toFixed(0)+'" cy="'+y.toFixed(0)+'" r="'+r+'" fill="#fff" opacity="'+(.35+Math.random()*.6).toFixed(2)+'"'+(i%3?'':' class="tw" style="animation-delay:-'+(Math.random()*3).toFixed(1)+'s"')+'/>';}g.innerHTML=h;
+<script>(function(){
 var T=['Прогреваем турбину…','Дед заряжает соль…','Гоша ищет, где теплее…','Бабуля пересчитывает банки варенья…','Подкачиваем колёса «Буханки»…','Сверяемся с картой колонии…'],k=0,el=document.getElementById('bootTip'),bi=document.getElementById('bootI'),p=6,t0=Date.now();
 window.bootP=function(v,txt){p=Math.max(p,v);bi.style.width=p+'%';if(txt)el.textContent=txt;};window.bootReset=function(tips){p=6;bi.style.transition='none';bi.style.width='6%';void bi.offsetWidth;bi.style.transition='';if(tips){T=tips;k=0;el.textContent=T[0];}};
 window.bootTips=setInterval(function(){k=(k+1)%T.length;el.style.opacity=0;setTimeout(function(){el.textContent=T[k];el.style.opacity=1;},300);if(p<88)bootP(p+(88-p)*.35);},1500);
@@ -1486,8 +1468,8 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
 const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 43); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 // заставка и при входе в экспедицию: там грузится ещё ~3 МБ
 const WD_TIPS = ['Заправляем «Буханку»…', 'Дед чистит ружьё…', 'Гоша занимает место у окна…', 'Бабуля прячет пирожки от деда…', 'Сверяемся с картой Марса…'];
-function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide'); }
-function bootHide() { bootP(100); clearInterval(window.bootTips); setTimeout(() => $('boot').classList.add('hide'), 350); }
+function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide', 'gone'); }
+function bootHide() { bootP(100); clearInterval(window.bootTips); setTimeout(() => $('boot').classList.add('hide'), 350); setTimeout(() => $('boot').classList.add('gone'), 1200); }
 const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : (bootShow(), loadJS('assets/world.js')).then(() => { bootP(30); return loadJS('assets/world2.js'); }).then(() => { WD_PART2(); bootP(50); return loadJS('assets/world3.js'); }).then(() => { WD_PART3(); bootP(72); return loadJS('assets/world4.js'); }).then(() => { WD_PART4(); bootP(90); setTimeout(bootHide, 200); }, (e) => { bootHide(); throw e; });
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
@@ -3008,7 +2990,7 @@ genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
 function afterFirst() {
-  bootP(100); clearInterval(window.bootTips); $('boot').classList.add('hide'); document.body.classList.add('play');
+  bootP(100); clearInterval(window.bootTips); $('boot').classList.add('hide'); setTimeout(() => $('boot').classList.add('gone'), 800); // скрытая заставка не должна крутить анимации document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
   setTimeout(loadModels, 150); setTimeout(loadSfx, 700); setTimeout(() => { if (!LOCALS.length) spawnLocals(); }, 1600); setTimeout(loadFx, 900);
   // самый первый заход — заезд стартует сам; вернувшегося игрока встречает карта колонии
