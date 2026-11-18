@@ -371,6 +371,36 @@ W.H = H;
 function normalAt(x, z) { const e = 2.5, hx = H(x + e, z) - H(x - e, z), hz = H(x, z + e) - H(x, z - e); const n = new THREE.Vector3(-hx, 2 * e, -hz); return n.normalize(); }
 W.normalAt = normalAt;
 
+/* ---------- фактура: мелкий песок, камешки и трещинки поверх цвета вершин ----------
+   рисуется кодом при входе (0 байт загрузки), два масштаба — без заметного повтора, на склонах — сбоку */
+let DET_TEX = null;
+function detTex() {
+  if (DET_TEX) return DET_TEX;
+  const R = Math.random; DET_TEX = noiseTex(256, 8, (v, x, y) => { let k = 0.38 + v * 0.3 + (R() - 0.5) * 0.14; if (R() < 0.012) k -= 0.22; else if (R() < 0.02) k += 0.16; const c = Math.round(255 * Math.max(0, Math.min(1, k))); return [c, c, c]; });
+  // камешки: тёмный низ и светлая макушка — читается объём
+  const c = DET_TEX.image, x = c.getContext('2d');
+  for (let i = 0; i < 90; i++) { const px = R() * 256, py = R() * 256, r = 1.5 + R() * R() * 5; for (const [dx, dy] of [[0, 0], [256, 0], [-256, 0], [0, 256], [0, -256]]) {
+    x.fillStyle = 'rgba(30,30,30,0.45)'; x.beginPath(); x.ellipse(px + dx + r * 0.25, py + dy + r * 0.3, r, r * 0.8, 0, 0, 7); x.fill();
+    x.fillStyle = 'rgba(200,200,200,0.35)'; x.beginPath(); x.ellipse(px + dx - r * 0.2, py + dy - r * 0.2, r * 0.6, r * 0.45, 0, 0, 7); x.fill(); } }
+  x.strokeStyle = 'rgba(40,40,40,0.28)'; x.lineWidth = 1;
+  for (let i = 0; i < 14; i++) { let px = R() * 256, py = R() * 256, a = R() * 7; x.beginPath(); x.moveTo(px, py); for (let j = 0; j < 9; j++) { a += (R() - 0.5) * 1.2; px += Math.cos(a) * 6; py += Math.sin(a) * 6; x.lineTo(px, py); } x.stroke(); }
+  DET_TEX.needsUpdate = true; DET_TEX.anisotropy = tier === 2 ? 4 : 1; return DET_TEX;
+}
+function detail(m, k) {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.tDet = { value: detTex() }; sh.uniforms.kDet = { value: k };
+    sh.vertexShader = 'varying vec3 vWp; varying vec3 vWn;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vWn = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = (lowEnd ? '' : '#define DET2\n') + 'uniform sampler2D tDet; uniform float kDet; varying vec3 vWp; varying vec3 vWn;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+  { vec2 uv = vWp.xz;
+#ifdef DET2
+    float d = texture2D(tDet, uv / 6.0).r * 0.62 + texture2D(tDet, uv / 29.0 + 0.37).r * 0.38;
+#else
+    float d = texture2D(tDet, uv / 7.0).r;
+#endif
+    diffuseColor.rgb *= 1.0 + (d - 0.5) * 2.0 * kDet; }`);
+  };
+  m.customProgramCacheKey = () => 'det' + k;
+}
 /* ---------- сцена ---------- */
 let S, sun, hemi, terrain, roadsM, beams = [];
 function buildTerrain() {
@@ -391,7 +421,8 @@ function buildTerrain() {
     { const l = t.r * 0.3 + t.g * 0.59 + t.b * 0.11; t.r += (l - t.r) * 0.2; t.g += (l - t.g) * 0.2; t.b += (l - t.b) * 0.2; } // фон чуть приглушён — яркими остаются цели и свет
     C.push(t.r, t.g, t.b); }
   g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); if (!CHC.cloud) MG = MGn;
-  terrain = new THREE.Mesh(g, (typeof lowEnd !== 'undefined' && lowEnd) ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, specular: 0x000000 })); S.add(terrain); // попиксельный свет — без видимых треугольников рельефа
+  const tm = (typeof lowEnd !== 'undefined' && lowEnd) ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 0, specular: 0x000000 }); detail(tm, CHC.clouds ? 0.25 : CHC.ice ? 0.32 : CHC.space ? 0.5 : 0.42);
+  terrain = new THREE.Mesh(g, tm); S.add(terrain); // попиксельный свет — без видимых треугольников рельефа
 }
 // столкновения у всего крупного: по габаритам модели (длинное — цепочкой кругов); трава, грядки, мелочь, площадки и трамплины — проходимы
 const NOCOLL = /roundGlass|grass|crop|Crop|flower|path|planter|plant|_[1-4]$|mushroom|^o_|^m_(apple|banana|beet|bread|cabbage|carrot|corn|fish|honey|pumpkin|strawberry|tomato|can)|lights|crater|landingpad|platform|ramp|astronaut|alien|bench|chair|table|bucket|tool|^s_fish|campfire|signpost|solarpanel|Spaceship5|cone|stump/;
@@ -673,7 +704,7 @@ function buildSaturn() { const G = new THREE.Group(), g = new THREE.SphereGeomet
   const N = 420, sg = new THREE.BufferGeometry(), sp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { sp[i * 3] = (Math.random() - 0.5) * 140; sp[i * 3 + 1] = Math.random() * 60; sp[i * 3 + 2] = (Math.random() - 0.5) * 140; } // метановая морось: капли падают медленно
   sg.setAttribute('position', new THREE.BufferAttribute(sp, 3)); const pts = new THREE.Points(sg, new THREE.PointsMaterial({ color: '#ffd090', size: 0.3, transparent: true, opacity: 0.7, depthWrite: false })); pts.frustumCulled = false; S.add(pts); W.snowP = pts; }
 // ночь на Земле (глава 14, бакены): k от 0 (день) до 1 (ночь)
-W.setNight = function (k) { if (!S || !CHC.blue) return; const day = new THREE.Color(CHC.fog), night = new THREE.Color('#0a1424'); S.fog.color.copy(day).lerp(night, k); S.background = S.fog.color; hemi.intensity = 0.6 * (1 - k * 0.75); sun.intensity = 0.8 * (1 - k * 0.85); if (W.head) W.head.intensity = k * 2.6; };
+W.setNight = function (k) { if (!S || !CHC.blue) return; const day = new THREE.Color(CHC.fog), night = new THREE.Color('#0a1424'); S.fog.color.copy(day).lerp(night, k); S.background = S.fog.color; hemi.intensity = 0.66 * (1 - k * 0.75); sun.intensity = 1.0 * (1 - k * 0.85); if (W.head) W.head.intensity = k * 2.6; };
 W.snowStep = function (dt) { if (W.beltM) { W.beltM.position.set(camera.position.x, 0, camera.position.z); W.beltM.rotation.y += dt * 0.01; } if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); if (!CHC.jup && !CHC.sat) W.marsBall.rotation.y += dt * (CHC.earth ? 0.006 : 0.004); } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
   for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 4; a[i] += Math.sin(W.t + i) * dt * 0.6; let x = a[i], z = a[i + 2]; if (x - cx > 70) x -= 140; if (x - cx < -70) x += 140; if (z - cz > 70) z -= 140; if (z - cz < -70) z += 140; a[i] = x; a[i + 2] = z;
     if (a[i + 1] < H(x, z) + 9) { a[i + 1] = camera.position.y + 30 + Math.random() * 25; } } p.geometry.attributes.position.needsUpdate = true; if (W.aurora) W.aurora.position.set(cx, 0, cz); if (W.aurora) W.aurora.children.forEach((m, k) => (m.material.opacity = 0.6 + 0.3 * Math.sin(W.t * 0.5 + k * 1.3))); }
@@ -683,7 +714,12 @@ function buildScene() {
   const old = S, keep = old ? old.children.filter((o) => o.userData.keep) : [];
   if (old) old.traverse((o) => { if (o.geometry && !o.userData.keep && o.geometry !== MODELS[o.name]) { /* общие геометрии моделей не трогаем */ } });
   S = W.scene = new THREE.Scene(); const fogC = new THREE.Color(CHC.fog); S.fog = new THREE.Fog(fogC, CHC.fogNear || 120, CHC.fogFar || 520); S.background = fogC;
-  hemi = CHC.blue ? new THREE.HemisphereLight('#dcecff', '#5a4a30', 0.6) : CHC.earth ? new THREE.HemisphereLight('#e4eaf4', '#2a2a32', 0.62) : CHC.sat ? new THREE.HemisphereLight('#ffd8a0', '#3a2414', 0.7) : CHC.clouds ? new THREE.HemisphereLight('#fff0c8', '#a87a3a', 1.0) : CHC.dark ? new THREE.HemisphereLight('#c0a8f0', '#4a3050', 1.0) : CHC.ice ? new THREE.HemisphereLight('#dce8ff', '#3a4868', 0.8) : new THREE.HemisphereLight('#ffe0c8', '#5a2a28', 0.9); S.add(hemi); sun = new THREE.DirectionalLight(CHC.blue ? '#fff4e0' : CHC.earth ? '#ffffff' : CHC.sat ? '#ffc890' : CHC.dark ? '#7a90ff' : CHC.ice ? '#cfe0ff' : '#ffd0a0', CHC.dark ? 0.35 : 0.8); sun.position.set(0.5, 1, 0.3); S.add(sun);
+  // тёплый свет против холодного: солнце (ключ) тёплое, небо в тенях холодное; в пещерах наоборот — холодные кристаллы, тёплые фонари
+  const LT = { 4: ['#9a8ae0', '#6a3a2a', 0.95, '#7a90ff', 0.4], 5: ['#a8c0ff', '#2a3458', 0.78, '#ffd2a8', 0.9], 6: ['#7c8cc4', '#1c1a22', 0.5, '#fff0d8', 1.15], 7: ['#6c64a0', '#ff6a38', 0.72, '#ffb07a', 0.75], 8: ['#7c8cc4', '#1c1c24', 0.5, '#fff0d8', 1.15], 9: ['#c4bce4', '#b07a3a', 0.8, '#ffd49a', 0.85], 10: ['#a0b8ff', '#5a3a2a', 0.62, '#ffe8c8', 1.0], 11: ['#e0aa6c', '#283444', 0.72, '#ffc07a', 0.75], 12: ['#94acec', '#1a1a22', 0.52, '#fff4e4', 1.15], 13: ['#b4d0ff', '#4a3a22', 0.66, '#ffe0b0', 1.0], 14: ['#b4d0ff', '#4a3a22', 0.66, '#ffe0b0', 1.0] }[W.ch] || ['#aca8d4', '#5a2a24', 0.72, '#ffc488', 1.08];
+  hemi = new THREE.HemisphereLight(LT[0], LT[1], LT[2]); S.add(hemi); sun = new THREE.DirectionalLight(LT[3], LT[4]); sun.position.set(0.5, 1, 0.3); S.add(sun);
+  // тот же свет — в запечённые цвета моделей (стены к солнцу тёплые, теневые — холодные); в колонии вернётся свой (W.stop)
+  if (!W.bake0) W.bake0 = [AMB.slice(), BOUNCE.slice(), SUN.slice(), SUN_DIR.clone()];
+  { const a = new THREE.Color(LT[0]), b = new THREE.Color(LT[1]), c = new THREE.Color(LT[3]); AMB[0] = a.r * LT[2] * 0.62; AMB[1] = a.g * LT[2] * 0.62; AMB[2] = a.b * LT[2] * 0.62; BOUNCE[0] = b.r * LT[2] * 0.46; BOUNCE[1] = b.g * LT[2] * 0.46; BOUNCE[2] = b.b * LT[2] * 0.46; SUN[0] = c.r * LT[4] * 0.62; SUN[1] = c.g * LT[4] * 0.62; SUN[2] = c.b * LT[4] * 0.62; SUN_DIR.set(0.55, 0.75, 0.4).normalize(); }
   beams = []; W.snowP = null; W.aurora = null; W.marsBall = null; W.beltM = null; buildTerrain(); buildPOIs(); buildWater(); buildAurora(); buildSpace(); buildTracks(); if (!roverG) buildRover(); else S.add(roverG); if (!W.saucer && MODELS.s_Spaceship5) { const b = new Builder([]); b.add(MODELS.s_Spaceship5, mat(0, -1.2, 0, 1.1, 1.1, 1.1), null, { vcol: true, vk: 1.1 }); W.saucer = new THREE.Mesh(b.build(), bakedMat); W.saucer.visible = false; roverG.add(W.saucer); }
   if (!W.head) { const L = new THREE.SpotLight('#ffe8c0', 0, 120, 0.62, 0.5, 1); L.position.set(0, 2.2, 2.6); L.target.position.set(0, -1, 30); roverG.add(L); roverG.add(L.target); W.head = L; } W.head.intensity = CHC.dark ? 2.6 : 0; keep.forEach((o) => S.add(o)); W.ready = true;
 }
@@ -866,7 +902,7 @@ W.start = function () {
   W.st = W.st || { hull: 120, hullMax: 120, nerves: 100, fuel: 100, food: 6, ammo: 160, parts: 0, money: 150, xp: 0, need: 8, lvl: 1 };
   if (W.onStart) W.onStart();
 };
-W.stop = function () { if (!W.active) return; W.active = false; document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
+W.stop = function () { if (!W.active) return; W.active = false; if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
   W.t += dt; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
