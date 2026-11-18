@@ -26,11 +26,11 @@ const T = W.TYPES = {
   dino: { m: 'm_dino', name: 'ящер-камнеед', h: 3.4, hp: 45, sp: 7, dmg: 10, xp: 14, r: 2.4, ground: 1, elite: 1 },
   barge: { m: 'r_craft_cargoB', name: 'Баржа «ТрансГалактик»', h: 9, hp: 700, sp: 9, dmg: 20, xp: 250, r: 9, fly: 8, boss: 1, rot: Math.PI },
   bpart: { m: 'r_turret_double', name: 'двигатель баржи', h: 3, hp: 170, sp: 0, dmg: 0, xp: 30, r: 2.4, fly: 8, boss: 1 },
-  police: { m: 'k_alien', name: 'марсианский полицейский', h: 2.6, hp: 14, sp: 9, dmg: 6, xp: 5, r: 1.3, ground: 1 },
+  police: { m: 'k_alien', name: 'марсианский полицейский', h: 2.6, hp: 14, sp: 9, dmg: 6, xp: 5, r: 1.3, ground: 1 , rot: Math.PI },
   thief: { m: 'k_craft_cargoA', name: 'фургон похитителей', h: 3.2, hp: 170, sp: 14, dmg: 0, xp: 60, r: 3.5, fly: 1.4, elite: 1, rot: Math.PI },
   umb: { m: 'k_satelliteDish', name: 'зонтик-щит', h: 3.2, hp: 55, sp: 0, dmg: 0, xp: 20, r: 2.2, fly: 7, elite: 1 },
   pusik: { m: 'm_dragon', name: 'Пусик, дракончик Зурги', h: 4, hp: 150, sp: 10, dmg: 12, xp: 60, r: 2.5, fly: 4, elite: 1, shoots: 1 },
-  zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 12, xp: 300, r: 4, ground: 1, boss: 1 },
+  zurga: { m: 'k_alien', name: 'Тёща Зурга', h: 9, hp: 650, sp: 5, dmg: 12, xp: 300, r: 4, ground: 1, boss: 1 , rot: Math.PI },
   angler: { m: 'f_Anglerfish', name: 'рыба-удильщик', h: 2.4, hp: 16, sp: 9, dmg: 8, xp: 6, r: 1.6, fly: 2.6 },
   gshark: { m: 'f_GoblinShark', name: 'акула-гоблин', h: 2.4, hp: 28, sp: 12, dmg: 12, xp: 9, r: 2, fly: -0.4 },
   catf: { m: 'f_ArmoredCatfish', name: 'сом-броненосец', h: 2.6, hp: 45, sp: 6, dmg: 14, xp: 12, r: 2.2, fly: -0.3, elite: 1 },
@@ -62,7 +62,7 @@ const T = W.TYPES = {
   queen: { m: 'm_mushroomking', name: 'Королева гнезда', h: 6.5, hp: 420, sp: 4, dmg: 20, xp: 120, r: 4, ground: 1, boss: 1 },
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 400, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
-const EN = W.EN = []; const IM = {};
+const EN = W.EN = []; const IM = {}; W.monGeo = (n) => MON && MON[n]; W.IM = IM;
 /* ---------- свои чудовища на каждой планете (у каждой главы — свой набор, вид, цвет и вред) ---------- */
 Object.assign(T, {
   sandsq: { m: 'm_squidle', name: 'песчаный кальмар', h: 2.2, hp: 9, sp: 9, dmg: 7, xp: 4, r: 1.5, fly: 5, tint: '#e8b878' },
@@ -70,7 +70,7 @@ Object.assign(T, {
   icehog: { m: 'm_greenspikyblob', name: 'ледяной ёж', h: 1.7, hp: 10, sp: 6, dmg: 6, xp: 3, r: 1.2, ground: 1, buried: 1, tint: '#bfe8ff', fx: 'freeze' },
   snowslug: { m: 'm_pinkblob', name: 'снежный слизень', h: 2, hp: 9, sp: 5, dmg: 5, xp: 3, r: 1.3, ground: 1, split: 'snowslug', tint: '#f4f8ff', fx: 'freeze' },
   meteor: { m: 'k_meteor_detailed', name: 'живой метеорит', h: 2.2, hp: 8, sp: 11, dmg: 14, xp: 3, r: 1.5, ground: 1, boom: 1, tint: '#c89a7a' },
-  trooper: { m: 'k_astronautA', name: 'пират-десантник', h: 2.4, hp: 14, sp: 6, dmg: 5, xp: 5, r: 1.2, ground: 1, shoots: 1, tint: '#ff9a9a' },
+  trooper: { m: 'k_astronautA', name: 'пират-десантник', h: 2.4, hp: 14, sp: 6, dmg: 5, xp: 5, r: 1.2, ground: 1, shoots: 1, tint: '#ff9a9a' , rot: Math.PI },
   magma: { m: 'm_pinkblob', name: 'лавовый слизень', h: 2, hp: 12, sp: 5, dmg: 8, xp: 4, r: 1.3, ground: 1, split: 'magma', tint: '#ff6a2a' },
   fdrag: { m: 'm_dragon', name: 'огненный дракончик', h: 2.6, hp: 30, sp: 10, dmg: 9, xp: 10, r: 1.6, fly: 6, elite: 1, shoots: 1, tint: '#ff5a3a' },
   saltbug: { m: 'm_armabee_evolved', name: 'соляной жук', h: 1.8, hp: 12, sp: 7, dmg: 7, xp: 4, r: 1.3, ground: 1, tint: '#f4f0e8' },
@@ -83,7 +83,7 @@ Object.assign(T, {
   perch: { m: 'f_RedSnapper', name: 'подлёдный окунь-кусака', h: 1.8, hp: 12, sp: 10, dmg: 7, xp: 4, r: 1.3, fly: 1.4, tint: '#6ab0ff' },
   mbub: { m: 'm_glub', name: 'метановый пузырь', h: 1.8, hp: 4, sp: 7, dmg: 16, xp: 3, r: 1.3, fly: 1.5, boom: 1, tint: '#ff9a3a' },
   tholin: { m: 'm_mushnub', name: 'толиновый гриб', h: 2, hp: 12, sp: 4, dmg: 6, xp: 4, r: 1.3, ground: 1, spore: 1, tint: '#a0603a' },
-  selen: { m: 'k_alien', name: 'селенит', h: 2.2, hp: 12, sp: 8, dmg: 6, xp: 4, r: 1.2, ground: 1, tint: '#b8c8e8', fx: 'nerve' },
+  selen: { m: 'k_alien', name: 'селенит', h: 2.2, hp: 12, sp: 8, dmg: 6, xp: 4, r: 1.2, ground: 1, tint: '#b8c8e8', fx: 'nerve' , rot: Math.PI },
   rego: { m: 'm_armabee', name: 'реголитовый жук', h: 1.4, hp: 5, sp: 9, dmg: 4, xp: 2, r: 1.1, ground: 1, buried: 1, tint: '#b8b8b8' },
   lrover: { m: 'r_craft_speederD', name: 'луноход-дикарь', h: 1.6, hp: 22, sp: 16, dmg: 8, xp: 7, r: 2, fly: 1, rot: Math.PI, tint: '#d8d8c8' },
   locust: { m: 'm_armabee', name: 'саранча-переросток', h: 1.1, hp: 2, sp: 14, dmg: 2, xp: 1, r: 0.9, ground: 1, tint: '#8ac84a' },
@@ -94,6 +94,7 @@ Object.assign(T, {
   somik: { m: 'f_ArmoredCatfish', name: 'сомёнок-кусака', h: 1.6, hp: 12, sp: 7, dmg: 7, xp: 4, r: 1.3, ground: 1, tint: '#8a7a5a' },
 });
 T.acidj.fx = 'fuel';
+for (const [id, k] of [['catf', 3], ['som', 3], ['somik', 3], ['gshark', 2], ['tsar', 2], ['pike', 2], ['angler', 2.2], ['perch', 1.6]]) if (T[id]) T[id].bright = k;
 // набор тварей по главам: [вид, вес]; элитные — реже
 W.ROSTER = { 1: [['bug', 4], ['pink', 3], ['jumper', 2]], 2: [['bug2', 4], ['dino', 1], ['pirate', 2]], 3: [['mush', 4], ['ghost', 2], ['sandsq', 3]], 4: [['angler', 3], ['larva', 4], ['crmoth', 3]],
   5: [['yeti', 2], ['icehog', 4], ['snowslug', 3]], 6: [['meteor', 3], ['trooper', 3], ['fighter', 2]], 7: [['gole', 2], ['magma', 4], ['fdrag', 1]], 8: [['saltbug', 4], ['mimic', 3], ['minedr', 3]],
@@ -110,10 +111,33 @@ function monFx(t, e) { const s = W.st;
 W.monFx = monFx;
 
 function initMon() { if (MON) { W.addMon(); return Promise.resolve(); } return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); W.addMon(); }); }
+
+/* ---------- морды тварям: у кого нет глаз или вместо глаз щель — мультяшные глаза с бликом, брови, рот с зубами ----------
+   Отдельная InstancedMesh на вид, те же матрицы, что у тела. Точку на «лице» ищем по вершинам модели. */
+const FM = {}; W.FM = FM;
+const FACES = {
+  jumper: { fy: 0.6, fx: 0.16, r: 0.085, glow: '#ffe14a', brow: 1 }, icehog: { fy: 0.6, fx: 0.16, r: 0.085, glow: '#8af0ff', brow: 1 },
+  meteor: { fy: 0.58, fx: 0.2, r: 0.12, brow: 1, mouth: 1 }, mimic: { fy: 0.62, fx: 0.11, r: 0.09, mouth: 1, brow: 1 },
+  larva: { head: 1, r: 0.07 }, methw: { head: 1, r: 0.07, brow: 1 }, pink: { fy: 0.45, mouthOnly: 1, r: 0.1 }, snowslug: { fy: 0.45, mouthOnly: 1, r: 0.1 }, magma: { fy: 0.45, mouthOnly: 1, r: 0.1, angry: 1 }, pet13: { fy: 0.45, mouthOnly: 1, r: 0.1 } };
+function faceGeo(id) { const t = T[id], F = FACES[id], g = MON && MON[t.m]; if (!F || !g) return null; g.computeBoundingBox(); const bb = g.boundingBox, P = g.attributes.position, h = bb.max.y - bb.min.y, w = bb.max.x - bb.min.x, B = new Builder(null), r = F.r * h;
+  const surf = (x, y) => { let best = -1e9; for (let i = 0; i < P.count; i++) { const vx = P.getX(i), vy = P.getY(i); if (Math.abs(vx - x) < w * 0.1 && Math.abs(vy - y) < h * 0.1) best = Math.max(best, P.getZ(i)); } return best > -1e8 ? best : bb.max.z; };
+  let cx = (bb.min.x + bb.max.x) / 2, cy = bb.min.y + (F.fy || 0.6) * h, ex = (F.fx || 0.15) * w, zL, zR;
+  if (F.head) { let hi = 0; for (let i = 1; i < P.count; i++) if (P.getY(i) > P.getY(hi)) hi = i; cx = P.getX(hi); cy = P.getY(hi) - r * 0.6; ex = r * 1.2; zL = zR = P.getZ(hi) + r * 0.4; }
+  else { zL = surf(cx - ex, cy); zR = surf(cx + ex, cy); }
+  const em = { emit: true };
+  if (!F.mouthOnly) for (const [s, z] of [[-1, zL], [1, zR]]) { const x = cx + s * ex, ez = z + r * 0.25;
+    if (F.glow) { B.add(BALL2, mat(x, cy, ez, r * 1.05, r * 0.8, r * 0.5), F.glow, em); B.add(BALL2, mat(x, cy, ez + r * 0.35, r * 0.35, r * 0.6, r * 0.25), '#1a1008', em); B.add(BALL2, mat(x - r * 0.3, cy + r * 0.25, ez + r * 0.5, r * 0.18, r * 0.18, r * 0.1), '#ffffff', em); }
+    else { B.add(BALL2, mat(x, cy, ez, r, r * 1.15, r * 0.6), '#fbfaf6', em); B.add(BALL2, mat(x + s * r * 0.1, cy - r * 0.1, ez + r * 0.4, r * 0.55, r * 0.65, r * 0.35), '#24160e', em); B.add(BALL2, mat(x - r * 0.2, cy + r * 0.25, ez + r * 0.7, r * 0.2, r * 0.2, r * 0.1), '#ffffff', em); }
+    if (F.brow) B.add(BOX, mat(x, cy + r * 1.25, ez + r * 0.2, r * 1.5, r * 0.32, r * 0.3, 0, 0, s * 0.42), '#2a1a12', em); }
+  if (F.mouth || F.mouthOnly) { const my = F.mouthOnly ? cy : cy - r * 1.8, mz = surf(cx, my) + r * 0.15, mw = F.mouthOnly ? r * 0.9 : r * 1.6;
+    if (F.mouthOnly && !F.angry) { B.add(new THREE.TorusGeometry(mw, r * 0.16, 5, 12, Math.PI), mat(cx, my, mz, 1, 1, 1, 0, 0, Math.PI), '#5a1a22', em); B.add(BALL2, mat(cx - mw * 1.7, my + r * 0.2, mz - r * 0.1, r * 0.5, r * 0.32, r * 0.2), '#ff9ab0', em); B.add(BALL2, mat(cx + mw * 1.7, my + r * 0.2, mz - r * 0.1, r * 0.5, r * 0.32, r * 0.2), '#ff9ab0', em); }
+    else { B.add(BALL2, mat(cx, my, mz, mw, r * 0.55, r * 0.3), '#3a0e12', em); for (let k = -2; k <= 2; k++) { const c = new THREE.ConeGeometry(r * 0.2, r * 0.42, 4); B.add(c, mat(cx + k * mw * 0.36, my + r * 0.3, mz + r * 0.22, 1, 1, 1, 0, 0, Math.PI), '#fffbea', em); } } }
+  return B.build(); }
+W.faceFor = (id) => { const g = faceGeo(id); return g ? new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true })) : null; };
 // подключить к бою новые модели (паки догружаются по главам): только виды, у которых ещё нет InstancedMesh
 W.addMon = function () { if (!MON) return; for (const n in MODELS) if (/^(r|s|k|f|n|o|p)_/.test(n)) MON[n] = MODELS[n];
-  for (const [id, t] of Object.entries(T)) { if (t.tint && !t.tintC) t.tintC = new THREE.Color(t.tint); if (IM[id]) continue; const g = MON[t.m]; if (!g) continue; g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
-    const im = new THREE.InstancedMesh(g, MAT, t.boss ? 3 : t.elite ? 6 : 60); im.count = 0; im.frustumCulled = false; im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(im.count * 3 + 180 * 3), 3); im.userData.keep = true; W.scene.add(im); IM[id] = im; } };
+  for (const [id, t] of Object.entries(T)) { if ((t.tint || t.bright) && !t.tintC) t.tintC = new THREE.Color(t.tint || '#ffffff').multiplyScalar(t.bright || 1); if (IM[id]) continue; const g = MON[t.m]; if (!g) continue; if (!g.attributes.normal) g.computeVertexNormals(); /* у самодельных моделей (дирижабль, баллоны, щупальца, робот) нет нормалей — были чёрными */ g.computeBoundingBox(); const bb = g.boundingBox, hgt = bb.max.y - bb.min.y; t.sc = t.h / hgt; t.y0 = -bb.min.y * t.sc;
+    const im = new THREE.InstancedMesh(g, MAT, t.boss ? 3 : t.elite ? 6 : 60); im.count = 0; im.frustumCulled = false; im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(im.count * 3 + 180 * 3), 3); im.userData.keep = true; W.scene.add(im); if (FACES[id]) { const fg = faceGeo(id); if (fg) { const fm = new THREE.InstancedMesh(fg, new THREE.MeshBasicMaterial({ vertexColors: true }), im.instanceMatrix.count); fm.count = 0; fm.frustumCulled = false; fm.userData.keep = true; W.scene.add(fm); FM[id] = fm; } } IM[id] = im; } };
 W.spawn = function (type, x, z, o = {}) { const t = T[type]; if (!t || !IM[type]) return null; if (EN.filter((e) => e.type === type && !e.dead).length >= (t.boss ? 3 : t.elite ? 6 : 60)) return null;
   const e = Object.assign({ type, t, x, z, y: W.H(x, z), vx: 0, vz: 0, h: rnd(0, 6), hp: t.hp * (o.hpK || 1), max: t.hp * (o.hpK || 1), hit: 0, cd: 0, ph: rnd(0, 6), st: t.buried ? 'buried' : 'go', age: 0 }, o); EN.push(e); return e; };
 
@@ -232,8 +256,8 @@ function stepEnemies(dt) { if (W.monSlowT > 0) { W.monSlowT -= dt; if (W.monSlow
     const im = IM[e.type]; if (!im || cnt[e.type] >= 60 && !t.boss) continue; const s = t.sc * (e.scl || 1), sq = e.dead ? 1 + e.dt * 4 : 1, bob = t.ground ? Math.abs(Math.sin(e.ph * 1.6)) * 0.12 : 0;
     E.set(t.fly ? Math.sin(e.ph) * 0.1 : 0, e.h + (t.rot || 0), e.st === 'leap' ? -0.4 : 0, 'YXZ'); Q.setFromEuler(E); SC.set(s * sq * (1 + (t.ground ? Math.sin(e.ph * 3.2) * 0.05 : 0)), s * (e.dead ? Math.max(0.05, 1 - e.dt * 4) : 1 + (t.ground ? Math.sin(e.ph * 3.2 + 1.5) * 0.07 : Math.sin(e.ph * 2) * 0.05)), s * sq);
     if (e.st === 'buried') { SC.multiplyScalar(0.35); P.set(e.x, e.y - 0.5, e.z); } else P.set(e.x, e.y + t.y0 * (e.scl || 1) + bob, e.z);
-    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : W.sleepT > 0 && !t.boss ? CS : t.tintC || CW); }
-  for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
+    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); if (FM[e.type]) FM[e.type].setMatrixAt(k, M4); im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : W.sleepT > 0 && !t.boss ? CS : t.tintC || CW); }
+  for (const id in FM) { FM[id].count = cnt[id] || 0; FM[id].instanceMatrix.needsUpdate = true; } for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
 
 /* ---------- опыт, находки, магнит ---------- */
 function stepGems(dt) { const st = W.st, mr = 5 * (1 + PERK.magnet.lv * 0.4) * (W.shopMag || 1); let n = 0;
