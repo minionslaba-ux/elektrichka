@@ -1505,7 +1505,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 46); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 47); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 // заставка и при входе в экспедицию: там грузится ещё ~3 МБ
 const WD_TIPS = ['Заправляем «Буханку»…', 'Дед чистит ружьё…', 'Гоша занимает место у окна…', 'Бабуля прячет пирожки от деда…', 'Сверяемся с картой Марса…'];
 function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide', 'gone'); }

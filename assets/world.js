@@ -776,7 +776,7 @@ function roverStep(dt) {
   if (W.view === 2 && W.auto) { const a = W.auto; thr = a.thr; st = a.st; } // в турели ведёт бабка
   if (W.lock > 0) { thr = 0; st = 0; }
   if (W.nobrake > 0 && thr < 0) thr = 0; // ракетный двигатель вместо тормозов
-  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (W.shopV || 1) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? (W.swimK || 0.62) : 1) * (W.flyMode ? (W.flyK || 1.5) : 1) * (W.vmaxCap ? Math.min(1, W.vmaxCap / ((W.vmax || 17) * (onRoad ? 1.18 : 1))) : 1), n = normalAt(R.x, R.z);
+  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (W.shopV || 1) * (W.monSlow || 1) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? (W.swimK || 0.62) : 1) * (W.flyMode ? (W.flyK || 1.5) : 1) * (W.vmaxCap ? Math.min(1, W.vmaxCap / ((W.vmax || 17) * (onRoad ? 1.18 : 1))) : 1), n = normalAt(R.x, R.z);
   const fwd = new THREE.Vector3(Math.sin(R.h), 0, Math.cos(R.h)), slope = fwd.x * n.x + fwd.z * n.z; // спуск разгоняет, подъём тормозит
   if (R.air <= 0) { if (thr > 0) R.v += (thr * 9 - (R.v < 0 ? -6 : 0)) * dt; else if (thr < 0) R.v += thr * (R.v > 0 ? 14 : 6) * dt; else R.v -= Math.sign(R.v) * Math.min(Math.abs(R.v), (W.hover ? 9 : onRoad ? 2 : 4) * dt);
     R.v += slope * 9.8 * 0.55 * dt * (CHC.g ? 0.35 : 1); R.v = Math.max(-6, Math.min(vmax, R.v)); if (R.v > vmax) R.v += (vmax - R.v) * dt * 2; }

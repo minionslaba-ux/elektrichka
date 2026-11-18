@@ -63,6 +63,52 @@ const T = W.TYPES = {
   kolyan: { m: 'm_orc_skull', name: 'Бешеный Колян', h: 5.5, hp: 400, sp: 13, dmg: 16, xp: 200, r: 3.5, ground: 1, boss: 1 },
 };
 const EN = W.EN = []; const IM = {};
+/* ---------- свои чудовища на каждой планете (у каждой главы — свой набор, вид, цвет и вред) ---------- */
+Object.assign(T, {
+  sandsq: { m: 'm_squidle', name: 'песчаный кальмар', h: 2.2, hp: 9, sp: 9, dmg: 7, xp: 4, r: 1.5, fly: 5, tint: '#e8b878' },
+  crmoth: { m: 'm_glub', name: 'кристальная моль', h: 1.5, hp: 5, sp: 12, dmg: 3, xp: 2, r: 1, fly: 3, tint: '#c08aff', fx: 'blind' },
+  icehog: { m: 'm_greenspikyblob', name: 'ледяной ёж', h: 1.7, hp: 10, sp: 6, dmg: 6, xp: 3, r: 1.2, ground: 1, buried: 1, tint: '#bfe8ff', fx: 'freeze' },
+  snowslug: { m: 'm_pinkblob', name: 'снежный слизень', h: 2, hp: 9, sp: 5, dmg: 5, xp: 3, r: 1.3, ground: 1, split: 'snowslug', tint: '#f4f8ff', fx: 'freeze' },
+  meteor: { m: 'k_meteor_detailed', name: 'живой метеорит', h: 2.2, hp: 8, sp: 11, dmg: 14, xp: 3, r: 1.5, ground: 1, boom: 1, tint: '#c89a7a' },
+  trooper: { m: 'k_astronautA', name: 'пират-десантник', h: 2.4, hp: 14, sp: 6, dmg: 5, xp: 5, r: 1.2, ground: 1, shoots: 1, tint: '#ff9a9a' },
+  magma: { m: 'm_pinkblob', name: 'лавовый слизень', h: 2, hp: 12, sp: 5, dmg: 8, xp: 4, r: 1.3, ground: 1, split: 'magma', tint: '#ff6a2a' },
+  fdrag: { m: 'm_dragon', name: 'огненный дракончик', h: 2.6, hp: 30, sp: 10, dmg: 9, xp: 10, r: 1.6, fly: 6, elite: 1, shoots: 1, tint: '#ff5a3a' },
+  saltbug: { m: 'm_armabee_evolved', name: 'соляной жук', h: 1.8, hp: 12, sp: 7, dmg: 7, xp: 4, r: 1.3, ground: 1, tint: '#f4f0e8' },
+  mimic: { m: 'k_rock_crystals', name: 'камень-мимик', h: 2.2, hp: 16, sp: 7, dmg: 10, xp: 5, r: 1.5, ground: 1, buried: 1, tint: '#d8c8ff' },
+  minedr: { m: 'r_craft_speederC', name: 'дрон-старатель', h: 1.4, hp: 10, sp: 15, dmg: 5, xp: 4, r: 1.5, fly: 4, rot: Math.PI, tint: '#ffd27a' },
+  bolt9: { m: 'm_ghost', name: 'шаровая молния', h: 1.8, hp: 7, sp: 11, dmg: 6, xp: 4, r: 1.2, fly: 4, tint: '#fff27a', fx: 'zap' },
+  sulf: { m: 'm_hywirl', name: 'серный вихрь', h: 3.4, hp: 40, sp: 6, dmg: 10, xp: 14, r: 2.4, ground: 1, elite: 1, tint: '#e8e05a', fx: 'fuel' },
+  puffer: { m: 'f_Puffer', name: 'ледяной фугу', h: 1.6, hp: 8, sp: 8, dmg: 6, xp: 3, r: 1.2, fly: 1.5, tint: '#9ae8ff', fx: 'freeze' },
+  krill: { m: 'f_Goldfish', name: 'светорачок', h: 1, hp: 2, sp: 14, dmg: 2, xp: 1, r: 0.8, fly: 1.2, tint: '#b8fff0' },
+  perch: { m: 'f_RedSnapper', name: 'подлёдный окунь-кусака', h: 1.8, hp: 12, sp: 10, dmg: 7, xp: 4, r: 1.3, fly: 1.4, tint: '#6ab0ff' },
+  mbub: { m: 'm_glub', name: 'метановый пузырь', h: 1.8, hp: 4, sp: 7, dmg: 16, xp: 3, r: 1.3, fly: 1.5, boom: 1, tint: '#ff9a3a' },
+  tholin: { m: 'm_mushnub', name: 'толиновый гриб', h: 2, hp: 12, sp: 4, dmg: 6, xp: 4, r: 1.3, ground: 1, spore: 1, tint: '#a0603a' },
+  selen: { m: 'k_alien', name: 'селенит', h: 2.2, hp: 12, sp: 8, dmg: 6, xp: 4, r: 1.2, ground: 1, tint: '#b8c8e8', fx: 'nerve' },
+  rego: { m: 'm_armabee', name: 'реголитовый жук', h: 1.4, hp: 5, sp: 9, dmg: 4, xp: 2, r: 1.1, ground: 1, buried: 1, tint: '#b8b8b8' },
+  lrover: { m: 'r_craft_speederD', name: 'луноход-дикарь', h: 1.6, hp: 22, sp: 16, dmg: 8, xp: 7, r: 2, fly: 1, rot: Math.PI, tint: '#d8d8c8' },
+  locust: { m: 'm_armabee', name: 'саранча-переросток', h: 1.1, hp: 2, sp: 14, dmg: 2, xp: 1, r: 0.9, ground: 1, tint: '#8ac84a' },
+  varan: { m: 'm_dino', name: 'степной варан', h: 2.6, hp: 30, sp: 9, dmg: 9, xp: 9, r: 2, ground: 1, elite: 1, tint: '#d8b87a' },
+  crow: { m: 'm_glub', name: 'ворона-хулиганка', h: 1.4, hp: 4, sp: 15, dmg: 1, xp: 2, r: 1, fly: 5, tint: '#2a2a30', fx: 'steal' },
+  pike: { m: 'f_GoblinShark', name: 'щука-переросток', h: 2, hp: 14, sp: 12, dmg: 8, xp: 5, r: 1.6, fly: 0.6, tint: '#6a9a4a' },
+  mosq: { m: 'm_squidle', name: 'комар-мутант', h: 1.3, hp: 3, sp: 13, dmg: 1, xp: 1, r: 0.9, fly: 3, tint: '#4a4a3a', fx: 'nerve' },
+  somik: { m: 'f_ArmoredCatfish', name: 'сомёнок-кусака', h: 1.6, hp: 12, sp: 7, dmg: 7, xp: 4, r: 1.3, ground: 1, tint: '#8a7a5a' },
+});
+T.acidj.fx = 'fuel';
+// набор тварей по главам: [вид, вес]; элитные — реже
+W.ROSTER = { 1: [['bug', 4], ['pink', 3], ['jumper', 2]], 2: [['bug2', 4], ['dino', 1], ['pirate', 2]], 3: [['mush', 4], ['ghost', 2], ['sandsq', 3]], 4: [['angler', 3], ['larva', 4], ['crmoth', 3]],
+  5: [['yeti', 2], ['icehog', 4], ['snowslug', 3]], 6: [['meteor', 3], ['trooper', 3], ['fighter', 2]], 7: [['gole', 2], ['magma', 4], ['fdrag', 1]], 8: [['saltbug', 4], ['mimic', 3], ['minedr', 3]],
+  9: [['acidj', 4], ['bolt9', 3], ['sulf', 1]], 10: [['puffer', 3], ['krill', 4], ['perch', 3]], 11: [['methw', 3], ['mbub', 4], ['tholin', 3]], 12: [['selen', 3], ['rego', 4], ['lrover', 2]],
+  13: [['locust', 5], ['varan', 1], ['crow', 3]], 14: [['pike', 3], ['mosq', 4], ['somik', 3]] };
+W.rosterPick = function (ch) { const L = (W.ROSTER[ch] || W.ROSTER[1]).filter(([id]) => IM[id] && !(ch === 5 && W.flags && W.flags.peace && id === 'yeti')); if (!L.length) return 'bug'; let s = 0; for (const q of L) s += q[1]; let r = Math.random() * s; for (const q of L) { r -= q[1]; if (r <= 0) return q[0]; } return L[0][0]; };
+function monFx(t, e) { const s = W.st;
+  if (t.fx === 'freeze') { W.monSlow = 0.55; W.monSlowT = 2.5; flash('#bfe8ff', 0.25); if (!W.fxT || W.t - W.fxT > 8) { W.fxT = W.t; floatText('❄ примёрзли!', R.x, R.y + 3.5, R.z, '#bfe8ff'); } }
+  else if (t.fx === 'fuel') { s.fuel = Math.max(0, s.fuel - 4); floatText('−4% ⛽ кислота', R.x, R.y + 3.5, R.z, '#e8e05a'); }
+  else if (t.fx === 'nerve') { if (W.nerve) W.nerve(-4); }
+  else if (t.fx === 'blind') flash('#b07aff', 0.6);
+  else if (t.fx === 'zap') { flash('#fff27a', 0.35); s.ammo = Math.max(0, s.ammo - 6); floatText('⚡ −6 🧂', R.x, R.y + 3.5, R.z, '#fff27a'); }
+  else if (t.fx === 'steal') { const n = Math.min(s.money || 0, 10); if (n > 0) { s.money -= n; floatText('🐦‍⬛ −' + n + ' ₽', R.x, R.y + 3.5, R.z, '#ffd27a'); } e.flee = 5; } }
+W.monFx = monFx;
+
 function initMon() { if (MON) { W.addMon(); return Promise.resolve(); } return getPack('mars_mon').then((k) => { MON = Object.assign({}, k); W.addMon(); }); }
 // подключить к бою новые модели (паки догружаются по главам): только виды, у которых ещё нет InstancedMesh
 W.addMon = function () { if (!MON) return; for (const n in MODELS) if (/^(r|s|k|f|n|o|p)_/.test(n)) MON[n] = MODELS[n];
@@ -109,7 +155,7 @@ W.hitEnemy = function (e, d, kx, kz) { if (e.dead) return; if (e.immune) { if (!
 function kill(e) { e.dead = true; const t = e.t; sfx(t.boss ? 'boom' : 'pot', { rnd: 0.3, vol: t.boss ? 1 : 0.5 }); burst(W.scene, e.x, e.y + t.h * 0.5, e.z, 'smoke', t.boss ? '#ffb04a' : '#c8a0ff', t.h * 1.2, 0.5); burst(W.scene, e.x, e.y + t.h * 0.5, e.z, 'spark', '#ffe08a', t.h, 0.3);
   const n = Math.max(1, Math.round(t.xp / 3)); for (let k = 0; k < n; k++) gems.push({ x: e.x + rnd(-1, 1), z: e.z + rnd(-1, 1), y: e.y + 0.6, v: t.xp / n });
   const r = Math.random(); if (r < 0.015 + PERK.gosha.lv * 0.015) loot.push(lootItem('⚙', e.x, e.z, 'parts', 1)); else if (r < 0.08 + PERK.thrift.lv * 0.06) loot.push(lootItem('🧂', e.x, e.z, 'ammo', 12)); else if (r < 0.14) loot.push(lootItem('⛽', e.x, e.z, 'fuel', 8)); else if (r < 0.13) loot.push(lootItem('🥟', e.x, e.z, 'food', 1));
-  if (t.split && !e.small) for (let k = 0; k < 2; k++) { const s = W.spawn('pink', e.x + rnd(-1.5, 1.5), e.z + rnd(-1.5, 1.5), { hpK: 0.4, small: 1 }); if (s) s.scl = 0.6; }
+  if (t.split && !e.small) for (let k = 0; k < 2; k++) { const s = W.spawn(t.split === 1 ? 'pink' : t.split, e.x + rnd(-1.5, 1.5), e.z + rnd(-1.5, 1.5), { hpK: 0.4, small: 1 }); if (s) s.scl = 0.6; }
   if (t.spore) { W.spore = 3.5; burst(W.scene, e.x, e.y + 1, e.z, 'smoke', '#b07aff', 6, 1.2); W.say && W.say('<b>Дед:</b> Таня, споры! Руль заело! Право — это лево!'); }
   W.st.kills = (W.st.kills || 0) + 1; if (W.onKill) W.onKill(e); }
 function lootItem(e, x, z, res, n) { const sp = emojiSprite(e, 1.3); sp.position.set(x, W.H(x, z) + 1, z); W.scene.add(sp); return { sp, x, z, res, n, t: 0 }; }
@@ -153,7 +199,7 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
 W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg, src: e.srcName || e.t.name }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
 const reach0 = (e) => e.t.r * (e.scl || 1) + 1.7;
 /* ---------- твари: повадки ---------- */
-function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
+function stepEnemies(dt) { if (W.monSlowT > 0) { W.monSlowT -= dt; if (W.monSlowT <= 0) W.monSlow = 1; } const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
   for (let i = EN.length - 1; i >= 0; i--) { const e = EN[i], t = e.t; e.age += dt; e.ph += dt * 6;
     if (e.dead) { e.dt = (e.dt || 0) + dt; if (e.dt > 0.25) { EN.splice(i, 1); continue; } }
     else {
@@ -162,6 +208,7 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
       if (W.sleepT > 0 && !t.boss) { e.vx *= 0.8; e.vz *= 0.8; if (Math.random() < 0.01) floatText('💤', e.x, e.y + t.h + 0.5, e.z, '#bfe8ff'); }
       else if (e.st === 'buried') { if (d < 16) { e.st = 'leap'; e.lt = 0; e.l0 = { x: e.x, z: e.z }; e.l1 = { x: R.x + fwdx * R.v * 0.6, z: R.z + fwdz * R.v * 0.6 }; sfx('jump', { vol: 0.6 }); burst(W.scene, e.x, e.y + 0.4, e.z, 'smoke', '#c88060', 3, 0.5); } }
       else if (e.st === 'leap') { e.lt += dt / 0.8; const k = Math.min(1, e.lt); e.x = e.l0.x + (e.l1.x - e.l0.x) * k; e.z = e.l0.z + (e.l1.z - e.l0.z) * k; e.jy = Math.sin(k * Math.PI) * 5; if (k >= 1) { e.st = 'go'; e.jy = 0; } }
+      else if (e.flee > 0) { e.flee -= dt; e.vx = -dx / d * t.sp * 1.3; e.vz = -dz / d * t.sp * 1.3; }
       else if (e.ai) e.ai(e, dt, d, dx, dz);
       else if (t.still || t.mine) { e.vx = 0; e.vz = 0; if (t.m === 'r_turret_single') { e.st3 = (e.st3 || 2) - dt; e.h = Math.atan2(dx, dz); if (e.st3 <= 0 && d < 130) { e.st3 = 2.6; W.enemyShoot(e, 34, 9); } } }
       else { const sp = t.sp * slow * (e.age < 0.6 ? 0.3 : 1); let tx = dx / d, tz = dz / d;
@@ -170,12 +217,13 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
       e.x += e.vx * dt; e.z += e.vz * dt; if (!t.still) e.h = Math.atan2(e.vx, e.vz) || e.h;
       e.y = (W.Hs || W.H)(e.x, e.z) + (t.fly ? t.fly + Math.sin(e.ph * 0.5) * 0.6 : 0) + (e.jy || 0);
       if (t.fly === 5 && d < 3.2) e.y -= 2.5; // кальмар опускается и бьёт током
+      if (t.boom && d < reach0(e) + 0.6) { W.hurt(t.dmg, t.name); kill(e); burst(W.scene, e.x, e.y + 1, e.z, 'smoke', t.tint || '#ff6a3a', 6, 0.7); shake = 0.45; sfx('boom', { vol: 0.7 }); continue; }
       if (t.mine && d < reach0(e)) { W.hurt(t.dmg, 'мина'); e.hp = 0; kill(e); burst(W.scene, e.x, e.y + 1, e.z, 'smoke', '#ff6a3a', 6, 0.7); shake = 0.5; sfx('boom'); continue; }
       // касание марсохода
       const reach = t.r * (e.scl || 1) + 1.7, spd = Math.abs(R.v);
       if (d < reach && spd > 7 && !t.boss && !t.elite && !t.fly && Math.abs(e.y - R.y) < 2.5 && (e.ram || 0) <= 0) { e.ram = 0.4; const fx = Math.sin(R.h), fz = Math.cos(R.h); if ((-dx * fx - dz * fz) / d > 0.3) { W.hitEnemy(e, spd * 0.9, fx * spd * 1.2 + (-dz / d) * 6, fz * spd * 1.2 + (dx / d) * 6); e.cd = 0.6; sfx('slap', { vol: 0.6, rnd: 0.3 }); burst(W.scene, e.x, e.y + 1, e.z, 'spark', '#ffd27a', 2, 0.25); if (!W.ramT || W.t - W.ramT > 6) { W.ramT = W.t; if (Math.random() < 0.4) W.say && W.say(pick(['<b>Баба Таня:</b> Посторонись, членистоногие!', '<b>Дед:</b> Таня, это таран! Как в 72-м на тракторе!', '<b>Баба Таня:</b> Пешеходам — дорогу. Жукам — нет!'])); } } }
       e.ram = (e.ram || 0) - dt;
-      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5 && !(W.sleepT > 0 && !t.boss) && !e.nohurt) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.nerve && (W.nT || 0) < W.t) { W.nT = W.t + 1.2; W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); } if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
+      e.cd -= dt; if (d < reach && e.cd <= 0 && Math.abs(e.y - R.y) < 4.5 && !(W.sleepT > 0 && !t.boss) && !e.nohurt) { e.cd = t.boss ? 1.2 : 0.9; if (t.dmg) W.hurt(t.dmg, t.name); if (t.fx) monFx(t, e); if (t.nerve && (W.nT || 0) < W.t) { W.nT = W.t + 1.2; W.nerve(-t.nerve, 'Призрак шепчет: «Тань, а газ ты выключила?»'); } if (!t.boss) { e.vx -= dx / d * 10; e.vz -= dz / d * 10; } if (t.fly === 5) { W.flashCol = '#7fe8ff'; flash('#7fe8ff', 0.35); sfx('warn', { vol: 0.4 }); } }
       if (t.shoots && !(W.sleepT > 0)) { e.st2 = (e.st2 || rnd(1, 3)) - dt; if (e.st2 <= 0 && d < 40) { e.st2 = rnd(2.2, 3.5); const v = new V3(dx, 0, dz).normalize().multiplyScalar(18); v.y = 4; prj.push({ k: 'spit', p: new V3(e.x, e.y + 1.5, e.z), v, g: 4, life: 3, dmg: 8 }); sfx('jump', { vol: 0.3, rate: 0.7 }); } }
       if (t.elite && d < 14 && t.m === 'm_hywirl') { R.v *= 1 - dt * 0.6; R.h += dt * 0.7; if (Math.random() < 0.3) burst(W.scene, e.x, e.y + 2, e.z, 'smoke', '#c88060', 5, 0.8); } // вихрь крутит и тормозит
       e.hit = Math.max(0, e.hit - dt);

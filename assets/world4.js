@@ -314,7 +314,7 @@ VEH.boat = (() => { const old = VEH.boat; return () => { const g = old(); const 
 
 W.ride4 = function (o) { W.rideEnd4(); const V = W.rd4 = Object.assign({ park: { x: R.x, z: R.z, h: R.h, y: R.y } }, o); V.m = typeof o.mesh === 'string' ? VEH[o.mesh]() : o.mesh; W.scene.add(V.m);
   if (o.parked) { V.car = new THREE.Group(); V.car.add(W.roverG.clone()); V.car.position.set(R.x, R.y, R.z); V.car.rotation.y = R.h; W.scene.add(V.car); }
-  W.foot = 1; W.camK = o.cam || ({ granny: 0.55, suit: 0.55, cat: 0.5, jet: 0.6, camel: 0.8, boat: 0.75, drone: 0.9, glider: 1.1, balloon: 1.3, heli: 1.1, rocket: 1.2, saucer: 1 })[o.mesh] || 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; W.hover = /^(heli|drone|jet|balloon|cat|granny|suit)$/.test(o.mesh) ? 1 : 0; return V; };
+  W.foot = 1; W.camK = o.cam || ({ granny: 0.55, suit: 0.55, cat: 0.5, jet: 0.6, camel: 0.8, boat: 0.75, drone: 0.9, glider: 1.1, balloon: 1.3, heli: 1.1, rocket: 1.2, saucer: 1 })[o.mesh] || 1; if (o.fly) { W.flyMode = 1; W.flyAlt = o.alt || 13; W.flyK = o.flyK || 1.2; } if (o.vmax) W.vmaxCap = o.vmax; if (o.glide) W.glide = o.glide; if (o.swimK) W.swimK = o.swimK; if (o.noFire) W.noFire = 1; W.hover = o.hover != null ? o.hover : /^(heli|drone|jet|balloon|cat|granny|suit)$/.test(o.mesh) ? 1 : 0; return V; };
 W.rideEnd4 = function (back) { const V = W.rd4; if (!V) return; W.scene.remove(V.m); if (V.car) W.scene.remove(V.car); W.rd4 = null; W.foot = 0; W.camK = 0; W.hover = 0; W.flyMode = 0; W.flyAlt = W.flyK = undefined; W.flyY = undefined; W.vmaxCap = 0; W.glide = 0; W.swimK = 0; if (V.noFire) W.noFire = 0;
   if (back) { R.x = V.park.x; R.z = V.park.z; R.h = V.park.h; } R.y = W.H(R.x, R.z); R.v = 0; R.vy = 0; R.mx = R.mz = 0; };
 clear4.push(() => W.rideEnd4());
@@ -569,7 +569,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     else if (F.hp <= 0) { raftEnd(); W.talk([['moh', 'Плот развалился! Гномы на брёвнах доплыли обратно. Новый плот готов — давай снова, акул отгоняй раньше.']], () => run2()); } };
   // играешь за кота Гошу: щель, куда «Буханка» не пролезет; в гроте поют кристаллы
   go.start = function () { W.talk([['gosha', 'Мяу. (Гоша нашёл щель в скале. Узкую. Пахнет картошкой.)'], ['ded', 'Таня, «Буханка» туда не пролезет. А кот пролезет. Пусть ведёт — а мы по его следу объедем.'], ['pip', 'Теперь ты — Гоша! Беги по запаху 🟡, в тёмном гроте кошачьи глаза видят.']], () => catGo()); };
-  function catGo() { const pts = [[285, 105], [430, -330], [560, -170], [610, 60], [580, 260], [470, 395]]; W.ride4({ mesh: 'cat', parked: 1, vmax: 14, noFire: 1, bob: 1 }); const pa = Math.atan2(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]); R.x = pts[0][0] + Math.sin(pa) * 12; R.z = pts[0][1] + Math.cos(pa) * 12; R.h = pa; R.y = W.H(R.x, R.z); W.noColl = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; });
+  function catGo() { const pts = [[285, 105], [430, -330], [560, -170], [610, 60], [580, 260], [470, 395]]; W.ride4({ mesh: W.catVeh ? W.catVeh('helmet') : 'cat', parked: 0, hover: 1, cam: 0.55, vmax: 14, noFire: 1, bob: 1 }); const pa = Math.atan2(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]); R.x = pts[0][0] + Math.sin(pa) * 12; R.z = pts[0][1] + Math.cos(pa) * 12; R.h = pa; R.y = W.H(R.x, R.z); W.noColl = 1; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; });
     W.cat4 = { pts, i: 1, ring: A.ring11(pts[1][0], pts[1][1], '#ffd24a', 6) }; A.setObj('🐱 Беги по запаху картошки', { x: pts[1][0], z: pts[1][1] }); }
   function catEnd() { const C = W.cat4; if (!C) return; if (C.ring) W.scene.remove(C.ring); W.cat4 = null; W.noColl = 0; W.calm = 0; }
   clear4.push(catEnd);
@@ -969,12 +969,21 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
    ===================================================================== */
 (function gosha4() {
   const insertAfter = (S, id, step) => { const i = S.findIndex((s) => s.id === id); if (i >= 0) S.splice(i + 1, 0, step); else S.splice(S.length - 1, 0, step); };
-  const catRide = (o) => W.ride4(Object.assign({ mesh: 'cat', parked: 1, vmax: 13, noFire: 1 }, o || {}));
+  // Гоша едет без «Буханки» и деда: у каждой его миссии свой транспорт (лапы, реактивный ранец, зонтик, игрушечная машинка)
+  const LMc = (c, o) => new THREE.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
+  function catVeh(kit) { const g = new THREE.Group(), c = (typeof catMesh === 'function' ? catMesh() : null); if (c) { c.scale.setScalar(3.4); g.add(c); }
+    const add = (geo, col, x, y, z, o) => { const m = new THREE.Mesh(geo, LMc(col, o)); m.position.set(x, y, z); g.add(m); return m; };
+    if (kit === 'jet') { add(new THREE.SphereGeometry(0.9, 16, 12), '#cfe9ff', 0, 1.5, 1.0, { transparent: true, opacity: 0.3, depthWrite: false }); add(new THREE.TorusGeometry(0.7, 0.08, 6, 16), '#e8e8f0', 0, 1.15, 1.0).rotation.x = Math.PI / 2 - 0.4; for (const x of [-0.35, 0.35]) { add(new THREE.CylinderGeometry(0.22, 0.26, 0.9, 10), '#c8ccd8', x, 1.35, -0.2); const f = add(new THREE.ConeGeometry(0.2, 0.7, 8), '#7fe8ff', x, 0.6, -0.2, { transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }); f.rotation.x = Math.PI; } }
+    if (kit === 'umbrella') { const st = add(new THREE.CylinderGeometry(0.04, 0.04, 2.2, 6), '#3a2a20', 0.3, 2.3, 0.2); st.rotation.z = -0.2; const dm = add(new THREE.SphereGeometry(1.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), '#e0303a', 0.52, 3.3, 0.2, { side: THREE.DoubleSide }); dm.rotation.z = -0.2; for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; add(new THREE.SphereGeometry(0.12, 6, 4), '#ffffff', 0.52 + Math.cos(a) * 1.0, 3.25, 0.2 + Math.sin(a) * 1.0); } }
+    if (kit === 'car') { if (c) c.position.y = 0.55; add(new THREE.BoxGeometry(1.7, 0.45, 2.6), '#3a8adf', 0, 0.45, 0); add(new THREE.BoxGeometry(1.5, 0.12, 0.7), '#ffd24a', 0, 0.72, 1.0); for (const [x, z] of [[-0.9, -0.85], [0.9, -0.85], [-0.9, 0.85], [0.9, 0.85]]) add(new THREE.CylinderGeometry(0.35, 0.35, 0.3, 12), '#1a1a1e', x, 0.35, z).rotation.z = Math.PI / 2; add(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 4), '#888', -0.6, 1.3, -1.0); add(new THREE.SphereGeometry(0.1, 6, 4), '#ff4a4a', -0.6, 2.0, -1.0); }
+    if (kit === 'helmet') { add(new THREE.SphereGeometry(0.55, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), '#ffcf3a', 0, 1.95, 1.0); add(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 10), '#fff8c0', 0, 2.15, 1.5, { emissive: '#fff4a0' }).rotation.x = Math.PI / 2; const L = new THREE.SpotLight('#fff4c0', 2.5, 30, 0.5, 0.5); L.position.set(0, 2.15, 1.6); L.target.position.set(0, 0, 12); g.add(L); g.add(L.target); }
+    return g; } W.catVeh = catVeh;
+  const catRide = (o) => W.ride4(Object.assign({ mesh: catVeh(o && o.kit), parked: 0, vmax: 13, noFire: 1, cam: 0.55, hover: o && o.kit === 'car' ? 0 : 1 }, o || {}));
   // --- гл.1: стелс в караване Коляна
   const S1 = A.CHAPTERS[1]; if (S1) { const cv = { id: 'cat1', start() { A.setObj('Привал каравана Коляна', byId('caravan1')); }, arrive: 'caravan1',
       onArrive() { W.talk([['petr', '<i>(по рации)</i> Таня, караван Коляна встал на привал. У них в клетке — рассада всей колонии!'], ['ded', 'На «Буханке» не подъедешь — услышат. А кот пролезет.'], ['gosha', 'Мяу. (Гоша вытянул лапы и надел невидимую маску ниндзя.)']], () => run1()); } };
     function run1() { const c = byId('caravan1'); W.stealthEnd4(); W.rideEnd4(); if (!W.cv1m) { const g = new THREE.Group(); [['k_craft_cargoA', 0, 0, 6, 0.3], ['containers_A', -22, 14, 5, 1], ['containers_B', 20, -16, 5, 2], ['k_barrels', -14, -22, 5, 0], ['cargo_B_stacked', 26, 18, 5, 1.2]].forEach(([m, x, z, sc, ry]) => { const k = kmodel(m, sc, ry); if (k) { k.position.set(c.x + x, W.H(c.x + x, c.z + z), c.z + z); g.add(k); } }); W.scene.add(g); W.cv1m = g; }
-      { const dx = R.x - c.x, dz = R.z - c.z, dl = Math.hypot(dx, dz) || 1; R.x = c.x + dx / dl * 62; R.z = c.z + dz / dl * 62; R.y = W.H(R.x, R.z); R.h = Math.atan2(-dx, -dz); R.v = 0; } const pk = { x: R.x, z: R.z }; catRide({ vmax: 11 });
+      { const dx = R.x - c.x, dz = R.z - c.z, dl = Math.hypot(dx, dz) || 1; R.x = c.x + dx / dl * 62; R.z = c.z + dz / dl * 62; R.y = W.H(R.x, R.z); R.h = Math.atan2(-dx, -dz); R.v = 0; } const pk = { x: R.x, z: R.z }; catRide({ vmax: 11, kit: 'paws' });
       W.stealth4({ label: '🔑 Ключ от клетки', quiet: 7.5, take: 1.5, pickR: 9, guards: [{ path: [[c.x - 34, c.z - 26], [c.x + 34, c.z - 26], [c.x + 34, c.z + 28], [c.x - 34, c.z + 28]], sp: 2.4, pause: 2 }, { path: [[c.x - 20, c.z - 40], [c.x - 20, c.z + 40]], sp: 2, pause: 3 }],
         items: [{ x: c.x + 4, z: c.z + 2, e: '🔑', name: 'Ключ от клетки' }], exit: { x: pk.x, z: pk.z },
         onCaught() { W.talk([['kolyan', '<i>(издалека)</i> Эй! Кот! Держи кота!'], ['gosha', 'Мяу! (Гоша удрал и сделал вид, что спал.)']], () => { W.stealthEnd4(); W.rideEnd4(true); run1(); }); },
@@ -989,7 +998,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
     function run6() { const c = byId('module6'); W.rideEnd4(); if (!W.md6m) { const g = new THREE.Group(); const k = kmodel('k_hangar_largeA', 9, 0.6) || kmodel('basemodule_A', 9); if (k) { k.position.set(c.x, W.H(c.x, c.z) + 2, c.z); k.rotation.z = 0.25; g.add(k); } W.scene.add(g); W.md6m = g; }
       const pts = [[c.x + 30, c.z - 10, 6], [c.x + 10, c.z + 28, 12], [c.x - 26, c.z + 16, 8], [c.x - 20, c.z - 24, 14], [c.x + 4, c.z - 6, 5]];
       W.c6 = { pts, i: 0, rings: pts.map(([x, z, y], k) => { const m = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.35, 10, 28), new THREE.MeshBasicMaterial({ color: k === pts.length - 1 ? '#7aff8a' : '#9ad0ff', transparent: true, opacity: 0.35 })); m.position.set(x, W.H(x, z) + y, z); W.scene.add(m); return m; }) };
-      catRide({ fly: 1, alt: 5, flyK: 0.8, glide: 0.9, vmax: 10 }); A.setObj('🐱 Плыви сквозь кольца к люку · отталкивайся и тормози заранее', { x: pts[0][0], z: pts[0][1] }); }
+      catRide({ fly: 1, alt: 5, flyK: 0.8, glide: 0.9, vmax: 10, kit: 'jet' }); A.setObj('🐱 Плыви сквозь кольца к люку · отталкивайся и тормози заранее', { x: pts[0][0], z: pts[0][1] }); }
     function end6() { if (W.c6) W.c6.rings.forEach((m) => W.scene.remove(m)); W.c6 = null; }
     clear4.push(() => { end6(); if (W.md6m) { W.scene.remove(W.md6m); W.md6m = null; } });
     md.tick = function (dt) { const C = W.c6; if (!C || W.paused) return; const [x, z, y] = C.pts[C.i]; W.flyAlt += (y - W.flyAlt) * Math.min(1, dt * 0.9); C.rings.forEach((m, k) => { m.material.opacity = k === C.i ? 0.95 : k > C.i ? 0.3 : 0; m.rotation.y += dt * 0.5; }); if (W.obj) { W.obj.x = x; W.obj.z = z; }
@@ -1001,7 +1010,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       onArrive() { W.talk([['vnuki', 'Бабуль! Облачная чайка утащила твой пирожок — вон, по крышам!'], ['tanya', 'Мой пирожок?! С капустой?! Гоша, фас!'], ['gosha', 'Мяу! (Гоша уже на тросе.)']], () => run9()); } };
     function run9() { const c = byId('roofs9'); end9(); const P = []; for (let k = 0; k < 8; k++) { const a = k * 0.8, r = 22 + k * 9; P.push({ x: c.x + Math.sin(a) * r, z: c.z + Math.cos(a) * r - 10, y: 6 + k * 2.5 }); }
       const g = new THREE.Group(); P.forEach((p, k) => { const t = new THREE.Mesh(new THREE.CylinderGeometry(5, 5.4, 2, 16), new THREE.MeshLambertMaterial({ color: k % 2 ? '#d88a5a' : '#e8b07a' })); t.position.set(p.x, p.y - 1, p.z); g.add(t); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 60, 8), LM('#a8a0b0')); st.position.set(p.x, p.y - 32, p.z); g.add(st); if (k) { const q = P[k - 1], L = Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z), cab = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, L, 6), LM('#3a3a44')); cab.position.set((p.x + q.x) / 2, (p.y + q.y) / 2, (p.z + q.z) / 2); cab.lookAt(p.x, p.y, p.z); cab.rotateX(Math.PI / 2); g.add(cab); } }); W.scene.add(g);
-      const bird = emojiSprite('🐦', 3); W.scene.add(bird); W.r9 = { P, g, i: 0, bird }; catRide({ fly: 1, flyK: 0.75, vmax: 11 }); R.x = P[0].x; R.z = P[0].z; R.h = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z); W.flyY = P[0].y; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); A.setObj('🐱 Беги по тросу за чайкой', { x: P[1].x, z: P[1].z }); }
+      const bird = emojiSprite('🐦', 3); W.scene.add(bird); W.r9 = { P, g, i: 0, bird }; catRide({ fly: 1, flyK: 0.75, vmax: 11, kit: 'umbrella' }); R.x = P[0].x; R.z = P[0].z; R.h = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z); W.flyY = P[0].y; W.calm = 1; W.EN.forEach((e) => { if (!e.keep) e.dead = true; }); A.setObj('🐱 Беги по тросу за чайкой', { x: P[1].x, z: P[1].z }); }
     function end9() { if (W.r9) { W.scene.remove(W.r9.g); W.scene.remove(W.r9.bird); W.r9 = null; W.calm = 0; } W.flyY = undefined; }
     clear4.push(end9);
     rf.tick = function (dt) { const Q = W.r9; if (!Q || W.paused) return; const a = Q.P[Q.i], b = Q.P[Math.min(Q.i + 1, Q.P.length - 1)], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((R.x - a.x) * dx + (R.z - a.z) * dz) / L2)), cx = a.x + dx * t, cz = a.z + dz * t, off = Math.hypot(R.x - cx, R.z - cz);
@@ -1015,7 +1024,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
       onArrive() { W.talk([['nurlan', '<i>(по рации)</i> Суслики подрыли рельсы — поезд с ракетой не пройдёт! Их надо распугать.'], ['gosha', 'Мяу. (Гоша прижал уши. Это его работа.)'], ['pip', 'Суслик выглядывает из норы на пару секунд — успей добежать!']], () => run13()); } };
     function rodent() { const g = new THREE.Group(), c = '#c8a064', b = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 12), LM(c)); b.scale.set(0.9, 1.3, 0.8); b.position.y = 0.9; g.add(b); const h = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), LM(c)); h.position.set(0, 1.9, 0.15); g.add(h); for (const x of [-0.25, 0.25]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), LM('#a87a44')); e.position.set(x, 2.25, 0.05); g.add(e); const ey = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), LM('#1a1a1a')); ey.position.set(x * 0.6, 2, 0.52); g.add(ey); } const bl = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 10), LM('#efd8b0')); bl.scale.set(0.8, 1.1, 0.5); bl.position.set(0, 0.9, 0.42); g.add(bl); g.scale.setScalar(1.6); return g; }
     function run13() { const c = byId('suslik13'); end13(); const holes = []; for (let k = 0; k < 8; k++) { const a = k * 0.785 + 0.2, r = 22 + (k % 3) * 10, x = c.x + Math.sin(a) * r, z = c.z + Math.cos(a) * r, y = W.H(x, z); const m = new THREE.Mesh(new THREE.CircleGeometry(1.4, 18), new THREE.MeshBasicMaterial({ color: '#2a1c10' })); m.rotation.x = -Math.PI / 2; m.position.set(x, y + 0.08, z); W.scene.add(m); const mound = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.45, 8, 20), LM('#a8824a')); mound.rotation.x = Math.PI / 2; mound.position.set(x, y + 0.1, z); W.scene.add(mound); const s = rodent(); s.position.set(x, y - 3, z); W.scene.add(s); holes.push({ x, z, y, m, mound, s, up: 0 }); }
-      W.h13 = { holes, t: 1.5, got: 0, T: 90 }; catRide({ vmax: 13 }); A.setObj('🐱 Лови сусликов, пока выглядывают', c); }
+      W.h13 = { holes, t: 1.5, got: 0, T: 90 }; catRide({ vmax: 13, kit: 'car' }); A.setObj('🐱 Лови сусликов, пока выглядывают', c); }
     function end13() { const Hh = W.h13; if (!Hh) return; Hh.holes.forEach((h) => { W.scene.remove(h.m); W.scene.remove(h.mound); W.scene.remove(h.s); }); W.h13 = null; }
     clear4.push(end13);
     su.tick = function (dt) { const Hh = W.h13; if (!Hh || W.paused) return; Hh.T -= dt; Hh.t -= dt; if (Hh.t <= 0) { Hh.t = rnd(0.9, 1.6); const free = Hh.holes.filter((h) => h.up <= 0); const h = free[Math.floor(Math.random() * free.length)]; if (h) { h.up = rnd(2.2, 3); sfx('pick', { vol: 0.3 }); } }
@@ -1028,6 +1037,58 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   (function smoke() { const d0 = W.director; let t = 0; W.director = function (dt) { d0 && d0(dt); t -= dt; if (t > 0 || W.paused) return; t = 0.12; const L = W.EMIT || []; for (const e of L) { const d = Math.hypot(e.x - R.x, e.z - R.z); if (d > (e.k === 'vol' ? 600 : 140)) continue;
         if (e.k === 'fire') { if (Math.random() < 0.6) burst(W.scene, e.x + rnd(-0.4, 0.4), e.y + 1.2, e.z + rnd(-0.4, 0.4), 'smoke', '#5a5048', 1.6, 1.4); if (Math.random() < 0.5) burst(W.scene, e.x, e.y + 0.8, e.z, 'spark', '#ffb04a', 0.9, 0.6); }
         else if (e.k === 'vol' && Math.random() < 0.5) burst(W.scene, e.x + rnd(-6, 6), e.y + rnd(0, 6), e.z + rnd(-6, 6), 'smoke', '#6a5a50', 9, 3); } }; })();
+})();
+
+
+/* =====================================================================
+   КОНТРОЛЬ МИССИЙ: каждый светящийся столб — цель.
+   Доехал до столба — «🎯 Цель достигнута» и награда; миссия засчитана — карточка «✅ Миссия выполнена»
+   с тем, что получил; сверху — «Миссия 3 из 9» и кружки пройденных. Город со столбом — отметка и награда.
+   При входе в главу — «Твари этой планеты».
+   ===================================================================== */
+(function goals4() {
+  const css = document.createElement('style'); css.textContent = `
+#wdProg{position:absolute;left:50%;transform:translateX(-50%);top:calc(138px + env(safe-area-inset-top));padding:3px 10px;border-radius:10px;background:rgba(20,8,16,.55);color:#ffe0a0;font:800 12px system-ui,sans-serif;white-space:nowrap;pointer-events:none;display:none}
+#wdProg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:3px;background:rgba(255,255,255,.2);vertical-align:1px}#wdProg i.d{background:#7fe87a}#wdProg i.c{background:#ffd24a;box-shadow:0 0 6px #ffd24a}
+body.world #wdProg{display:block}
+#wdDone{position:fixed;left:50%;top:calc(30% + env(safe-area-inset-top));transform:translate(-50%,-50%) scale(.9);z-index:40;min-width:min(330px,86vw);padding:16px 20px;border-radius:20px;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s,transform .25s;background:linear-gradient(170deg,rgba(40,70,40,.95),rgba(20,40,24,.95));border:2px solid #9aff8a;color:#fff;font-family:system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#wdDone.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#wdDone.goal{background:linear-gradient(170deg,rgba(80,52,16,.95),rgba(44,24,8,.95));border-color:#ffd24a}
+#wdDone b{display:block;font-size:22px;font-weight:900;letter-spacing:.02em}#wdDone small{display:block;margin-top:4px;font-size:14px;color:#e8f0d8;font-weight:700}
+#wdDone .rw{margin-top:8px;font-size:18px;font-weight:900;color:#ffe08a}`;
+  document.head.appendChild(css);
+  const hud = document.getElementById('wdHud') || document.getElementById('wdObj').parentNode;
+  const prog = document.createElement('div'); prog.id = 'wdProg'; hud.appendChild(prog);
+  const card = document.createElement('div'); card.id = 'wdDone'; document.body.appendChild(card);
+  let cardT = 0;
+  function showCard(kind, title, sub, rw) { card.className = kind === 'goal' ? 'goal' : ''; card.innerHTML = '<b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + (rw ? '<div class="rw">' + rw + '</div>' : ''); void card.offsetWidth; card.classList.add('on'); cardT = kind === 'goal' ? 2.2 : 3.2; }
+  const res = () => ({ money: W.st.money || 0, food: W.st.food || 0, parts: W.st.parts || 0, ammo: W.st.ammo || 0, xp: W.st.lvl || 0 });
+  const diff = (a, b) => { const o = []; if (b.money > a.money) o.push('+' + (b.money - a.money) + ' ₽'); if (b.food > a.food) o.push('+' + (b.food - a.food) + ' 🥟'); if (b.parts > a.parts) o.push('+' + (b.parts - a.parts) + ' ⚙'); if (b.ammo > a.ammo + 20) o.push('+' + (b.ammo - a.ammo) + ' 🧂'); return o.join(' · '); };
+  const clean = (t) => String(t || '').replace(/<[^>]+>/g, '').replace(/^🎯\s*/, '');
+  const ROST_E = { 1: 'Марса', 2: 'Ржавого каньона', 3: 'Кидонии', 4: 'Кристальных пещер', 5: 'Полярной шапки', 6: 'Фобоса', 7: 'Олимпа', 8: 'Цереры', 9: 'Венеры', 10: 'Европы', 11: 'Титана', 12: 'Луны', 13: 'степи', 14: 'Волги' };
+  const FXT = { freeze: 'морозит — «Буханка» тормозит', fuel: 'разъедает бак', nerve: 'треплет нервы', blind: 'слепит вспышкой', zap: 'бьёт током — сыплется соль', steal: 'ворует ₽' };
+  function bestiary() { const fl = W.flags.best = W.flags.best || {}; if (fl[W.ch] || !W.ROSTER) return; fl[W.ch] = 1;
+    const L = (W.ROSTER[W.ch] || []).map(([id]) => W.TYPES[id]).filter(Boolean).map((t) => '<b>' + t.name + '</b>' + (t.fx ? ' (' + FXT[t.fx] + ')' : t.boom ? ' (взрывается)' : t.split ? ' (делится)' : t.buried ? ' (сидит в засаде)' : t.shoots ? ' (плюётся)' : ''));
+    setTimeout(() => W.say && W.say('<b>Пип:</b> Твари ' + (ROST_E[W.ch] || 'здесь') + ': ' + L.join(', ') + '. Других таких нигде нет!'), 9000); }
+  let lastCh = -1, lastI = -1, snap = null, name = '', arrSeen = 1, upd = 0;
+  const d0 = W.director;
+  W.director = function (dt) { d0 && d0(dt); if (cardT > 0) { cardT -= dt; if (cardT <= 0) card.classList.remove('on'); }
+    const L = A.CHAPTERS[W.ch] || [], i = A.stepI, cur = A.curStep();
+    if (W.ch !== lastCh) { lastCh = W.ch; lastI = i; snap = res(); name = clean(W.obj && W.obj.text); arrSeen = cur ? cur.arrived : 1; bestiary(); }
+    else if (i > lastI && !W.visit) { const r = res(), got = diff(snap, r); sfx('j_win1', { vol: 0.7 }); showCard('done', '✅ МИССИЯ ВЫПОЛНЕНА', (lastI + 1) + ' из ' + L.length + (name ? ' · ' + name : ''), got || 'дальше — новая цель'); flash('#9aff8a', 0.25);
+      lastI = i; snap = r; name = clean(W.obj && W.obj.text); arrSeen = cur ? cur.arrived : 1; }
+    else if (i !== lastI) { lastI = i; snap = res(); name = clean(W.obj && W.obj.text); arrSeen = cur ? cur.arrived : 1; }
+    // доехал до столба-цели: сразу награда
+    if (cur && cur.arrive && !W.side) { if (!cur.arrived) arrSeen = 0; else if (!arrSeen) { arrSeen = 1; const p = byId(cur.arrive), m = 20 + W.ch * 5; W.give('money', m); W.give('fuel', 10); snap.money += m; if (p) { burst(W.scene, p.x, W.H(p.x, p.z) + 2, p.z, 'spark', '#ffd24a', 6, 0.8); burst(W.scene, p.x, W.H(p.x, p.z) + 1, p.z, 'smoke', p.col || '#ffd24a', 8, 1); }
+      showCard('goal', '🎯 ЦЕЛЬ ДОСТИГНУТА', p ? p.e + ' ' + clean(p.name.split(' —')[0]) : '', '+' + m + ' ₽ · +10% ⛽'); sfx('coins', { vol: 0.8 }); } }
+    // столб над городом: отметиться — награда (раз в главу)
+    if (!W.paused && !W.side) for (const p of W.POI) { if (p.kind !== 'city' || Math.hypot(R.x - p.x, R.z - p.z) > p.r * 0.75) continue; const cv = W.flags.cityV = W.flags.cityV || {}, k = W.ch + ':' + p.id; if (cv[k]) continue; cv[k] = 1;
+      W.give('money', 30); W.give('fuel', 25); W.give('food', 1); if (!cardT || cardT <= 0) showCard('goal', '🏙 ГОРОД ОТМЕЧЕН', p.e + ' ' + clean(p.name.split(' —')[0]) + ' · рынок 🏪 открыт', '+30 ₽ · +25% ⛽ · +1 🥟'); sfx('coins', { vol: 0.7 }); A.save && A.save(); }
+    upd -= dt; if (upd > 0) return; upd = 0.3;
+    if (!L.length || W.visit) { prog.style.display = 'none'; return; } prog.style.display = '';
+    const n = L.length, done = Math.min(i, n); let dots = ''; for (let k = 0; k < n; k++) dots += '<i class="' + (k < done ? 'd' : k === done ? 'c' : '') + '"></i>';
+    prog.innerHTML = (done >= n ? '🏆 Глава пройдена' : '📜 Миссия ' + (done + 1) + ' из ' + n) + dots; };
+  clear4.push(() => { card.classList.remove('on'); cardT = 0; });
 })();
 
 };
