@@ -97,11 +97,11 @@ const PG = {}; function prjMesh(id, geo, col, n = 120) { const m = new THREE.Ins
 function initPrj() { if (PG.salt) return; prjMesh('salt', new THREE.SphereGeometry(0.16, 6, 4), '#fffbe8', 200); prjMesh('jam', new THREE.CylinderGeometry(0.28, 0.28, 0.5, 8), '#d0303a', 30); prjMesh('slip', new THREE.BoxGeometry(0.9, 0.12, 0.38), '#4a8adf', 20); prjMesh('cuc', new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.2, 0.7, 3, 6) : new THREE.CylinderGeometry(0.2, 0.2, 1, 6), '#4ab84a', 40); prjMesh('spit', new THREE.SphereGeometry(0.35, 8, 6), '#9aff6a', 40); prjMesh('bolt', new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.16, 1.2, 3, 6) : new THREE.CylinderGeometry(0.16, 0.16, 1.4, 6), '#ff4a3a', 60);
   const gg = new THREE.OctahedronGeometry(0.35); W.gems = new THREE.InstancedMesh(gg, new THREE.MeshBasicMaterial({ color: '#7fe8ff' }), 300); W.gems.count = 0; W.gems.frustumCulled = false; W.gems.userData.keep = true; W.scene.add(W.gems);
   const rg = new THREE.RingGeometry(0.9, 1, 48); rg.rotateX(-Math.PI / 2); W.wave = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false })); W.wave.userData.keep = true; W.scene.add(W.wave); }
-const gems = []; const loot = [];
+const gems = []; const loot = []; W.loot = loot; W.gemList = gems; // помощники из магазина подбирают находки
 function muzzle() { const b = W.barrel; b.updateMatrixWorld(); return new V3(0, 0.8, 0).applyMatrix4(b.matrixWorld); }
 function aimDir(t) { const m = muzzle(); return new V3(t.x - m.x, (t.y + t.t.h * 0.5) - m.y, t.z - m.z).normalize(); }
 function nearest(range, from) { const o = from || R; let b = null, bd = range * range; for (const e of EN) { if (e.dead || e.st === 'buried') continue; const d = dist2(e, o); if (d < bd) { bd = d; b = e; } } return b; }
-function dmgMul() { return (1 + PERK.salt.lv * 0.15) * (W.flags && W.flags.pip ? 1.1 : 1) * (1 + (W.dmgBonus || 0)); }
+function dmgMul() { return (W.shopDmg || 1) * (1 + PERK.salt.lv * 0.15) * (W.flags && W.flags.pip ? 1.1 : 1) * (1 + (W.dmgBonus || 0)); }
 function crit() { return Math.random() < PERK.glasses.lv * 0.12 ? 2 : 1; }
 W.hitEnemy = function (e, d, kx, kz) { if (e.dead) return; if (e.immune) { if (!W.immT || W.t - W.immT > 3) { W.immT = W.t; floatText(e.immMsg || '🛡 броня!', e.x, e.y + e.t.h, e.z, '#9fd8ff'); } return; } const c = crit(); d *= c * dmgMul() * (e.p === 'stun' ? 2 : 1); e.hp -= d; e.hit = 0.12; if (kx !== undefined && !e.t.boss) { e.vx += kx; e.vz += kz; }
   if (c > 1 || d >= 8) floatText((c > 1 ? '💥' : '') + Math.round(d), e.x, e.y + e.t.h + 0.5, e.z, c > 1 ? '#ffcf3a' : '#fff');
@@ -188,7 +188,7 @@ function stepEnemies(dt) { const cnt = {}; for (const id in IM) cnt[id] = 0; con
   for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
 
 /* ---------- опыт, находки, магнит ---------- */
-function stepGems(dt) { const st = W.st, mr = 5 * (1 + PERK.magnet.lv * 0.4); let n = 0;
+function stepGems(dt) { const st = W.st, mr = 5 * (1 + PERK.magnet.lv * 0.4) * (W.shopMag || 1); let n = 0;
   for (let i = gems.length - 1; i >= 0; i--) { const g = gems[i], dx = R.x - g.x, dz = R.z - g.z, d = Math.hypot(dx, dz); if (d < mr) { const sp = 28 * (1 - d / mr) + 8; g.x += dx / d * sp * dt; g.z += dz / d * sp * dt; }
     if (d < 1.8) { gems.splice(i, 1); st.xp += g.v; W.combo = (W.combo || 0) + 1; W.comboT = 0.6; sfx('coin', { vol: 0.25, rate: 1 + Math.min(1, W.combo * 0.03) }); if (st.xp >= st.need) levelUp(); continue; }
     if (d > 260) { gems.splice(i, 1); continue; } if (n < 300) { P.set(g.x, W.H(g.x, g.z) + 0.6 + Math.sin(W.t * 4 + i) * 0.15, g.z); E.set(0, W.t * 2 + i, 0); Q.setFromEuler(E); SC.set(1, 1, 1); M4.compose(P, Q, SC); W.gems.setMatrixAt(n++, M4); } }

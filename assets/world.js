@@ -732,11 +732,13 @@ const R = W.rover = { x: 6, z: 50, y: 0, h: Math.PI, v: 0, steer: 0, pitch: 0, r
 let roverG, dedT, gunT, wheels = [];
 function buildRover() {
   roverG = new THREE.Group(); const body = new THREE.Group(); roverG.add(body); W.body = body;
+  // кузов отдельной функцией — магазин перекрашивает «Буханку» (P: кузов, крыша, флажок)
+  const bodyGeo = (P) => {
   const B = new Builder(null), sh = (hex) => (cx, cy, cz, nx, ny, nz) => TC.set(hex).multiplyScalar(0.55 + 0.35 * Math.max(0, ny) + 0.18 * Math.max(0, nz) + 0.1 * Math.abs(nx));
   const box = (x, y, z, w, h, d, col, rx = 0) => B.add(BOX, mat(x, y, z, w, h, d, 0, rx), sh(col), { emit: true });
   box(0, 0.85, 0, 2.5, 0.45, 4.8, '#3a3438');                 // рама
-  box(0, 1.75, 0.15, 2.3, 1.45, 3.6, '#b8c890');              // кузов «буханки»
-  box(0, 2.5, 0.15, 2.2, 0.12, 3.4, '#a8b880');               // крыша
+  box(0, 1.75, 0.15, 2.3, 1.45, 3.6, P[0]);              // кузов «буханки»
+  box(0, 2.5, 0.15, 2.2, 0.12, 3.4, P[1]);               // крыша
   box(0, 1.95, 1.98, 2.1, 0.62, 0.08, '#1a2a38');             // лобовое стекло
   for (const sd of [-1, 1]) { box(sd * 1.16, 2.0, 0.6, 0.06, 0.5, 1.2, '#1a2a38'); box(sd * 1.16, 2.0, -0.9, 0.06, 0.5, 1.0, '#1a2a38'); box(sd * 0.72, 1.32, 2.08, 0.42, 0.28, 0.06, '#fff4c0'); } // окна, фары
   box(0, 1.3, 2.1, 1.0, 0.5, 0.06, '#5a6448');                // решётка
@@ -744,9 +746,10 @@ function buildRover() {
   box(0, 2.7, -0.9, 1.9, 0.08, 1.6, '#5a4a3a');               // багажник
   for (let k = 0; k < 5; k++) B.add(CYL, mat(-0.7 + k * 0.35, 2.92, -0.4, 0.13, 0.32, 0.13), sh(k % 2 ? '#d0303a' : '#e8803a'), { emit: true }); // банки варенья
   B.add(CYL, mat(0, 2.0, -2.55, 0.62, 0.3, 0.62, 0, Math.PI / 2), sh('#1e1a1c'), { emit: true }); // запаска
-  B.add(CYL, mat(-1.0, 3.6, 1.2, 0.03, 2.2, 0.03), sh('#ccc'), { emit: true }); box(-0.82, 4.55, 1.2, 0.36, 0.22, 0.02, '#ff7a3a'); // антенна с флажком
+  B.add(CYL, mat(-1.0, 3.6, 1.2, 0.03, 2.2, 0.03), sh('#ccc'), { emit: true }); box(-0.82, 4.55, 1.2, 0.36, 0.22, 0.02, P[2]); // антенна с флажком
   box(0.65, 2.62, 1.3, 0.9, 0.05, 0.7, '#2a3a6a');            // солнечная панель
-  const bm = new THREE.Mesh(B.build(), new THREE.MeshBasicMaterial({ vertexColors: true })); body.add(bm); W.bodyMesh = bm;
+  return B.build(); }; W.roverPaint = (P) => { W.bodyMesh.geometry.dispose(); W.bodyMesh.geometry = bodyGeo(P); };
+  const bm = new THREE.Mesh(bodyGeo(W.paint || ['#b8c890', '#a8b880', '#ff7a3a']), new THREE.MeshBasicMaterial({ vertexColors: true })); body.add(bm); W.bodyMesh = bm;
   // колёса: одна сетка на 6 штук, у каждого своя подвеска и вращение
   const wg = new THREE.CylinderGeometry(0.62, 0.62, 0.5, 16); wg.rotateZ(Math.PI / 2); const wb = new Builder(null); wb.add(wg, null, (cx, cy, cz, nx, ny, nz) => TC.set(Math.abs(nx) > 0.7 ? '#3a3438' : Math.floor((Math.atan2(cy, cz) + 3.1416) / 0.3927) % 2 ? '#141012' : '#2e2a2c').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
   for (const sx of [-0.26, 0.26]) { for (let k = 0; k < 3; k++) wb.add(BOX, mat(sx, 0, 0, 0.06, 0.9, 0.13, 0, k * Math.PI / 3), () => TC.set('#c8c0b0'), { emit: true }); wb.add(CYL, mat(sx, 0, 0, 0.3, 0.07, 0.3, 0, 0, Math.PI / 2), () => TC.set('#d8a43a'), { emit: true }); } // спицы и ступица — видно, как крутится
@@ -773,7 +776,7 @@ function roverStep(dt) {
   if (W.view === 2 && W.auto) { const a = W.auto; thr = a.thr; st = a.st; } // в турели ведёт бабка
   if (W.lock > 0) { thr = 0; st = 0; }
   if (W.nobrake > 0 && thr < 0) thr = 0; // ракетный двигатель вместо тормозов
-  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? (W.swimK || 0.62) : 1) * (W.flyMode ? (W.flyK || 1.5) : 1) * (W.vmaxCap ? Math.min(1, W.vmaxCap / ((W.vmax || 17) * (onRoad ? 1.18 : 1))) : 1), n = normalAt(R.x, R.z);
+  const onRoad = roadDist(R.x, R.z) < 7, vmax = (W.vmax || 17) * (W.shopV || 1) * (onRoad ? 1.18 : 1) * (W.fuelOut ? 0.3 : 1) * (W.slow || 1) * (W.ch === 2 && W.river2(R.x, R.z) && R.air <= 0 ? 0.55 : 1) * (W.swim ? (W.swimK || 0.62) : 1) * (W.flyMode ? (W.flyK || 1.5) : 1) * (W.vmaxCap ? Math.min(1, W.vmaxCap / ((W.vmax || 17) * (onRoad ? 1.18 : 1))) : 1), n = normalAt(R.x, R.z);
   const fwd = new THREE.Vector3(Math.sin(R.h), 0, Math.cos(R.h)), slope = fwd.x * n.x + fwd.z * n.z; // спуск разгоняет, подъём тормозит
   if (R.air <= 0) { if (thr > 0) R.v += (thr * 9 - (R.v < 0 ? -6 : 0)) * dt; else if (thr < 0) R.v += thr * (R.v > 0 ? 14 : 6) * dt; else R.v -= Math.sign(R.v) * Math.min(Math.abs(R.v), (W.hover ? 9 : onRoad ? 2 : 4) * dt);
     R.v += slope * 9.8 * 0.55 * dt * (CHC.g ? 0.35 : 1); R.v = Math.max(-6, Math.min(vmax, R.v)); if (R.v > vmax) R.v += (vmax - R.v) * dt * 2; }
