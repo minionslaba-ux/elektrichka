@@ -13,11 +13,32 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#2a1a2e;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none}
 canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
 #vig{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 80% 75% at 50% 45%,transparent 55%,rgba(20,6,12,.55) 100%)}
-#boot{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .7s;
-  background:radial-gradient(ellipse 60% 30% at 70% 72%,#9ec4e8 0%,rgba(158,196,232,.25) 30%,transparent 60%),linear-gradient(#1c1022,#5a2c34 55%,#b8603e 80%,#6e3426)}
-#boot h1{margin:0;font-size:clamp(32px,8vw,60px);font-weight:900;text-shadow:0 3px 24px rgba(0,0,0,.5)}
-#boot p{margin:0;color:var(--dim)}
+#boot{position:fixed;inset:0;z-index:20;overflow:hidden;transition:opacity .7s;background:#1a0c1c}
+#boot svg{position:absolute;inset:0;width:100%;height:100%}
+#boot .bt{position:absolute;left:0;right:0;top:calc(9vh + env(safe-area-inset-top));text-align:center;padding:0 16px}
+#boot h1{margin:0;font-size:clamp(30px,min(9vw,13vh),78px);font-weight:900;line-height:1.02;letter-spacing:-.01em;color:#ffd9a0;background:linear-gradient(#fff3d6 15%,#ffb35c 70%,#f07a3e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 18px rgba(40,6,20,.65));animation:btIn .9s cubic-bezier(.2,.8,.2,1) both}
+#boot .bsub{margin:10px 0 0;color:#f2c6b0;font-size:clamp(13px,3.4vw,17px);font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.85;animation:btIn .9s .15s cubic-bezier(.2,.8,.2,1) both}
+#boot .bbot{position:absolute;left:50%;bottom:calc(7vh + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(320px,70vw);text-align:center}
+#boot .bbar{height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;box-shadow:0 0 0 1px rgba(255,200,150,.15)}
+#boot .bbar i{display:block;height:100%;width:6%;border-radius:6px;background:linear-gradient(90deg,#ff8a4a,#ffd27a);box-shadow:0 0 12px #ffb35c;transition:width .5s ease-out}
+#boot .btip{margin:10px 0 0;color:#e8c0b0;font-size:14px;min-height:1.3em;transition:opacity .3s}
 #boot.hide{opacity:0;pointer-events:none}
+@keyframes btIn{from{opacity:0;transform:translateY(14px)}}
+@keyframes btTw{50%{opacity:.25}}
+@keyframes btSpin{to{transform:rotate(360deg)}}
+@keyframes btBob{50%{transform:translateY(-2.5px)}}
+@keyframes btDust{0%{opacity:.55;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(-150px,-34px) scale(2.6)}}
+@keyframes btTail{50%{transform:rotate(-14deg)}}
+@keyframes btFlag{50%{transform:skewY(-8deg) scaleX(.9)}}
+@keyframes btBlink{0%,60%{opacity:1}70%,100%{opacity:.15}}
+#boot .tw{animation:btTw 3s ease-in-out infinite}
+#boot .whl{transform-box:fill-box;transform-origin:center;animation:btSpin .9s linear infinite}
+#boot .rov{animation:btBob .45s ease-in-out infinite}
+#boot .dst{transform-box:fill-box;transform-origin:center;animation:btDust 1.5s ease-out infinite}
+#boot .tail{transform-box:fill-box;transform-origin:0% 100%;animation:btTail 2.2s ease-in-out infinite}
+#boot .flag{transform-box:fill-box;transform-origin:0% 50%;animation:btFlag 1s ease-in-out infinite}
+#boot .blk{animation:btBlink 1.6s infinite}
+@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}}
 .g{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 #ui{opacity:0;transition:opacity .5s;pointer-events:none}body.play #ui{opacity:1}
 #tl{position:fixed;left:16px;top:calc(12px + env(safe-area-inset-top));z-index:5;border-radius:12px;padding:7px 12px;font-variant-numeric:tabular-nums}
@@ -220,7 +241,60 @@ body.mgon #turbo,body.mgon #prog,body.mgon #tr,body.mgon #tl,body.mgon #joy,body
 </head>
 <body>
 <div id="vig"></div>
-<div id="boot"><h1>Бабуля на Марсе</h1><p>Прогреваем турбину…</p></div>
+<div id="boot"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+<defs>
+<linearGradient id="bkS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120818"/><stop offset=".38" stop-color="#3c1632"/><stop offset=".6" stop-color="#8a3640"/><stop offset=".72" stop-color="#c8654a"/><stop offset=".8" stop-color="#e49060"/></linearGradient>
+<radialGradient id="bkSun" cx="1250" cy="588" r="330" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eaf6ff"/><stop offset=".07" stop-color="#b8dcf4" stop-opacity=".9"/><stop offset=".3" stop-color="#7fb0d8" stop-opacity=".38"/><stop offset="1" stop-color="#7fb0d8" stop-opacity="0"/></radialGradient>
+<radialGradient id="bkD" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#d8966c" stop-opacity=".7"/><stop offset="1" stop-color="#d8966c" stop-opacity="0"/></radialGradient>
+<radialGradient id="bkGl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffc06a" stop-opacity=".9"/><stop offset="1" stop-color="#ffc06a" stop-opacity="0"/></radialGradient>
+<linearGradient id="bkF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c1018"/><stop offset="1" stop-color="#0e0408"/></linearGradient>
+<linearGradient id="bkM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a2a34"/><stop offset="1" stop-color="#40161e"/></linearGradient>
+<linearGradient id="bkH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff0c0" stop-opacity=".5"/><stop offset="1" stop-color="#fff0c0" stop-opacity="0"/></linearGradient>
+<linearGradient id="bkR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1420"/><stop offset="1" stop-color="#12060c"/></linearGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#bkS)"/>
+<g id="bkStars"></g>
+<path d="M300 158c14-12 40-14 56-4 14 9 16 28 6 40-12 14-40 18-58 8-16-9-17-31-4-44z" fill="#b69482"/><path d="M330 196c18 2 30-6 34-18 2 16-10 30-30 30-10 0-20-4-26-10 6 0 14-2 22-2z" fill="#7a5a52" opacity=".7"/><circle cx="318" cy="168" r="5" fill="#9a786a"/><circle cx="342" cy="180" r="3.5" fill="#9a786a"/>
+<circle cx="1420" cy="118" r="3" fill="#d8c0b0"/>
+<rect width="1600" height="900" fill="url(#bkSun)"/>
+<circle cx="1250" cy="588" r="13" fill="#f6fbff"/>
+<g class="tw" style="animation-duration:2.4s"><circle cx="1128" cy="420" r="11" fill="#8ec8ff" opacity=".28"/><circle cx="1128" cy="420" r="3.2" fill="#cfe9ff"/></g>
+<path d="M0 604Q250 470 560 598Z" fill="#9c5452" opacity=".75"/>
+<path d="M0 612C200 566 380 594 560 576C760 554 900 530 1100 566C1300 602 1450 576 1600 590V900H0Z" fill="#8a4044" opacity=".92"/>
+<path d="M0 662C180 632 300 652 460 642L520 608L650 610L700 646C850 656 1000 642 1180 652C1350 662 1480 640 1600 656V900H0Z" fill="url(#bkM)"/>
+<g fill="#33121c"><path d="M1150 654a42 36 0 0 1 84 0z"/><path d="M1246 654a30 26 0 0 1 60 0z"/><rect x="1236" y="640" width="14" height="14"/><rect x="1324" y="596" width="5" height="58"/><path d="M1312 600h29l-14-10z"/></g>
+<g><circle cx="1180" cy="640" r="14" fill="url(#bkGl)"/><circle cx="1206" cy="644" r="12" fill="url(#bkGl)"/><circle cx="1276" cy="644" r="11" fill="url(#bkGl)"/><rect x="1176" y="637" width="7" height="6" rx="1" fill="#ffd28a"/><rect x="1203" y="641" width="6" height="5" rx="1" fill="#ffd28a"/><rect x="1273" y="641" width="6" height="5" rx="1" fill="#ffd28a"/></g>
+<circle class="blk" cx="1326" cy="592" r="3.5" fill="#ff4a4a"/>
+<path d="M0 760C200 720 420 698 640 702C800 704 900 696 1050 706C1250 718 1420 762 1600 742V900H0Z" fill="url(#bkF)"/>
+<path d="M0 760C200 720 420 698 640 702C800 704 900 696 1050 706C1250 718 1420 762 1600 742" fill="none" stroke="#ff9a6a" stroke-opacity=".28" stroke-width="2"/>
+<g fill="#16070c"><path d="M180 748l18-14 22 6 8 12z"/><path d="M1380 752l12-10 16 4 6 8z"/><path d="M520 712l10-8 14 3 4 6z"/></g>
+<g transform="translate(-90,0)"><g fill="url(#bkD)"><circle class="dst" cx="780" cy="684" r="12"/><circle class="dst" cx="790" cy="680" r="10" style="animation-delay:-.5s"/><circle class="dst" cx="775" cy="690" r="14" style="animation-delay:-1s"/><circle class="dst" cx="770" cy="694" r="11" style="animation-delay:-.25s"/><circle class="dst" cx="786" cy="686" r="13" style="animation-delay:-.75s"/></g>
+<path d="M998 646L1420 560L1420 760Z" fill="url(#bkH)"/>
+<g class="rov">
+<g transform="translate(0,-22)">
+<rect x="782" y="676" width="214" height="14" rx="5" fill="#12060c"/>
+<path d="M776 690V612q0-20 20-20h152q18 0 26 14l24 44q4 8 4 18v22z" fill="url(#bkR)" stroke="#ff9a6a" stroke-opacity=".35" stroke-width="2"/>
+<rect x="800" y="606" width="40" height="30" rx="5" fill="#ffb35c" opacity=".8"/><rect x="848" y="606" width="44" height="30" rx="5" fill="#ffb35c" opacity=".8"/>
+<path d="M904 606h48l22 40h-70z" fill="#ffc77a" opacity=".85"/>
+<g fill="#2a1420"><circle cx="936" cy="628" r="9"/><circle cx="932" cy="616" r="5.5"/><path d="M922 646q14-14 28 0z"/><circle cx="862" cy="626" r="7"/><path d="M852 640q10-10 20 0z"/></g>
+<circle cx="992" cy="664" r="6" fill="#fff4c8"/>
+<rect x="800" y="582" width="70" height="10" rx="3" fill="#1e0c14"/><g fill="#1e0c14"><rect x="806" y="570" width="10" height="13" rx="2"/><rect x="820" y="572" width="10" height="11" rx="2"/><rect x="834" y="570" width="10" height="13" rx="2"/></g>
+<rect x="874" y="578" width="34" height="14" rx="4" fill="#1e0c14"/><circle cx="890" cy="558" r="9" fill="#1e0c14"/><path d="M878 556h24l-4-8h-16z" fill="#1e0c14"/><path d="M894 568l50-20" stroke="#1e0c14" stroke-width="7" stroke-linecap="round"/>
+<path d="M790 592V512" stroke="#1e0c14" stroke-width="2.5"/><path class="flag" d="M791 513h26l-6 8 6 8h-26z" fill="#ff7a3a"/>
+<g fill="#1e0c14"><ellipse cx="948" cy="580" rx="13" ry="11"/><circle cx="958" cy="566" r="8"/><path d="M952 561l2-10 5 7zM960 559l5-9 2 9z"/><path class="tail" d="M936 588q-16-4-14-22q1-8 6-10q-2 8-1 14q2 10 10 12z"/></g>
+<g class="whl"><circle cx="806" cy="700" r="26" fill="#0c0406"/><circle cx="806" cy="700" r="9" fill="#5a3438"/><path d="M806 678v44M787 689l38 22M787 711l38-22" stroke="#3a2228" stroke-width="4"/></g>
+<g class="whl"><circle cx="884" cy="700" r="26" fill="#0c0406"/><circle cx="884" cy="700" r="9" fill="#5a3438"/><path d="M884 678v44M865 689l38 22M865 711l38-22" stroke="#3a2228" stroke-width="4"/></g>
+<g class="whl"><circle cx="962" cy="700" r="26" fill="#0c0406"/><circle cx="962" cy="700" r="9" fill="#5a3438"/><path d="M962 678v44M943 689l38 22M943 711l38-22" stroke="#3a2228" stroke-width="4"/></g>
+</g></g>
+</svg>
+<div class="bt"><h1>Бабуля на Марсе</h1><p class="bsub">пенсия · картошка · турбо-кресло</p></div>
+<div class="bbot"><div class="bbar"><i id="bootI"></i></div><p class="btip" id="bootTip">Прогреваем турбину…</p></div>
+</div>
+<script>(function(){var g=document.getElementById('bkStars'),h='';for(var i=0;i<80;i++){var x=Math.random()*1600,y=Math.random()*Math.random()*520,r=(.5+Math.random()*1.2).toFixed(2);h+='<circle cx="'+x.toFixed(0)+'" cy="'+y.toFixed(0)+'" r="'+r+'" fill="#fff" opacity="'+(.35+Math.random()*.6).toFixed(2)+'"'+(i%3?'':' class="tw" style="animation-delay:-'+(Math.random()*3).toFixed(1)+'s"')+'/>';}g.innerHTML=h;
+var T=['Прогреваем турбину…','Дед заряжает соль…','Гоша ищет, где теплее…','Бабуля пересчитывает банки варенья…','Подкачиваем колёса «Буханки»…','Сверяемся с картой колонии…'],k=0,el=document.getElementById('bootTip'),bi=document.getElementById('bootI'),p=6,t0=Date.now();
+window.bootP=function(v,txt){p=Math.max(p,v);bi.style.width=p+'%';if(txt)el.textContent=txt;};window.bootReset=function(tips){p=6;bi.style.transition='none';bi.style.width='6%';void bi.offsetWidth;bi.style.transition='';if(tips){T=tips;k=0;el.textContent=T[0];}};
+window.bootTips=setInterval(function(){k=(k+1)%T.length;el.style.opacity=0;setTimeout(function(){el.textContent=T[k];el.style.opacity=1;},300);if(p<88)bootP(p+(88-p)*.35);},1500);
+setTimeout(function(){bootP(40);},60);})();</script>
 <div id="ui">
   <div id="tl" class="g"><b id="time">0:00</b><small>до внуков</small></div>
   <div id="prog"><i id="progi"></i></div>
@@ -1410,7 +1484,11 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
 const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 43); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : loadJS('assets/world.js').then(() => loadJS('assets/world2.js')).then(() => { WD_PART2(); return loadJS('assets/world3.js'); }).then(() => { WD_PART3(); return loadJS('assets/world4.js'); }).then(() => WD_PART4());
+// заставка и при входе в экспедицию: там грузится ещё ~3 МБ
+const WD_TIPS = ['Заправляем «Буханку»…', 'Дед чистит ружьё…', 'Гоша занимает место у окна…', 'Бабуля прячет пирожки от деда…', 'Сверяемся с картой Марса…'];
+function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide'); }
+function bootHide() { bootP(100); clearInterval(window.bootTips); setTimeout(() => $('boot').classList.add('hide'), 350); }
+const loadWorld = () => window.WD && WD.part3 ? Promise.resolve() : (bootShow(), loadJS('assets/world.js')).then(() => { bootP(30); return loadJS('assets/world2.js'); }).then(() => { WD_PART2(); bootP(50); return loadJS('assets/world3.js'); }).then(() => { WD_PART3(); bootP(72); return loadJS('assets/world4.js'); }).then(() => { WD_PART4(); bootP(90); setTimeout(bootHide, 200); }, (e) => { bootHide(); throw e; });
 function newRun(first) {
   hideMap(); stxClear(); setTimeout(storyBegin, 60);
   if (!ORDER.startsWith('d_')) { DXS = null; while (DXG.children.length) DXG.remove(DXG.children[0]); dxNight(false); car.lim = 1; }
@@ -2930,7 +3008,7 @@ genTrack(); buildSky(); buildWorld(); placeItems(); resetCar();
 snapCam();
 requestAnimationFrame(frame);
 function afterFirst() {
-  $('boot').classList.add('hide'); document.body.classList.add('play');
+  bootP(100); clearInterval(window.bootTips); $('boot').classList.add('hide'); document.body.classList.add('play');
   if (tier === 2 || /[?&]fx=1/.test(location.search)) setTimeout(loadPost, 300);
   setTimeout(loadModels, 150); setTimeout(loadSfx, 700); setTimeout(() => { if (!LOCALS.length) spawnLocals(); }, 1600); setTimeout(loadFx, 900);
   // самый первый заход — заезд стартует сам; вернувшегося игрока встречает карта колонии
