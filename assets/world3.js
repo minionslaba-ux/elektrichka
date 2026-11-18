@@ -1015,7 +1015,7 @@ function openCity(p) { const s = st(); const items = [
     { t: '🥟 Пирожки +2', sub: '30 ₽', ok: () => s.money >= 30, fn() { s.money -= 30; W.give('food', 2); return reopen(); } },
     { t: '🧂 Соль +40', sub: '35 ₽', ok: () => s.money >= 35, fn() { s.money -= 35; W.give('ammo', 40); return reopen(); } },
     { t: '🛠 Ремонт +40', sub: '1 ⚙ или 50 ₽', ok: () => s.hull < s.hullMax && (s.parts >= 1 || s.money >= 50), fn() { if (s.parts >= 1) s.parts--; else s.money -= 50; W.give('hull', 40); return reopen(); } }];
-  { const c = Math.round(250 * (1 + (W.flags.mtrain || 0) * 0.5)); items.push({ t: '🃏 Дед тренируется у местных', sub: c + ' ₽ — новая карточка улучшения', ok: () => s.money >= c, fn() { s.money -= c; W.flags.mtrain = (W.flags.mtrain || 0) + 1; W.pendingLv = (W.pendingLv || 0) + 1; setTimeout(() => W.showCards(), 300); } }); }
+  { const c = Math.min(99, Math.round(60 * (1 + (W.flags.mtrain || 0) * 0.3))); items.push({ t: '🃏 Дед тренируется у местных', sub: c + ' ₽ — новая карточка улучшения', ok: () => s.money >= c, fn() { s.money -= c; W.flags.mtrain = (W.flags.mtrain || 0) + 1; W.pendingLv = (W.pendingLv || 0) + 1; setTimeout(() => W.showCards(), 300); } }); }
   if (W.flags.workshop) items.push({ t: '🔧 Мастерская Лёхи', sub: 'броня, слоты, бак', fn() { return [workshop()]; } });
   items.push({ t: '🛒 Марсторг', sub: 'покраска, улучшения, помощники', fn() { setTimeout(() => window.SHOP && SHOP.open(), 60); } });
   items.push({ t: '🚗 Ехать дальше', fn() { } });
