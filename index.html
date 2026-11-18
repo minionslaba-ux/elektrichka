@@ -785,6 +785,23 @@ function adTex([t1, t2, col]) {
   const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
 }
 
+/* ---------- главные герои: общие детали (лицо с глазами, руки-ноги из «капсул», точёные силуэты) ---------- */
+const HV_UP = new THREE.Vector3(0, 1, 0), BALLS = new THREE.SphereGeometry(1, 7, 5), BALLM = new THREE.SphereGeometry(1, 11, 8);
+const lathe = (pts, seg) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg || 28);
+function limb(B, a, b, r1, r2, col, o) { const A = new THREE.Vector3(a[0], a[1], a[2]), Bv = new THREE.Vector3(b[0], b[1], b[2]), d = Bv.clone().sub(A), L = d.length(); const q = new THREE.Quaternion().setFromUnitVectors(HV_UP, d.normalize()); const m = new THREE.Matrix4().compose(A.clone().add(Bv).multiplyScalar(0.5), q, new THREE.Vector3(1, 1, 1));
+  const T = o && o.E ? o.E : B, opt = o && o.E ? { emit: true } : SMOOTH; T.add(new THREE.CylinderGeometry(r2, r1, L, 10, 1, true), m, col, opt); if (!(o && o.noCap)) T.add(BALL2, mat(b[0], b[1], b[2], r2, r2, r2), col, opt); }
+// лицо, смотрит в +z: глаза с бликом (не светятся, но и не темнеют), брови, щёки, нос, улыбка, круглые очки
+function heroFace(B, E, h) { const { x, y, z, r } = h;
+  for (const s of [-1, 1]) { const ex = x + s * r * 0.34, ey = y + r * 0.1, ez = z + r * 0.86;
+    E.add(BALLS, mat(ex, ey, ez, r * 0.16, r * 0.19, r * 0.1), '#fbfaf6', { emit: true });
+    E.add(BALLS, mat(ex, ey - r * 0.03, ez + r * 0.055, r * 0.1, r * 0.125, r * 0.06), h.eye || '#3a2618', { emit: true });
+    E.add(BALLS, mat(ex - r * 0.035, ey + r * 0.03, ez + r * 0.11, r * 0.035, r * 0.04, r * 0.02), '#ffffff', { emit: true });
+    B.add(BOX, mat(ex, ey + r * 0.3, z + r * 0.86, r * 0.32, r * 0.07, r * 0.1, 0, -0.2, s * -0.18), h.brow || '#8a7a6a');
+    if (h.cheek !== false) B.add(BALLM, mat(x + s * r * 0.55, y - r * 0.2, z + r * 0.74, r * 0.17, r * 0.11, r * 0.1), h.cheek || '#f29a98', SMOOTH);
+    if (h.glass) B.add(new THREE.TorusGeometry(r * 0.25, r * 0.035, 6, 18), mat(ex, ey, z + r * 0.99), h.glass, SMOOTH); }
+  if (h.glass) { B.add(BOX, mat(x, y + r * 0.12, z + r * 1.0, r * 0.2, r * 0.04, r * 0.04), h.glass); for (const s of [-1, 1]) E.add(BALLS, mat(x + s * r * 0.42, y + r * 0.22, z + r * 1.0, r * 0.03, r * 0.03, r * 0.01), '#ffffff', { emit: true }); }
+  B.add(BALLM, mat(x, y - r * 0.1, z + r * 0.95, r * 0.15, r * 0.14, r * 0.14), h.nose || '#eaa284', SMOOTH);
+  if (h.mouth !== false) B.add(new THREE.TorusGeometry(r * 0.2, r * 0.035, 5, 12, Math.PI), mat(x, y - r * 0.27, z + r * 0.9, 1, 1, 1, 0, 0, Math.PI), h.mouth || '#9a3a32'); }
 /* ---------- наряды бабули (магазин «Марсторг», вкладка «Наряды») ---------- */
 // skirt — юбка, coat — кофта, sl — рукава, scarf/dots — платок в горошек (или hair — без платка), x — добавки
 const GRAN = {
@@ -799,28 +816,42 @@ const GRAN = {
   o_queen: { skirt: '#b8202a', coat: '#b8202a', sl: '#f4efe4', hair: '#dcdce2', x: 'queen' },
 };
 const granId = () => { try { const s = JSON.parse(localStorage.getItem('bm_shop') || '{}'); return s.eq && GRAN[s.eq.outfit] ? s.eq.outfit : 'o_classic'; } catch (e) { return 'o_classic'; } };
-function granGeo(id) { // одежда бабули в кресле: обычная сетка + светящиеся детали
-  const o = GRAN[id] || GRAN.o_classic, L = new Builder(null, true), E = new Builder(null), sl = o.sl || o.coat, w = o.x === 'winter' ? 0.06 : 0;
+function granGeo(id) { // бабуля в кресле: одежда по наряду + лицо; обычная сетка + детали без затенения
+  const o = GRAN[id] || GRAN.o_classic, L = new Builder(null, true), E = new Builder(null), sl = o.sl || o.coat, w = o.x === 'winter' ? 0.06 : 0, skin = '#f2c9a8';
   const dotsK = (base, dot) => (cx, cy, cz) => TC.set(((Math.round(cx * 11) + Math.round(cy * 11) + Math.round(cz * 11)) % 3 === 0) ? dot : base);
-  L.add(new THREE.CylinderGeometry(0.42 + w, 0.55 + w, 0.55, 18), mat(0, 1.15, 0.1), o.x === 'party' ? dotsK(o.skirt, '#ffffff') : o.x === 'queen' ? (cx) => TC.set(Math.abs(cx) < 0.07 ? '#ffcf3a' : o.skirt) : o.skirt, SMOOTH); // юбка
-  L.add(new THREE.CylinderGeometry(0.34 + w, 0.42 + w, 0.6, 18), mat(0, 1.65, -0.05), o.x === 'queen' ? (cx) => TC.set(Math.abs(cx) < 0.07 ? '#ffcf3a' : o.coat) : o.x === 'space' ? (cx, cy) => TC.set(Math.abs(cy - 1.62) < 0.05 ? '#ff8a2a' : o.coat) : o.coat, SMOOTH); // кофта
-  for (const s of [-1, 1]) { L.add(new THREE.CylinderGeometry(0.1 + w * 0.5, 0.11 + w * 0.5, 0.55, 6), mat(s * 0.38, 1.6, 0.15, 1, 1, 1, 0, 0.9, s * 0.2), sl); L.add(BALL2, mat(s * 0.36, 1.42, 0.42, 0.08, 0.08, 0.08), o.x === 'space' || o.x === 'pilot' ? '#5a4a3a' : '#f0c8a8'); }
-  L.add(BALL2, mat(0, 2.15, 0.0, 0.26, 0.28, 0.26), '#f0c8a8', SMOOTH); // голова
-  if (o.hair) { L.add(BALL2, mat(0, 2.24, -0.05, 0.27, 0.24, 0.26), o.hair, SMOOTH); if (o.x !== 'pilot') L.add(BALL2, mat(0, 2.36, -0.2, 0.12, 0.11, 0.11), o.hair, SMOOTH); } // волосы и пучок
-  else {
-    L.add(BALL2, mat(0, 2.2, -0.04, 0.3, 0.3, 0.3), (cx, cy, cz, nx, ny, nz) => (nz > 0.55 && cy < 2.32 ? TC.set('#f0c8a8') : TC.set(o.scarf)), SMOOTH); // платок
-    L.add(new THREE.ConeGeometry(0.12, 0.2, 6), mat(0, 1.92, -0.12, 1, 1, 1, 0, 0.6), o.scarf); // узелок
-    for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283; (o.x === 'cyber' ? E : L).add(BALL2, mat(Math.cos(a) * 0.27, 2.24 + Math.sin(k) * 0.05, -0.04 + Math.sin(a) * 0.27, 0.035, 0.035, 0.035), o.dots, { emit: o.x === 'cyber' }); } // горошек
-  }
+  const pleat = (base) => (cx, cy, cz) => TC.set(base).multiplyScalar(0.9 + 0.1 * Math.cos(Math.atan2(cz - 0.1, cx) * 14));
+  const skirtC = o.x === 'party' ? dotsK(o.skirt, '#ffffff') : o.x === 'queen' ? (cx) => TC.set(Math.abs(cx) < 0.07 ? '#ffcf3a' : o.skirt) : pleat(o.skirt);
+  L.add(lathe([[0.001, 0.86], [0.5 + w, 0.86], [0.57 + w, 0.9], [0.55 + w, 1.0], [0.46 + w, 1.2], [0.38 + w, 1.38], [0.001, 1.4]]), mat(0, 0, 0.1), skirtC, SMOOTH); // юбка в складку
+  const coatC = o.x === 'queen' ? (cx) => TC.set(Math.abs(cx) < 0.07 ? '#ffcf3a' : o.coat) : o.x === 'space' ? (cx, cy) => TC.set(Math.abs(cy - 1.62) < 0.05 ? '#ff8a2a' : o.coat) : o.coat;
+  L.add(lathe([[0.001, 1.36], [0.4 + w, 1.38], [0.44 + w, 1.52], [0.42 + w, 1.68], [0.34 + w, 1.84], [0.17, 1.95], [0.001, 1.97]]), mat(0, 0, -0.05), coatC, SMOOTH); // кофта
+  if (!/^(sport|cyber|space|garden|queen|pilot)$/.test(o.x || '')) for (const [y, zz] of [[1.5, 0.39], [1.62, 0.385], [1.74, 0.35]]) L.add(BALLS, mat(0, y, zz - 0.05 + w, 0.03, 0.03, 0.02), '#f4e2a8', SMOOTH); // пуговицы
+  if (!/^(winter|pilot|space)$/.test(o.x || '')) L.add(new THREE.TorusGeometry(0.17, 0.045, 8, 22), mat(0, 1.93, -0.03, 1, 1, 0.9, 0, Math.PI / 2), o.x === 'cyber' ? '#2a2a36' : '#f6efe2', SMOOTH); // воротничок
+  L.add(CYL, mat(0, 1.99, -0.02, 0.2, 0.1, 0.2), skin);
+  const handC = o.x === 'space' || o.x === 'pilot' ? '#5a4a3a' : skin;
+  for (const s of [-1, 1]) { const sh = [s * 0.36, 1.8, -0.04], el = [s * 0.49, 1.53, 0.1], ha = [s * 0.35, 1.43, 0.42];
+    L.add(BALLS, mat(sh[0], sh[1], sh[2], 0.125 + w * 0.5, 0.12 + w * 0.5, 0.12 + w * 0.5), sl, SMOOTH); limb(L, sh, el, 0.115 + w * 0.5, 0.105 + w * 0.5, sl); limb(L, el, ha, 0.105 + w * 0.5, 0.09 + w * 0.5, sl, { noCap: 1 });
+    L.add(BALLM, mat(ha[0], ha[1] - 0.01, ha[2] + 0.05, 0.08, 0.07, 0.095), handC, SMOOTH); L.add(BALLS, mat(ha[0] - s * 0.065, ha[1] + 0.03, ha[2] + 0.07, 0.032, 0.032, 0.045), handC, SMOOTH); }
+  L.add(BALL2, mat(0, 2.17, 0, 0.27, 0.28, 0.26), skin, SMOOTH); // голова
+  heroFace(L, E, { x: 0, y: 2.15, z: 0, r: 0.265, glass: o.x === 'space' ? null : '#a8823a', brow: '#a8a098' });
+  if (o.hair) { L.add(new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, 1.15), mat(0, 2.19, -0.02, 0.29, 0.28, 0.29), o.hair, SMOOTH); L.add(BALL2, mat(0, 2.15, -0.09, 0.28, 0.28, 0.22), o.hair, SMOOTH);
+    for (const s of [-1, 1]) L.add(BALLM, mat(s * 0.262, 2.13, 0.01, 0.045, 0.07, 0.04), skin, SMOOTH);
+    if (o.x !== 'pilot') { L.add(BALLM, mat(0, 2.4, -0.17, 0.12, 0.11, 0.11), o.hair, SMOOTH); L.add(new THREE.TorusGeometry(0.09, 0.02, 6, 14), mat(0, 2.38, -0.12, 1, 1, 1, 0, 1.2), '#d8302a'); } }
+  else { const SC = mat(0, 2.2, -0.03, 0.31, 0.31, 0.31);
+    L.add(new THREE.SphereGeometry(1, 28, 10, 0, Math.PI * 2, 0, 0.95), SC, o.scarf, SMOOTH); // макушка
+    L.add(new THREE.SphereGeometry(1, 28, 14, Math.PI / 2 + 1.05, Math.PI * 2 - 2.1, 0.95, 1.35), SC, o.scarf, SMOOTH); // бока и затылок, лицо открыто
+    for (let k = 0; k < 5; k++) L.add(BALLS, mat(-0.1 + k * 0.05, 2.34 - Math.abs(k - 2) * 0.012, 0.2 - Math.abs(k - 2) * 0.012, 0.045, 0.04, 0.035), '#e2ded8', SMOOTH); // чёлка
+    const dots = []; for (const [e, n] of [[0.15, 12], [0.55, 10], [0.95, 6], [-0.35, 10]]) for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2 + e, cx = Math.cos(e) * Math.cos(a), cy = Math.sin(e), cz = Math.cos(e) * Math.sin(a); if (cz > 0.12 && cy < 0.8) continue; dots.push([cx * 0.312, 2.2 + cy * 0.312, -0.03 + cz * 0.312]); }
+    for (const [dx, dy, dz] of dots) (o.x === 'cyber' ? E : L).add(BALLS, mat(dx, dy, dz, 0.024, 0.024, 0.024), o.dots, { emit: o.x === 'cyber' }); // горошек
+    L.add(BALLM, mat(0, 1.92, 0.2, 0.075, 0.06, 0.06), o.scarf, SMOOTH); for (const s of [-1, 1]) L.add(new THREE.ConeGeometry(0.05, 0.15, 6), mat(s * 0.05, 1.84, 0.22, 1, 1, 0.5, 0, Math.PI, s * 0.4), o.scarf); } // узелок под подбородком
   const neck = (r, col, y = 1.97, t = 0.06, em) => (em ? E : L).add(new THREE.TorusGeometry(r, t, 6, 18), mat(0, y, -0.05, 1, 1, 1, 0, Math.PI / 2), col, { emit: !!em });
-  if (o.x === 'sport') { for (const s of [-1, 1]) { L.add(BOX, mat(s * 0.43, 1.62, 0.17, 0.04, 0.5, 0.05, 0, 0.9, s * 0.2), '#ffffff'); L.add(BOX, mat(s * 0.47, 1.15, 0.1, 0.03, 0.5, 0.06, 0, 0, s * -0.22), '#ffffff'); } L.add(BOX, mat(0, 1.7, 0.33, 0.05, 0.5, 0.03, 0, -0.14), '#ffffff'); }
-  if (o.x === 'party') { for (let k = 0; k < 14; k++) { const a = -0.3 + k / 13 * (Math.PI + 0.6); L.add(BALL2, mat(Math.cos(a) * 0.31, 1.9 - Math.sin(a) * 0.08, -0.05 + Math.sin(a) * 0.33, 0.045, 0.045, 0.045), '#fff8ea', SMOOTH); } L.add(BALL2, mat(0.24, 1.75, 0.3, 0.07, 0.07, 0.03), '#ff7ab8'); }
+  if (o.x === 'sport') { for (const s of [-1, 1]) { limb(L, [s * 0.47, 1.8, -0.04], [s * 0.6, 1.53, 0.1], 0.022, 0.022, '#ffffff'); limb(L, [s * 0.6, 1.53, 0.1], [s * 0.45, 1.43, 0.42], 0.022, 0.022, '#ffffff', { noCap: 1 }); L.add(BOX, mat(s * 0.47, 1.15, 0.1, 0.03, 0.5, 0.06, 0, 0, s * -0.22), '#ffffff'); } L.add(BOX, mat(0, 1.7, 0.33, 0.05, 0.5, 0.03, 0, -0.14), '#ffffff'); }
+  if (o.x === 'party') { for (let k = 0; k < 14; k++) { const a = -0.3 + k / 13 * (Math.PI + 0.6); L.add(BALLS, mat(Math.cos(a) * 0.31, 1.9 - Math.sin(a) * 0.08, -0.05 + Math.sin(a) * 0.33, 0.045, 0.045, 0.045), '#fff8ea', SMOOTH); } L.add(BALLM, mat(0.24, 1.75, 0.3, 0.07, 0.07, 0.03), '#ff7ab8'); }
   if (o.x === 'winter') { neck(0.36, '#f4ece0', 1.94, 0.1); L.add(new THREE.TorusGeometry(0.6, 0.08, 6, 20), mat(0, 0.88, 0.1, 1, 1, 1, 0, Math.PI / 2), '#f4ece0'); }
-  if (o.x === 'garden') { L.add(BOX, mat(0, 1.4, 0.38, 0.5, 0.62, 0.04, 0, -0.1), '#f4f0e0'); L.add(BOX, mat(0, 1.36, 0.41, 0.3, 0.2, 0.03, 0, -0.1), '#5ab84a'); L.add(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 20), mat(0, 2.42, -0.02), '#e8c870'); L.add(new THREE.CylinderGeometry(0.22, 0.26, 0.16, 16), mat(0, 2.5, -0.04), '#e8c870'); L.add(new THREE.CylinderGeometry(0.265, 0.265, 0.05, 16), mat(0, 2.45, -0.04), '#d8302a'); for (let k = 0; k < 3; k++) L.add(BALL2, mat(-0.3 + k * 0.08, 2.47, 0.2, 0.05, 0.05, 0.05), ['#ffffff', '#ffd24a', '#ff7ab8'][k]); }
+  if (o.x === 'garden') { L.add(BOX, mat(0, 1.4, 0.38, 0.5, 0.62, 0.04, 0, -0.1), '#f4f0e0'); L.add(BOX, mat(0, 1.36, 0.41, 0.3, 0.2, 0.03, 0, -0.1), '#5ab84a'); L.add(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 20), mat(0, 2.42, -0.02), '#e8c870'); L.add(new THREE.CylinderGeometry(0.22, 0.26, 0.16, 16), mat(0, 2.5, -0.04), '#e8c870'); L.add(new THREE.CylinderGeometry(0.265, 0.265, 0.05, 16), mat(0, 2.45, -0.04), '#d8302a'); for (let k = 0; k < 3; k++) L.add(BALLS, mat(-0.3 + k * 0.08, 2.47, 0.2, 0.05, 0.05, 0.05), ['#ffffff', '#ffd24a', '#ff7ab8'][k]); }
   if (o.x === 'pilot') { neck(0.33, '#ffffff', 1.95, 0.08); L.add(BOX, mat(0.12, 1.9, -0.45, 0.16, 0.06, 0.5, 0.3, -0.5), '#ffffff'); for (const s of [-1, 1]) { L.add(BOX, mat(s * 0.24, 2.05, 0.02, 0.06, 0.24, 0.14), o.hair); E.add(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 12), mat(s * 0.1, 2.36, 0.2, 1, 1, 1, 0, 1.3), '#8ad8ff', { emit: true }); } L.add(BOX, mat(0, 2.36, 0.17, 0.42, 0.05, 0.04, 0, -0.25), '#3a2a20'); L.add(BOX, mat(0, 1.7, 0.33, 0.3, 0.4, 0.03, 0, -0.14), '#4a2814'); }
-  if (o.x === 'cyber') { neck(0.47, '#7fe8ff', 1.4, 0.025, 1); neck(0.58, '#ff4ad8', 0.9, 0.03, 1); for (const s of [-1, 1]) E.add(BOX, mat(s * 0.42, 1.62, 0.17, 0.03, 0.5, 0.03, 0, 0.9, s * 0.2), '#ff4ad8', { emit: true }); E.add(BOX, mat(0, 1.7, 0.33, 0.04, 0.45, 0.02, 0, -0.14), '#7fe8ff', { emit: true }); }
+  if (o.x === 'cyber') { neck(0.47, '#7fe8ff', 1.4, 0.025, 1); neck(0.58, '#ff4ad8', 0.9, 0.03, 1); for (const s of [-1, 1]) { limb(L, [s * 0.47, 1.8, -0.04], [s * 0.6, 1.53, 0.1], 0.02, 0.02, '#ff4ad8', { E }); limb(L, [s * 0.6, 1.53, 0.1], [s * 0.45, 1.43, 0.42], 0.02, 0.02, '#ff4ad8', { E, noCap: 1 }); } E.add(BOX, mat(0, 1.7, 0.33, 0.04, 0.45, 0.02, 0, -0.14), '#7fe8ff', { emit: true }); }
   if (o.x === 'space') { neck(0.36, '#c8ccd4', 1.95, 0.08); L.add(BOX, mat(0, 1.75, -0.48, 0.5, 0.55, 0.2), '#c8ccd4'); E.add(BOX, mat(0.15, 1.65, 0.36, 0.14, 0.1, 0.02, 0, -0.14), '#4aff8a', { emit: true }); E.add(BOX, mat(-0.15, 1.75, 0.35, 0.1, 0.1, 0.02, 0, -0.14), '#ff4a4a', { emit: true }); L.add(BOX, mat(-0.2, 1.62, 0.36, 0.14, 0.1, 0.02, 0, -0.14), (cx, cy) => TC.set(cy > 1.62 ? '#d8302a' : '#2a4ab8')); }
-  if (o.x === 'queen') { L.add(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 18, 1, true, -1.3, 2.6), mat(0, 2.5, -0.02), '#ffcf3a'); for (const k of [1, -1]) E.add(new THREE.CylinderGeometry(0.3, 0.3, 0.42, 20, 1, true, -1.25, 2.5), mat(0, 2.48, -0.06, k, 1, 0.55), (cx, cy) => TC.set(cy > 2.62 ? '#ffe08a' : k > 0 ? '#ffc23a' : '#d89a1a'), { emit: true }); /* кокошник: лицо и изнанка — видно сзади */ E.add(BALL2, mat(0, 2.58, 0.13, 0.06, 0.07, 0.03), '#ff3a5a', { emit: true }); for (const s of [-1, 1]) E.add(BALL2, mat(s * 0.15, 2.52, 0.1, 0.04, 0.04, 0.02), '#4ac8ff', { emit: true }); for (let k = 0; k < 2; k++) for (let j = 0; j < 14; j++) { const a = -0.3 + j / 13 * (Math.PI + 0.6); L.add(BALL2, mat(Math.cos(a) * (0.31 + k * 0.05), 1.9 - k * 0.07 - Math.sin(a) * 0.1, -0.05 + Math.sin(a) * (0.33 + k * 0.05), 0.04, 0.04, 0.04), '#fff8ea'); } }
+  if (o.x === 'queen') { L.add(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 18, 1, true, -1.3, 2.6), mat(0, 2.5, -0.02), '#ffcf3a'); for (const k of [1, -1]) E.add(new THREE.CylinderGeometry(0.3, 0.3, 0.42, 20, 1, true, -1.25, 2.5), mat(0, 2.48, -0.06, k, 1, 0.55), (cx, cy) => TC.set(cy > 2.62 ? '#ffe08a' : k > 0 ? '#ffc23a' : '#d89a1a'), { emit: true }); /* кокошник: лицо и изнанка — видно сзади */ E.add(BALLM, mat(0, 2.58, 0.13, 0.06, 0.07, 0.03), '#ff3a5a', { emit: true }); for (const s of [-1, 1]) E.add(BALLS, mat(s * 0.15, 2.52, 0.1, 0.04, 0.04, 0.02), '#4ac8ff', { emit: true }); for (let k = 0; k < 2; k++) for (let j = 0; j < 14; j++) { const a = -0.3 + j / 13 * (Math.PI + 0.6); L.add(BALLS, mat(Math.cos(a) * (0.31 + k * 0.05), 1.9 - k * 0.07 - Math.sin(a) * 0.1, -0.05 + Math.sin(a) * (0.33 + k * 0.05), 0.04, 0.04, 0.04), '#fff8ea'); } }
   return { L: L.build(), E: E.p.length ? E.build() : null, glass: o.x === 'space' };
 }
 const granLM = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -848,7 +879,6 @@ const FX = {};
   L.add(new THREE.CylinderGeometry(0.36, 0.36, 0.14, 12), mat(0, 1.15, -1.25, 1, 1, 1, 0, Math.PI / 2), '#3a3c42');
   E.add(new THREE.CircleGeometry(0.28, 12), mat(0, 1.15, -1.33, 1, 1, 1, Math.PI), '#ffb04a', { emit: true });
   // бабуля — одежда отдельной сеткой (granDress), её меняет магазин
-  E.add(BOX, mat(0, 2.18, 0.25, 0.36, 0.07, 0.04), '#7fe8ff', { emit: true });                      // кибер-очки
   // корзинка с банками и картошкой
   L.add(BOX, mat(0, 1.05, 0.75, 0.8, 0.35, 0.45), '#9a6a3a');
   for (const s of [-0.22, 0.08]) E.add(CYL, mat(s, 1.35, 0.75, 0.22, 0.32, 0.22), s < 0 ? '#e85a4a' : '#8adc6a', { emit: true });
@@ -858,18 +888,26 @@ const FX = {};
   const body = new THREE.Group(); body.scale.setScalar(1.25); babka.add(body); FX.body = body; granDress(granId());
   // кот Гоша — лежит на тёплой турбине мордой назад, к камере
   const cat = new THREE.Group(); cat.position.set(0, 1.5, -0.85); body.add(cat); FX.cat = cat;
-  const CK = new Builder(null, true), stripe = (cx, cy, cz) => TC.set(Math.round(cz * 18) % 2 ? '#e8892e' : '#c86a1e');
-  CK.add(BALL2, mat(0, 0.1, 0, 0.2, 0.15, 0.32), stripe, SMOOTH);                                     // туловище
-  CK.add(BALL2, mat(0, 0.2, -0.3, 0.15, 0.13, 0.13), '#e8892e', SMOOTH);                              // голова
-  for (const sd of [-1, 1]) CK.add(new THREE.ConeGeometry(0.05, 0.1, 4), mat(sd * 0.08, 0.33, -0.3, 1, 1, 1, 0, 0, sd * -0.3), '#c86a1e'); // уши
-  CK.add(BALL2, mat(0, 0.17, -0.42, 0.06, 0.045, 0.03), '#f4e0c8', SMOOTH);                           // мордочка
-  for (const sd of [-1, 1]) CK.add(BOX, mat(sd * 0.1, 0.17, -0.43, 0.12, 0.006, 0.006, 0, 0, sd * 0.15), '#ffffff'); // усы
-  for (const sd of [-1, 1]) CK.add(BALL2, mat(sd * 0.11, -0.01, -0.2, 0.05, 0.04, 0.08), '#e8892e', SMOOTH); // лапы свисают
+  const CK = new Builder(null, true), CE2 = new Builder(null), OR = '#ee8e34', DK = '#c4621a', WH = '#fff3e4';
+  const fur = (cx, cy, cz) => TC.set(Math.round(cz * 15 + Math.sin(cx * 22) * 0.6) % 2 ? OR : DK);
+  CK.add(BALL2, mat(0, 0.11, 0.02, 0.2, 0.15, 0.3), (cx, cy, cz) => (cy < 0.07 && cz < 0.1 ? TC.set(WH) : fur(cx, cy, cz)), SMOOTH);   // туловище, белое брюшко
+  for (const sd of [-1, 1]) CK.add(BALL2, mat(sd * 0.12, 0.1, 0.16, 0.1, 0.11, 0.14), fur, SMOOTH);                               // бока-задние лапы
+  CK.add(BALL2, mat(0, 0.21, -0.3, 0.16, 0.14, 0.14), (cx, cy, cz) => TC.set(cy > 0.28 && Math.round(cx * 40) % 2 ? DK : OR), SMOOTH); // голова с полосками на лбу
+  for (const sd of [-1, 1]) { CK.add(BALLM, mat(sd * 0.085, 0.165, -0.38, 0.075, 0.06, 0.055), WH, SMOOTH);                          // щёки-пушки
+    CK.add(new THREE.ConeGeometry(0.06, 0.12, 8), mat(sd * 0.09, 0.33, -0.29, 1, 1, 0.7, 0, -0.1, sd * -0.35), OR);                  // уши
+    CK.add(new THREE.ConeGeometry(0.036, 0.08, 8), mat(sd * 0.088, 0.325, -0.31, 1, 1, 0.5, 0, -0.1, sd * -0.35), '#ffaab4');        // розовое внутри
+    CE2.add(BALLS, mat(sd * 0.06, 0.235, -0.425, 0.034, 0.036, 0.014), '#a8ff5a', { emit: true });                                 // глаза
+    CE2.add(BALLS, mat(sd * 0.06, 0.235, -0.437, 0.009, 0.03, 0.006), '#141414', { emit: true });                                  // зрачки-щёлки
+    CE2.add(BALLS, mat(sd * 0.052, 0.248, -0.442, 0.009, 0.009, 0.004), '#ffffff', { emit: true });
+    for (let k = 0; k < 3; k++) CK.add(BOX, mat(sd * 0.14, 0.17 - k * 0.012, -0.42, 0.13, 0.005, 0.005, sd * -0.25, 0, sd * (0.12 - k * 0.12)), '#ffffff'); // усы
+    CK.add(BALLM, mat(sd * 0.1, -0.01, -0.24, 0.055, 0.045, 0.085), (cx, cy, cz) => TC.set(cz < -0.29 ? WH : OR), SMOOTH); }        // лапки свисают
+  CE2.add(BALLS, mat(0, 0.195, -0.452, 0.02, 0.014, 0.01), '#ff8aa0', { emit: true });                                            // нос
   cat.add(new THREE.Mesh(CK.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
-  const CE2 = new Builder(null); for (const sd of [-1, 1]) CE2.add(BALL2, mat(sd * 0.055, 0.23, -0.415, 0.025, 0.018, 0.01), '#9aff6a', { emit: true }); // зелёные глаза
   cat.add(new THREE.Mesh(CE2.build(), bakedMat));
   const tail = new THREE.Group(); tail.position.set(0, 0.1, 0.3); cat.add(tail); FX.tail = tail;
-  const tm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.4, 6), new THREE.MeshLambertMaterial({ color: '#d87a26' })); tm.position.y = 0.2; tm.rotation.x = 0; tail.add(tm);
+  { const TB = new Builder(null, true), cv = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.14, 0.07), new THREE.Vector3(0.04, 0.3, 0.1), new THREE.Vector3(0.12, 0.38, 0.03)]);
+    TB.add(new THREE.TubeGeometry(cv, 20, 0.04, 8, false), null, (cx, cy) => TC.set(cy > 0.34 ? WH : Math.round(cy * 22) % 2 ? OR : DK), SMOOTH); TB.add(BALLS, mat(0.12, 0.38, 0.03, 0.04, 0.04, 0.04), WH, SMOOTH);
+    tail.add(new THREE.Mesh(TB.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); }
   // люлька, как у мотоцикла с коляской, — справа от бабули (x < 0 — правая сторона при виде сзади)
   const SX = -1.6;
   L.add(BALL2, mat(SX, 0.85, 0.15, 0.58, 0.42, 1.05), '#3a7a8a', SMOOTH);                                     // корпус люльки
@@ -884,23 +922,28 @@ const FX = {};
   body.add(new THREE.Mesh(L.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); body.add(new THREE.Mesh(E.build(), bakedMat));
   // дед — отдельно, чтобы двигался
   const ded = new THREE.Group(); ded.position.set(SX, 1.05, 0.0); body.add(ded); FX.ded = ded;
-  const D = new Builder(null, true), DE = new Builder(null);
-  D.add(new THREE.CylinderGeometry(0.28, 0.36, 0.55, 16), mat(0, 0.25, 0), (cx, cy) => TC.set(Math.round(cy * 14) % 2 ? '#4f5e3c' : '#46553a'), SMOOTH); // ватник
-  D.add(BALL2, mat(0, 0.74, 0.02, 0.21, 0.23, 0.21), '#e8bc9c', SMOOTH);                                         // голова
-  D.add(BALL2, mat(0, 0.86, -0.01, 0.25, 0.17, 0.25), '#6a4430', SMOOTH);                                        // ушанка
-  D.add(BOX, mat(0, 0.88, 0.2, 0.42, 0.1, 0.08, 0, 0.3), '#7a5238');                                              // козырёк ушанки
+  const D = new Builder(null, true), DE = new Builder(null), FUR = { flat: false, jit: 0.22 };
+  const quilt = (cx, cy, cz) => TC.set(Math.round(cy * 14) % 2 ? '#58683f' : '#4a5a36').multiplyScalar(Math.round(Math.atan2(cz, cx) * 3) % 2 ? 1 : 0.94);
+  D.add(lathe([[0.001, 0], [0.35, 0], [0.38, 0.12], [0.36, 0.34], [0.31, 0.48], [0.17, 0.58], [0.001, 0.6]]), null, quilt, SMOOTH); // телогрейка в стёжку
+  D.add(BALLM, mat(0, 0.5, 0.13, 0.11, 0.075, 0.08), (cx, cy) => TC.set(Math.round(cy * 70) % 2 ? '#ffffff' : '#2a3a8a'), SMOOTH); // тельняшка в вырезе
+  for (const y of [0.16, 0.3]) D.add(BALLS, mat(0, y, 0.37, 0.025, 0.025, 0.015), '#2a2a22', SMOOTH);
+  D.add(new THREE.TorusGeometry(0.15, 0.04, 6, 18), mat(0, 0.56, 0.01, 1, 1, 0.9, 0, Math.PI / 2), '#3e4c30', SMOOTH);
+  D.add(BALL2, mat(0, 0.76, 0.02, 0.21, 0.22, 0.21), '#ecbf9e', SMOOTH);                                                   // голова
+  for (const sd of [-1, 1]) D.add(BALLM, mat(sd * 0.205, 0.75, 0.02, 0.04, 0.065, 0.035), '#e4b090', SMOOTH);           // уши
+  heroFace(D, DE, { x: 0, y: 0.75, z: 0.02, r: 0.21, glass: '#2a2a2a', brow: '#f2f2ee', mouth: false, cheek: '#e88a80' });
+  D.add(BALLM, mat(0, 0.72, 0.215, 0.062, 0.056, 0.056), '#d8705a', SMOOTH);                                              // нос картошкой
+  for (const sd of [-1, 1]) { D.add(BALLM, mat(sd * 0.075, 0.67, 0.2, 0.09, 0.036, 0.048, 0, 0, sd * 0.35), '#f4f4f0', SMOOTH); D.add(BALLS, mat(sd * 0.145, 0.69, 0.17, 0.035, 0.03, 0.03), '#f4f4f0', SMOOTH); // усы с завитками
+    D.add(BALLM, mat(sd * 0.075, 0.835, 0.185, 0.065, 0.026, 0.035, 0, 0, sd * -0.15), '#f4f4f0', SMOOTH); }             // кустистые брови
+  D.add(BALL2, mat(0, 0.885, 0, 0.235, 0.15, 0.235), '#6a4430', FUR);                                                   // ушанка
+  D.add(BALL2, mat(0, 0.905, 0.17, 0.215, 0.075, 0.07, 0, 0.3), '#86603e', FUR);                                        // отворот
+  DE.add(BALLS, mat(0, 0.93, 0.235, 0.03, 0.03, 0.01), '#e8302a', { emit: true });                                      // звёздочка
   const flaps = []; for (const sd of [-1, 1]) { const f = new THREE.Group(); f.position.set(sd * 0.23, 0.8, 0); ded.add(f); flaps.push(f); }
   FX.flaps = flaps;
-  D.add(BALL2, mat(0, 0.72, 0.21, 0.055, 0.05, 0.05), '#d86a5a', SMOOTH);                                         // красный нос
-  D.add(BOX, mat(0, 0.66, 0.2, 0.3, 0.06, 0.06), '#e8e8e4');                                                     // седые усы
-  for (const sd of [-1, 1]) D.add(BOX, mat(sd * 0.17, 0.645, 0.18, 0.1, 0.05, 0.05, 0, 0, sd * -0.5), '#e8e8e4');
-  for (const sd of [-1, 1]) DE.add(BOX, mat(sd * 0.085, 0.77, 0.2, 0.1, 0.07, 0.02), '#9fd8ff', { emit: true });  // очки
-  DE.add(BOX, mat(0, 0.77, 0.205, 0.06, 0.015, 0.015), '#202020', { emit: true });
-  for (const sd of [-1, 1]) D.add(new THREE.CylinderGeometry(0.08, 0.09, 0.42, 8), mat(sd * 0.3, 0.32, 0.18, 1, 1, 1, 0, 1.1, sd * 0.25), '#4f5e3c', SMOOTH); // руки
+  for (const sd of [-1, 1]) { const sh = [sd * 0.3, 0.46, 0.02], el = [sd * 0.36, 0.28, 0.18], ha = [sd * 0.26, 0.42, 0.37]; D.add(BALLM, mat(sh[0], sh[1], sh[2], 0.1, 0.1, 0.1), '#4e5e3a', SMOOTH); limb(D, sh, el, 0.095, 0.085, '#4e5e3a'); limb(D, el, ha, 0.085, 0.075, '#4e5e3a', { noCap: 1 }); D.add(BALLS, mat(ha[0], ha[1], ha[2] + 0.02, 0.06, 0.055, 0.06), '#ecbf9e', SMOOTH); }
   // газета «Марсианская правда»
   D.add(BOX, mat(0, 0.42, 0.4, 0.55, 0.36, 0.02, 0, -0.35), (cx, cy) => TC.set(Math.round(cy * 40) % 3 ? '#e8e2d4' : '#8a8478'));
   const dm = new THREE.Mesh(D.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); ded.add(dm); ded.add(new THREE.Mesh(DE.build(), bakedMat));
-  for (const f of flaps) { const fm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.16), new THREE.MeshLambertMaterial({ color: '#6a4430' })); fm.position.y = -0.1; f.add(fm); }
+  for (const f of flaps) { const fm = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshLambertMaterial({ color: '#6a4430' })); fm.scale.set(0.045, 0.12, 0.09); fm.position.y = -0.09; f.add(fm); }
   // поддон с рассадой (виден только в заказе «рассада»)
   const tray = new THREE.Group(); tray.position.set(SX, 1.2, 0.62); body.add(tray); FX.tray = tray;
   const TB = new Builder(null, true); TB.add(BOX, mat(0, 0, 0, 0.6, 0.1, 0.32), '#7a5232');
@@ -1505,7 +1548,7 @@ function stxFrame(dt) { if (!SX.on || $('end').classList.contains('on')) return;
     if (p && o.hit && !o.cool && Math.hypot(p.x - o.x, p.z - o.z) < o.r && Math.abs((p.y || 0) - (stxMode() === 'drive' ? 0 : 0)) < 2.5) { try { o.hit(o, SXAPI); } catch (e) { console.warn('stx hit', m.n, e); } if (o.multi) { o.cool = true; setTimeout(() => (o.cool = false), 900); } else o.kill(); } }
   try { sc.frame && sc.frame(SXAPI, dt); } catch (e) { console.warn('stx frame', m.n, e); } }
 
-const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 48); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+const loadJS = (f) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = f + '?v=' + (window.EL_V || 49); s.onload = res; s.onerror = rej; document.head.appendChild(s); });
 // заставка и при входе в экспедицию: там грузится ещё ~3 МБ
 const WD_TIPS = ['Заправляем «Буханку»…', 'Дед чистит ружьё…', 'Гоша занимает место у окна…', 'Бабуля прячет пирожки от деда…', 'Сверяемся с картой Марса…'];
 function bootShow() { bootReset(WD_TIPS); clearInterval(window.bootTips); let k = 0; window.bootTips = setInterval(() => { k = (k + 1) % WD_TIPS.length; $('bootTip').textContent = WD_TIPS[k]; }, 1500); $('boot').classList.remove('hide', 'gone'); }
@@ -2263,36 +2306,47 @@ $('reload').onclick = (e) => { e.stopPropagation(); defReload(); };
 
 /* ---------- 🚶 ПЕШИЕ МИССИИ: бабуля пешком по даче и к соседке ---------- */
 let WK = { active: false, k: new Set(), ptr: null };
-function personMesh(o) { // процедурный человечек: юбка, кофта, платок в горошек, руки и ноги на шарнирах
-  const g = new THREE.Group(), lm = new THREE.MeshLambertMaterial({ vertexColors: true }), u = {};
+function personMesh(o) { // человечек: юбка в складку, кофта с пуговицами, платок с открытым лицом, лицо с глазами, руки и ноги на шарнирах
+  if (typeof o === 'string') o = { skirt: o, coat: o, scarf: '#d8302a', dots: '#ffe08a' };
+  const g = new THREE.Group(), lm = new THREE.MeshLambertMaterial({ vertexColors: true }), u = {}, NO = { add() {} }, skin = '#f0c8a8';
   const part = (fn, x, y, z, parent) => { const B = new Builder(null, true); fn(B); const p = new THREE.Group(); p.position.set(x, y, z); p.add(new THREE.Mesh(B.build(), lm)); p.userData.fn = fn; (parent || g).add(p); return p; };
+  const FACE = { x: 0, y: 1.69, z: 0, r: 0.21 };
   u.body = part((B) => {
-    B.add(new THREE.CylinderGeometry(0.28, 0.46, 0.62, 14), mat(0, 0.76, 0), o.skirt, SMOOTH);
-    B.add(new THREE.CylinderGeometry(0.25, 0.3, 0.5, 14), mat(0, 1.27, 0), o.coat, SMOOTH);
-    B.add(BALL2, mat(0, 1.7, 0, 0.21, 0.23, 0.21), '#f0c8a8', SMOOTH);
-    if (o.hair) { B.add(BALL2, mat(0, 1.78, -0.04, 0.22, 0.2, 0.21), o.hair, SMOOTH); B.add(BALL2, mat(0, 1.88, -0.17, 0.1, 0.09, 0.09), o.hair, SMOOTH); }
-    else { B.add(BALL2, mat(0, 1.75, -0.03, 0.245, 0.245, 0.245), (cx, cy, cz, nx, ny, nz) => TC.set(nz > 0.5 && cy < 1.86 ? '#f0c8a8' : o.scarf), SMOOTH);
-    B.add(new THREE.ConeGeometry(0.1, 0.16, 6), mat(0, 1.52, -0.14, 1, 1, 1, 0, 0.6), o.scarf);
-    for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; B.add(BALL2, mat(Math.cos(a) * 0.23, 1.8 + Math.sin(k * 2) * 0.04, -0.03 + Math.sin(a) * 0.23, 0.03, 0.03, 0.03), o.dots); } }
-    B.add(BALL2, mat(0, 1.66, 0.21, 0.045, 0.045, 0.045), '#e0a088', SMOOTH);
+    B.add(lathe([[0.001, 0.45], [0.45, 0.45], [0.47, 0.5], [0.43, 0.65], [0.33, 0.9], [0.27, 1.03], [0.001, 1.05]], 20), null, o.skirt, SMOOTH);
+    B.add(lathe([[0.001, 1.0], [0.29, 1.02], [0.31, 1.15], [0.29, 1.3], [0.22, 1.44], [0.12, 1.5], [0.001, 1.51]], 20), null, o.coat, SMOOTH);
+    for (const y of [1.12, 1.24, 1.35]) B.add(BALLS, mat(0, y, 0.3 - (y - 1.12) * 0.25, 0.022, 0.022, 0.015), '#f4e2a8', SMOOTH);
+    B.add(new THREE.TorusGeometry(0.12, 0.035, 6, 18), mat(0, 1.48, 0, 1, 1, 0.9, 0, Math.PI / 2), '#f6efe2', SMOOTH); B.add(CYL, mat(0, 1.52, 0, 0.15, 0.08, 0.15), skin);
+    B.add(BALL2, mat(0, 1.7, 0, 0.21, 0.23, 0.21), skin, SMOOTH);
+    heroFace(B, NO, Object.assign({ glass: o.glass, brow: o.hair || '#a8a098' }, FACE));
+    if (o.hair) { B.add(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, 1.15), mat(0, 1.72, -0.01, 0.225, 0.22, 0.225), o.hair, SMOOTH); B.add(BALL2, mat(0, 1.69, -0.07, 0.22, 0.22, 0.18), o.hair, SMOOTH); B.add(BALLM, mat(0, 1.89, -0.15, 0.1, 0.09, 0.09), o.hair, SMOOTH); }
+    else { const SC = mat(0, 1.74, -0.025, 0.245, 0.245, 0.245); B.add(new THREE.SphereGeometry(1, 22, 8, 0, Math.PI * 2, 0, 0.95), SC, o.scarf, SMOOTH); B.add(new THREE.SphereGeometry(1, 22, 12, Math.PI / 2 + 1.05, Math.PI * 2 - 2.1, 0.95, 1.35), SC, o.scarf, SMOOTH);
+      for (let k = 0; k < 4; k++) B.add(BALLS, mat(-0.06 + k * 0.04, 1.85, 0.165, 0.035, 0.03, 0.028), '#e2ded8', SMOOTH);
+      for (const [e, n] of [[0.15, 10], [0.55, 8], [-0.35, 8]]) for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2 + e, cx = Math.cos(e) * Math.cos(a), cy = Math.sin(e), cz = Math.cos(e) * Math.sin(a); if (cz > 0.12 && cy < 0.8) continue; B.add(BALLS, mat(cx * 0.247, 1.74 + cy * 0.247, -0.025 + cz * 0.247, 0.02, 0.02, 0.02), o.dots); }
+      B.add(BALLS, mat(0, 1.5, 0.16, 0.06, 0.05, 0.05), o.scarf, SMOOTH); }
     if (o.apron) B.add(BOX, mat(0, 0.85, 0.3, 0.42, 0.5, 0.04, 0, -0.12), o.apron);
   }, 0, 0, 0);
-  const E = new Builder(null); E.add(BOX, mat(0, 1.73, 0.2, 0.3, 0.06, 0.04), o.glass || '#7fe8ff', { emit: true }); u.body.add(new THREE.Mesh(E.build(), bakedMat));
-  u.legL = part((B) => { B.add(CYL, mat(0, -0.25, 0, 0.11, 0.5, 0.11), '#e8d8c8'); B.add(BOX, mat(0, -0.5, 0.06, 0.16, 0.09, 0.28), o.shoe || '#6a2a3a'); }, -0.13, 0.55, 0);
-  u.legR = part((B) => { B.add(CYL, mat(0, -0.25, 0, 0.11, 0.5, 0.11), '#e8d8c8'); B.add(BOX, mat(0, -0.5, 0.06, 0.16, 0.09, 0.28), o.shoe || '#6a2a3a'); }, 0.13, 0.55, 0);
-  u.armL = part((B) => { B.add(CYL, mat(0, -0.22, 0, 0.1, 0.46, 0.1), o.sl || o.coat); B.add(BALL2, mat(0, -0.47, 0, 0.065, 0.065, 0.065), '#f0c8a8'); }, -0.33, 1.47, 0, u.body);
-  u.armR = part((B) => { B.add(CYL, mat(0, -0.22, 0, 0.1, 0.46, 0.1), o.sl || o.coat); B.add(BALL2, mat(0, -0.47, 0, 0.065, 0.065, 0.065), '#f0c8a8'); }, 0.33, 1.47, 0, u.body);
+  const E = new Builder(null); heroFace(NO, E, Object.assign({ glass: o.glass }, FACE)); u.body.add(new THREE.Mesh(E.build(), bakedMat));
+  const legF = (B) => { limb(B, [0, 0, 0], [0, -0.44, 0], 0.075, 0.06, '#e8d8c8', { noCap: 1 }); B.add(BALL2, mat(0, -0.5, 0.05, 0.085, 0.065, 0.14), o.shoe || '#6a2a3a', SMOOTH); };
+  u.legL = part(legF, -0.13, 0.55, 0); u.legR = part(legF, 0.13, 0.55, 0);
+  const armF = (B) => { B.add(BALLM, mat(0, 0, 0, 0.085, 0.085, 0.085), o.sl || o.coat, SMOOTH); limb(B, [0, 0, 0], [0, -0.42, 0.02], 0.08, 0.068, o.sl || o.coat, { noCap: 1 }); B.add(BALLM, mat(0, -0.47, 0.02, 0.062, 0.07, 0.06), skin, SMOOTH); };
+  u.armL = part(armF, -0.31, 1.42, 0, u.body); u.armR = part(armF, 0.31, 1.42, 0, u.body);
   const sh = new THREE.Mesh(new THREE.CircleGeometry(0.45, 16), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.3, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; g.add(sh); u.shadow = sh;
   u.dress = (o2) => { o = Object.assign({}, o, { hair: undefined, sl: undefined }, o2); for (const p of [u.body, u.armL, u.armR]) { const B = new Builder(null, true); p.userData.fn(B); const m = p.children[0]; m.geometry.dispose(); m.geometry = B.build(); } }; // переодеть (магазин)
   g.userData = u; return g;
 }
-function catMesh() { // кот Гоша на своих четырёх
-  const g = new THREE.Group(), B = new Builder(null, true), stripe = (cx, cy, cz) => TC.set(Math.round(cz * 14) % 2 ? '#e8892e' : '#c86a1e');
-  B.add(BALL2, mat(0, 0.3, 0, 0.17, 0.15, 0.3), stripe, SMOOTH); B.add(BALL2, mat(0, 0.45, 0.3, 0.14, 0.13, 0.13), '#e8892e', SMOOTH);
-  for (const sd of [-1, 1]) { B.add(new THREE.ConeGeometry(0.05, 0.1, 4), mat(sd * 0.08, 0.58, 0.3, 1, 1, 1, 0, 0, sd * -0.3), '#c86a1e'); B.add(CYL, mat(sd * 0.09, 0.1, 0.18, 0.06, 0.22, 0.06), '#e8892e'); B.add(CYL, mat(sd * 0.09, 0.1, -0.18, 0.06, 0.22, 0.06), '#e8892e'); }
-  B.add(BALL2, mat(0, 0.42, 0.42, 0.06, 0.045, 0.03), '#f4e0c8', SMOOTH); B.add(CYL, mat(0, 0.36, -0.42, 0.05, 0.4, 0.05, 0, -1.25), '#d87a26'); B.add(BALL2, mat(0, 0.44, -0.6, 0.05, 0.05, 0.05), '#c86a1e');
-  g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true })));
-  const E = new Builder(null); for (const sd of [-1, 1]) E.add(BALL2, mat(sd * 0.055, 0.48, 0.41, 0.025, 0.02, 0.01), '#9aff6a', { emit: true }); g.add(new THREE.Mesh(E.build(), bakedMat));
+function catMesh() { // кот Гоша на своих четырёх: пушистые щёки, белая грудка и лапки, полосатый хвост
+  const g = new THREE.Group(), B = new Builder(null, true), E = new Builder(null), OR = '#ee8e34', DK = '#c4621a', WH = '#fff3e4';
+  const fur = (cx, cy, cz) => TC.set(Math.round(cz * 13 + Math.sin(cx * 20) * 0.6) % 2 ? OR : DK);
+  B.add(BALL2, mat(0, 0.3, 0, 0.17, 0.15, 0.3), (cx, cy, cz) => (cy < 0.22 ? TC.set(WH) : fur(cx, cy, cz)), SMOOTH); B.add(BALLM, mat(0, 0.31, 0.2, 0.12, 0.13, 0.1), WH, SMOOTH);
+  B.add(BALL2, mat(0, 0.47, 0.3, 0.15, 0.135, 0.135), (cx, cy) => TC.set(cy > 0.54 && Math.round(cx * 40) % 2 ? DK : OR), SMOOTH);
+  for (const sd of [-1, 1]) { B.add(BALLM, mat(sd * 0.08, 0.42, 0.38, 0.07, 0.055, 0.05), WH, SMOOTH);
+    B.add(new THREE.ConeGeometry(0.055, 0.12, 8), mat(sd * 0.085, 0.6, 0.29, 1, 1, 0.7, 0, 0.1, sd * -0.35), OR); B.add(new THREE.ConeGeometry(0.034, 0.08, 8), mat(sd * 0.083, 0.595, 0.305, 1, 1, 0.5, 0, 0.1, sd * -0.35), '#ffaab4');
+    E.add(BALLS, mat(sd * 0.057, 0.49, 0.41, 0.032, 0.034, 0.014), '#a8ff5a', { emit: true }); E.add(BALLS, mat(sd * 0.057, 0.49, 0.422, 0.008, 0.028, 0.006), '#141414', { emit: true }); E.add(BALLS, mat(sd * 0.05, 0.502, 0.427, 0.008, 0.008, 0.004), '#ffffff', { emit: true });
+    for (let k = 0; k < 3; k++) B.add(BOX, mat(sd * 0.13, 0.425 - k * 0.012, 0.42, 0.12, 0.005, 0.005, sd * 0.25, 0, sd * (0.12 - k * 0.12)), '#ffffff');
+    for (const z of [0.18, -0.18]) { limb(B, [sd * 0.09, 0.26, z], [sd * 0.09, 0.05, z + 0.02], 0.055, 0.045, fur, { noCap: 1 }); B.add(BALLM, mat(sd * 0.09, 0.035, z + 0.04, 0.05, 0.035, 0.07), WH, SMOOTH); } }
+  B.add(BALLS, mat(0, 0.42, 0.42, 0.055, 0.042, 0.035), WH, SMOOTH); E.add(BALLS, mat(0, 0.445, 0.452, 0.018, 0.013, 0.01), '#ff8aa0', { emit: true });
+  { const cv = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.34, -0.27), new THREE.Vector3(0, 0.38, -0.45), new THREE.Vector3(0.06, 0.46, -0.58), new THREE.Vector3(0.14, 0.5, -0.62)]); B.add(new THREE.TubeGeometry(cv, 18, 0.04, 8, false), null, (cx, cy, cz) => TC.set(cz < -0.58 ? WH : Math.round(cz * 20) % 2 ? OR : DK), SMOOTH); B.add(BALLS, mat(0.14, 0.5, -0.62, 0.04, 0.04, 0.04), WH, SMOOTH); }
+  g.add(new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true }))); g.add(new THREE.Mesh(E.build(), bakedMat));
   return g;
 }
 function emojiSprite(e, s = 1, glow = 'rgba(255,220,120,.85)') {
@@ -2303,7 +2357,7 @@ function emojiSprite(e, s = 1, glow = 'rgba(255,220,120,.85)') {
 }
 function buildWalk() {
   const R = WK.root = new THREE.Group(); farmScene.add(R);
-  WK.tan = personMesh(Object.assign({ skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a', apron: '#e8dcc0' }, GRAN[granId()], { apron: '#e8dcc0' })); R.add(WK.tan);
+  WK.tan = personMesh(Object.assign({ skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a', apron: '#e8dcc0' }, GRAN[granId()], { apron: '#e8dcc0', glass: '#a8823a' })); R.add(WK.tan);
   const T = new Builder(null, true); T.add(BOX, mat(0, -0.55, 0.06, 0.13, 0.05, 0.32), '#3a6ad8'); T.add(BOX, mat(0, -0.5, 0.0, 0.14, 0.05, 0.1), '#ff5a8a');
   WK.tapok = new THREE.Mesh(T.build(), new THREE.MeshLambertMaterial({ vertexColors: true })); WK.tan.userData.armR.add(WK.tapok);
   WK.cat = catMesh(); R.add(WK.cat);

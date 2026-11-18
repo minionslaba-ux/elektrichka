@@ -1056,7 +1056,7 @@ W.stealthStep4 = function (dt) { const S = W.st4; if (!S) return; let see = 0; S
   const box = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), LMt(c)); m.position.set(x, y, z); g.add(m); return m; };
   const cyl = (g, r1, r2, h, c, x, y, z, rx = 0, rz = 0) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 12), LMt(c)); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); g.add(m); return m; };
   function kfit(name, len, ry = Math.PI) { if (!MODELS || !MODELS[name]) return null; const m = kmodel(name, 1, ry); if (!m) return null; const bb = new THREE.Box3().setFromObject(m), sz = bb.getSize(new THREE.Vector3()), k = len / Math.max(sz.x, sz.z, 0.01); m.scale.multiplyScalar(k); m.position.set(-(bb.min.x + bb.max.x) / 2 * k, -bb.min.y * k, -(bb.min.z + bb.max.z) / 2 * k); const g = new THREE.Group(); g.add(m); g.userData.h = sz.y * k; return g; }
-  function gran(sc = 0.6) { let o = { skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a' }; try { o = Object.assign(o, GRAN[granId()]); } catch (e) {} const p = personMesh(o); p.scale.setScalar(sc); return p; }
+  function gran(sc = 0.6) { let o = { skirt: '#3a5a8a', coat: '#7a3a6a', scarf: '#d8302a', dots: '#ffe08a' }; try { o = Object.assign(o, GRAN[granId()], { glass: '#a8823a' }); } catch (e) {} const p = personMesh(o); p.scale.setScalar(sc); return p; }
   function ded(sc = 0.95) { if (typeof FX === 'undefined' || !FX.ded) return null; const d = FX.ded.clone(true); d.position.set(0, 0, 0); d.rotation.set(0, 0, 0); d.scale.setScalar(sc); return d; }
   const put = (g, o, x, y, z) => { if (o) { o.position.set(x, y, z); g.add(o); } return o; };
   const BUILD = {
