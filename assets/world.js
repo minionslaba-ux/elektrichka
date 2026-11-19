@@ -761,7 +761,7 @@ function buildScene() {
   S = W.scene = new THREE.Scene(); const fogC = new THREE.Color(CHC.fog); S.fog = new THREE.Fog(fogC, CHC.fogNear || 120, CHC.fogFar || 520); S.background = fogC;
   // тёплый свет против холодного: солнце (ключ) тёплое, небо в тенях холодное; в пещерах наоборот — холодные кристаллы, тёплые фонари
   const LT = { 4: ['#9a8ae0', '#6a3a2a', 0.95, '#7a90ff', 0.4], 5: ['#a8c0ff', '#2a3458', 0.78, '#ffd2a8', 0.9], 6: ['#7c8cc4', '#1c1a22', 0.5, '#fff0d8', 1.15], 7: ['#6c64a0', '#ff6a38', 0.72, '#ffb07a', 0.75], 8: ['#7c8cc4', '#1c1c24', 0.5, '#fff0d8', 1.15], 9: ['#c4bce4', '#b07a3a', 0.8, '#ffd49a', 0.85], 10: ['#a0b8ff', '#5a3a2a', 0.62, '#ffe8c8', 1.0], 11: ['#e0aa6c', '#283444', 0.72, '#ffc07a', 0.75], 12: ['#94acec', '#1a1a22', 0.52, '#fff4e4', 1.15], 13: ['#b4d0ff', '#4a3a22', 0.66, '#ffe0b0', 1.0], 14: ['#b4d0ff', '#4a3a22', 0.66, '#ffe0b0', 1.0] }[W.ch] || ['#aca8d4', '#5a2a24', 0.72, '#ffc488', 1.08];
-  hemi = new THREE.HemisphereLight(LT[0], LT[1], LT[2]); S.add(hemi); sun = new THREE.DirectionalLight(LT[3], LT[4]); sun.position.set(0.5, 1, 0.3); S.add(sun);
+  if (window.RIM) RIM.value.set(LT[0]).lerp(new THREE.Color('#ffffff'), 0.25).multiplyScalar(0.36); hemi = new THREE.HemisphereLight(LT[0], LT[1], LT[2]); S.add(hemi); sun = new THREE.DirectionalLight(LT[3], LT[4]); sun.position.set(0.5, 1, 0.3); S.add(sun);
   // тот же свет — в запечённые цвета моделей (стены к солнцу тёплые, теневые — холодные); в колонии вернётся свой (W.stop)
   if (!W.bake0) W.bake0 = [AMB.slice(), BOUNCE.slice(), SUN.slice(), SUN_DIR.clone()];
   { const a = new THREE.Color(LT[0]), b = new THREE.Color(LT[1]), c = new THREE.Color(LT[3]); AMB[0] = a.r * LT[2] * 0.62; AMB[1] = a.g * LT[2] * 0.62; AMB[2] = a.b * LT[2] * 0.62; BOUNCE[0] = b.r * LT[2] * 0.46; BOUNCE[1] = b.g * LT[2] * 0.46; BOUNCE[2] = b.b * LT[2] * 0.46; SUN[0] = c.r * LT[4] * 0.62; SUN[1] = c.g * LT[4] * 0.62; SUN[2] = c.b * LT[4] * 0.62; SUN_DIR.set(0.55, 0.75, 0.4).normalize(); }
@@ -966,7 +966,7 @@ W.start = function () {
   W.st = W.st || { hull: 120, hullMax: 120, nerves: 100, fuel: 100, food: 6, ammo: 160, parts: 0, money: 150, xp: 0, need: 8, lvl: 1 };
   if (W.onStart) W.onStart();
 };
-W.stop = function () { if (!W.active) return; W.active = false; if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
+W.stop = function () { if (!W.active) return; W.active = false; if (window.RIM) RIM.value.set('#ffd8b8').multiplyScalar(0.34); if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
   W.t += dt; scatterStep(); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));

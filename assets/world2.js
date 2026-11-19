@@ -4,7 +4,7 @@
 window.WD_PART2 = function () {
 'use strict';
 const W = window.WD, R = W.rover, V3 = THREE.Vector3;
-let MON = null; const MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+let MON = null; const MAT = window.addRim ? addRim(new THREE.MeshLambertMaterial({ vertexColors: true })) : new THREE.MeshLambertMaterial({ vertexColors: true });
 const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), SC = new V3(), P = new V3(), CW = new THREE.Color(1, 1, 1), CH = new THREE.Color(3, 3, 3), CF = new THREE.Color(1.6, 0.6, 0.6), CS = new THREE.Color(0.55, 0.65, 1.1);
 const rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)], dist2 = (a, b) => (a.x - b.x) ** 2 + (a.z - b.z) ** 2;
 
