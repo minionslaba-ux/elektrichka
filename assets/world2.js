@@ -223,7 +223,12 @@ function stepPrj(dt) { const cnt = { salt: 0, jam: 0, slip: 0, cuc: 0, spit: 0, 
 W.enemyShoot = function (e, spd = 26, dmg = 8) { if (W.sleepT > 0 && !e.t.boss) return; const dx = R.x + Math.sin(R.h) * R.v * 0.5 - e.x, dz = R.z + Math.cos(R.h) * R.v * 0.5 - e.z, dy = R.y + 1.5 - (e.y + 1), d = Math.hypot(dx, dz, dy) || 1; prj.push({ k: 'bolt', p: new V3(e.x, e.y + 1, e.z), v: new V3(dx / d * spd, dy / d * spd, dz / d * spd), life: 3, dmg, src: e.srcName || e.t.name }); sfx('shot', { rate: 1.8, vol: 0.3 }); };
 const reach0 = (e) => e.t.r * (e.scl || 1) + 1.7;
 /* ---------- твари: повадки ---------- */
-function stepEnemies(dt) { if (W.monSlowT > 0) { W.monSlowT -= dt; if (W.monSlowT <= 0) W.monSlow = 1; } const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
+
+/* ---------- мягкие тени-пятна под тварями (одна InstancedMesh на всех) ---------- */
+let SHD = null; W.shadowTex = function () { if (W._shT) return W._shT; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 1, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.72)'); g.addColorStop(0.5, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return (W._shT = new THREE.CanvasTexture(c)); };
+function shadowIM() { if (SHD && SHD.parent) return SHD; const geo = new THREE.PlaneGeometry(1, 1); geo.rotateX(-Math.PI / 2); SHD = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ map: W.shadowTex(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), 160); SHD.count = 0; SHD.frustumCulled = false; SHD.renderOrder = 1; SHD.userData.keep = true; W.scene.add(SHD); return SHD; }
+const P2 = new THREE.Vector3(), SC2 = new THREE.Vector3(), Q0 = new THREE.Quaternion(), M5 = new THREE.Matrix4();
+function stepEnemies(dt) { const SH = shadowIM(); let nsh = 0; if (W.monSlowT > 0) { W.monSlowT -= dt; if (W.monSlowT <= 0) W.monSlow = 1; } const cnt = {}; for (const id in IM) cnt[id] = 0; const fwdx = Math.sin(R.h), fwdz = Math.cos(R.h);
   for (let i = EN.length - 1; i >= 0; i--) { const e = EN[i], t = e.t; e.age += dt; e.ph += dt * 6;
     if (e.dead) { e.dt = (e.dt || 0) + dt; if (e.dt > 0.25) { EN.splice(i, 1); continue; } }
     else {
@@ -256,8 +261,8 @@ function stepEnemies(dt) { if (W.monSlowT > 0) { W.monSlowT -= dt; if (W.monSlow
     const im = IM[e.type]; if (!im || cnt[e.type] >= 60 && !t.boss) continue; const s = t.sc * (e.scl || 1), sq = e.dead ? 1 + e.dt * 4 : 1, bob = t.ground ? Math.abs(Math.sin(e.ph * 1.6)) * 0.12 : 0;
     E.set(t.fly ? Math.sin(e.ph) * 0.1 : 0, e.h + (t.rot || 0), e.st === 'leap' ? -0.4 : 0, 'YXZ'); Q.setFromEuler(E); SC.set(s * sq * (1 + (t.ground ? Math.sin(e.ph * 3.2) * 0.05 : 0)), s * (e.dead ? Math.max(0.05, 1 - e.dt * 4) : 1 + (t.ground ? Math.sin(e.ph * 3.2 + 1.5) * 0.07 : Math.sin(e.ph * 2) * 0.05)), s * sq);
     if (e.st === 'buried') { SC.multiplyScalar(0.35); P.set(e.x, e.y - 0.5, e.z); } else P.set(e.x, e.y + t.y0 * (e.scl || 1) + bob, e.z);
-    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); if (FM[e.type]) FM[e.type].setMatrixAt(k, M4); im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : W.sleepT > 0 && !t.boss ? CS : t.tintC || CW); }
-  for (const id in FM) { FM[id].count = cnt[id] || 0; FM[id].instanceMatrix.needsUpdate = true; } for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
+    M4.compose(P, Q, SC); const k = cnt[e.type]++; im.setMatrixAt(k, M4); if (FM[e.type]) FM[e.type].setMatrixAt(k, M4); if (!e.dead && e.st !== 'buried' && nsh < 160 && !t.boss) { const gy = W.H(e.x, e.z), hg = Math.max(0, e.y - gy), ss = t.r * 2.4 * (e.scl || 1) * Math.max(0.35, 1 - hg / 22); P2.set(e.x, gy + 0.12, e.z); SC2.set(ss, 1, ss); M5.compose(P2, Q0, SC2); SH.setMatrixAt(nsh++, M5); } im.setColorAt(k, e.hit > 0 ? CH : e.slow > 0 ? CF : W.sleepT > 0 && !t.boss ? CS : t.tintC || CW); }
+  SH.count = nsh; SH.instanceMatrix.needsUpdate = true; for (const id in FM) { FM[id].count = cnt[id] || 0; FM[id].instanceMatrix.needsUpdate = true; } for (const id in IM) { IM[id].count = cnt[id]; IM[id].instanceMatrix.needsUpdate = true; if (IM[id].instanceColor) IM[id].instanceColor.needsUpdate = true; } }
 
 /* ---------- опыт, находки, магнит ---------- */
 function stepGems(dt) { const st = W.st, mr = 5 * (1 + PERK.magnet.lv * 0.4) * (W.shopMag || 1); let n = 0;

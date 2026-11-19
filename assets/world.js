@@ -733,26 +733,42 @@ let roverG, dedT, gunT, wheels = [];
 function buildRover() {
   roverG = new THREE.Group(); const body = new THREE.Group(); roverG.add(body); W.body = body;
   // кузов отдельной функцией — магазин перекрашивает «Буханку» (P: кузов, крыша, флажок)
-  const bodyGeo = (P) => {
+  const bodyGeo = (P) => { // «Буханка»: скруглённый кузов, окна с бликом, круглые фары, решётка, задние двери с фонарями, запаска, лесенка, багажник
   const B = new Builder(null), sh = (hex) => (cx, cy, cz, nx, ny, nz) => TC.set(hex).multiplyScalar(0.55 + 0.35 * Math.max(0, ny) + 0.18 * Math.max(0, nz) + 0.1 * Math.abs(nx));
-  const box = (x, y, z, w, h, d, col, rx = 0) => B.add(BOX, mat(x, y, z, w, h, d, 0, rx), sh(col), { emit: true });
-  box(0, 0.85, 0, 2.5, 0.45, 4.8, '#3a3438');                 // рама
-  box(0, 1.75, 0.15, 2.3, 1.45, 3.6, P[0]);              // кузов «буханки»
-  box(0, 2.5, 0.15, 2.2, 0.12, 3.4, P[1]);               // крыша
-  box(0, 1.95, 1.98, 2.1, 0.62, 0.08, '#1a2a38');             // лобовое стекло
-  for (const sd of [-1, 1]) { box(sd * 1.16, 2.0, 0.6, 0.06, 0.5, 1.2, '#1a2a38'); box(sd * 1.16, 2.0, -0.9, 0.06, 0.5, 1.0, '#1a2a38'); box(sd * 0.72, 1.32, 2.08, 0.42, 0.28, 0.06, '#fff4c0'); } // окна, фары
-  box(0, 1.3, 2.1, 1.0, 0.5, 0.06, '#5a6448');                // решётка
-  box(0, 1.1, 2.45, 2.6, 0.22, 0.25, '#2a2428'); box(0, 1.1, -2.45, 2.6, 0.22, 0.25, '#2a2428'); // бамперы
-  box(0, 2.7, -0.9, 1.9, 0.08, 1.6, '#5a4a3a');               // багажник
-  for (let k = 0; k < 5; k++) B.add(CYL, mat(-0.7 + k * 0.35, 2.92, -0.4, 0.13, 0.32, 0.13), sh(k % 2 ? '#d0303a' : '#e8803a'), { emit: true }); // банки варенья
-  B.add(CYL, mat(0, 2.0, -2.55, 0.62, 0.3, 0.62, 0, Math.PI / 2), sh('#1e1a1c'), { emit: true }); // запаска
-  B.add(CYL, mat(-1.0, 3.6, 1.2, 0.03, 2.2, 0.03), sh('#ccc'), { emit: true }); box(-0.82, 4.55, 1.2, 0.36, 0.22, 0.02, P[2]); // антенна с флажком
-  box(0.65, 2.62, 1.3, 0.9, 0.05, 0.7, '#2a3a6a');            // солнечная панель
+  const E = { emit: true }, box = (x, y, z, w, h, d, col, rx = 0, rz = 0) => B.add(BOX, mat(x, y, z, w, h, d, 0, rx, rz), typeof col === 'function' ? col : sh(col), E);
+  const rbox = (w, h, d, r, seg = 5) => { const g = new THREE.BoxGeometry(w, h, d, seg, seg, seg), P2 = g.attributes.position, ix = w / 2 - r, iy = h / 2 - r, iz = d / 2 - r, v = new THREE.Vector3(), c = new THREE.Vector3();
+    for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i); c.set(Math.max(-ix, Math.min(ix, v.x)), Math.max(-iy, Math.min(iy, v.y)), Math.max(-iz, Math.min(iz, v.z))); v.sub(c); if (v.lengthSq() > 1e-9) v.setLength(r); P2.setXYZ(i, c.x + v.x, c.y + v.y, c.z + v.z); } return g; };
+  const GL = (cx, cy, cz, nx, ny, nz) => TC.set(cy > 2.15 ? '#3a5a78' : '#1a2a3a').multiplyScalar(0.9 + 0.25 * Math.max(0, ny)); // стекло: верх светлее — отражает небо
+  box(0, 0.82, 0.05, 2.3, 0.4, 4.7, '#2e2a2e');                                                                          // рама
+  B.add(rbox(2.32, 1.55, 3.95, 0.3), mat(0, 1.8, 0.05), (cx, cy, cz, nx, ny, nz) => TC.set(cy > 2.28 ? P[1] : P[0]).multiplyScalar(0.55 + 0.35 * Math.max(0, ny) + 0.18 * Math.max(0, nz) + 0.1 * Math.abs(nx)), E); // кузов, крыша другим цветом
+  B.add(rbox(2.12, 0.5, 0.5, 0.14), mat(0, 1.27, 2.0), sh(P[0]), E);                                                  // нос
+  for (const sd of [-1, 1]) {
+    box(sd * 0.5, 2.12, 2.03, 0.92, 0.6, 0.05, GL, 0.18);                                                               // лобовые стёкла
+    for (const z of [1.05, 0.05, -0.95]) { box(sd * 1.165, 2.12, z, 0.05, 0.52, 0.78, GL); box(sd * 1.19, 2.17, z + 0.1, 0.02, 0.07, 0.5, '#bfe6ff', 0, 0, 0); } // боковые окна с бликом
+    box(sd * 0.5, 2.1, -1.93, 0.8, 0.5, 0.05, GL);                                                                    // окна задних дверей
+    B.add(CYL, mat(sd * 0.72, 1.32, 2.24, 0.36, 0.08, 0.36, 0, Math.PI / 2), sh('#d8d8d0'), E); B.add(CYL, mat(sd * 0.72, 1.32, 2.29, 0.27, 0.04, 0.27, 0, Math.PI / 2), () => TC.set('#fff4c0'), E); // круглые фары
+    box(sd * 1.0, 1.42, 2.18, 0.16, 0.1, 0.06, '#ffb04a');                                                              // поворотники
+    box(sd * 0.95, 1.4, -1.94, 0.2, 0.36, 0.06, () => TC.set('#e8302a'), 0); box(sd * 0.95, 1.16, -1.94, 0.2, 0.1, 0.06, () => TC.set('#ffb04a'));   // задние фонари
+    for (const z of [-1.6, 0, 1.6]) B.add(new THREE.TorusGeometry(0.72, 0.1, 5, 12, Math.PI), mat(sd * 1.16, 0.78, z, 1, 1, 1, Math.PI / 2), sh('#262226'), E); // колёсные арки
+    box(sd * 1.23, 2.0, 1.75, 0.04, 0.04, 0.3, '#2a2a2e'); box(sd * 1.36, 2.0, 1.88, 0.06, 0.3, 0.18, '#2a2a2e');            // зеркала
+    box(sd * 1.17, 1.7, 0.55, 0.03, 0.05, 0.16, '#d8d8d0'); box(sd * 1.165, 1.75, 0.52, 0.02, 1.0, 0.02, '#1e1a1c');          // ручка и шов двери
+  }
+  for (let k = -2; k <= 2; k++) box(k * 0.17, 1.27, 2.26, 0.08, 0.36, 0.04, '#3a3a36');                                 // решётка
+  box(0, 1.78, -1.95, 0.025, 1.3, 0.03, '#1e1a1c'); box(-0.18, 1.66, -1.97, 0.04, 0.16, 0.05, '#d8d8d0');              // шов и ручка задних дверей
+  B.add(rbox(2.5, 0.24, 0.3, 0.1, 3), mat(0, 1.0, 2.4), sh('#2a2428'), E); B.add(rbox(2.5, 0.24, 0.3, 0.1, 3), mat(0, 1.0, -2.25), sh('#2a2428'), E); // бамперы
+  B.add(new THREE.CylinderGeometry(0.55, 0.55, 0.32, 16), mat(-0.45, 1.72, -2.16, 1, 1, 1, 0, Math.PI / 2), sh('#1e1a1c'), E); // запаска
+  B.add(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 16), mat(-0.45, 1.72, -2.33, 1, 1, 1, 0, Math.PI / 2), sh(P[1]), E); B.add(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 10), mat(-0.45, 1.72, -2.35, 1, 1, 1, 0, Math.PI / 2), sh(P[2]), E); // чехол с кружком
+  for (const x of [0.62, 0.92]) box(x, 2.0, -2.0, 0.05, 1.4, 0.05, '#8a8a84'); for (let k = 0; k < 5; k++) box(0.77, 1.45 + k * 0.28, -2.0, 0.3, 0.04, 0.04, '#8a8a84'); // лесенка
+  for (const sd of [-1, 1]) box(sd * 0.95, 2.72, -0.6, 0.05, 0.08, 2.2, '#5a4a3a'); for (const z of [-1.65, 0.45]) box(0, 2.72, z, 1.95, 0.08, 0.05, '#5a4a3a'); box(0, 2.62, -0.6, 1.8, 0.04, 2.1, '#4a3a2e'); // багажник
+  for (let k = 0; k < 5; k++) B.add(CYL, mat(-0.7 + k * 0.35, 2.82, 0.1, 0.13, 0.32, 0.13), sh(k % 2 ? '#d0303a' : '#e8803a'), E); // банки варенья
+  for (let k = 0; k < 5; k++) B.add(CYL, mat(-0.7 + k * 0.35, 3.0, 0.1, 0.14, 0.05, 0.14), sh('#e8e0c8'), E);           // крышки
+  B.add(CYL, mat(-1.0, 3.6, 1.2, 0.03, 2.2, 0.03), sh('#ccc'), E); box(-0.82, 4.55, 1.2, 0.36, 0.22, 0.02, P[2]);       // антенна с флажком
+  box(0.62, 2.6, 1.35, 0.85, 0.04, 0.7, '#2a3a6a'); for (let k = 0; k < 3; k++) box(0.62, 2.625, 1.12 + k * 0.23, 0.82, 0.01, 0.02, '#6a8ac8'); // солнечная панель
   return B.build(); }; W.roverPaint = (P) => { W.bodyMesh.geometry.dispose(); W.bodyMesh.geometry = bodyGeo(P); };
   const bm = new THREE.Mesh(bodyGeo(W.paint || ['#b8c890', '#a8b880', '#ff7a3a']), new THREE.MeshBasicMaterial({ vertexColors: true })); body.add(bm); W.bodyMesh = bm;
   // колёса: одна сетка на 6 штук, у каждого своя подвеска и вращение
   const wg = new THREE.CylinderGeometry(0.62, 0.62, 0.5, 16); wg.rotateZ(Math.PI / 2); const wb = new Builder(null); wb.add(wg, null, (cx, cy, cz, nx, ny, nz) => TC.set(Math.abs(nx) > 0.7 ? '#3a3438' : Math.floor((Math.atan2(cy, cz) + 3.1416) / 0.3927) % 2 ? '#141012' : '#2e2a2c').multiplyScalar(0.7 + 0.3 * Math.max(0, ny)), { emit: true });
-  for (const sx of [-0.26, 0.26]) { for (let k = 0; k < 3; k++) wb.add(BOX, mat(sx, 0, 0, 0.06, 0.9, 0.13, 0, k * Math.PI / 3), () => TC.set('#c8c0b0'), { emit: true }); wb.add(CYL, mat(sx, 0, 0, 0.3, 0.07, 0.3, 0, 0, Math.PI / 2), () => TC.set('#d8a43a'), { emit: true }); } // спицы и ступица — видно, как крутится
+  for (const sx of [-0.26, 0.26]) { wb.add(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 18), mat(sx, 0, 0, 1, 1, 1, 0, 0, Math.PI / 2), () => TC.set('#5a5a58'), { emit: true }); wb.add(new THREE.TorusGeometry(0.42, 0.045, 5, 18), mat(sx * 1.04, 0, 0, 1, 1, 1, Math.PI / 2), () => TC.set('#b8b8b0'), { emit: true }); for (let k = 0; k < 3; k++) wb.add(BOX, mat(sx * 1.06, 0, 0, 0.05, 0.78, 0.09, 0, k * Math.PI / 3), () => TC.set('#8a8a84'), { emit: true }); wb.add(CYL, mat(sx * 1.1, 0, 0, 0.2, 0.06, 0.2, 0, 0, Math.PI / 2), () => TC.set('#d8a43a'), { emit: true }); } // диск, обод, спицы, колпак // спицы и ступица — видно, как крутится
   wb.add(BOX, mat(0.26, 0, 0, 0.04, 0.5, 0.12), '#888', { emit: true });
   W.wheels = new THREE.InstancedMesh(wb.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), 6); W.wheels.frustumCulled = false; S.add(W.wheels);
   W.wpos = [[-1.42, -1.6], [1.42, -1.6], [-1.42, 0], [1.42, 0], [-1.42, 1.6], [1.42, 1.6]]; W.wsus = [0, 0, 0, 0, 0, 0]; W.wrot = 0;
@@ -762,7 +778,7 @@ function buildRover() {
   gunT = new THREE.Group(); gunT.position.y = 0.4; dedT.add(gunT);
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.5, 8), new THREE.MeshLambertMaterial({ color: '#2a2a30' })); barrel.rotation.x = Math.PI / 2; barrel.position.set(0.32, 0.25, 0.75); gunT.add(barrel); W.barrel = barrel;
   if (FX.ded) { const d = FX.ded.clone(true); d.position.set(0, -0.1, -0.1); d.rotation.set(0, 0, 0); d.scale.setScalar(0.95); gunT.add(d); W.dedFig = d; }
-  roverG.userData.keep = true; W.wheels.userData.keep = true; S.add(roverG); W.roverG = roverG; W.dedT = dedT; W.gunT = gunT;
+  { const sg = new THREE.PlaneGeometry(3.6, 6.2); sg.rotateX(-Math.PI / 2); const sm = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ map: W.shadowTex ? W.shadowTex() : null, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, opacity: 0.85 })); sm.position.y = 0.06; sm.renderOrder = 1; roverG.add(sm); W.roverShadow = sm; } roverG.userData.keep = true; W.wheels.userData.keep = true; S.add(roverG); W.roverG = roverG; W.dedT = dedT; W.gunT = gunT;
 }
 function wheelsStep(dt) { const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YXZ'), sc = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(); W.wrot += R.v * dt / 0.62; roverG.updateMatrixWorld();
   W.wpos.forEach(([lx, lz], k) => { p.set(lx, 0.62, lz).applyMatrix4(roverG.matrixWorld); const gy = H(p.x, p.z) + 0.62, t = R.air > 0 ? -0.25 : Math.max(-0.35, Math.min(0.35, gy - p.y)); W.wsus[k] += (t - W.wsus[k]) * Math.min(1, dt * 18);
