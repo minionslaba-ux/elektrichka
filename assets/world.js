@@ -345,6 +345,16 @@ function setChapter(n) { MG = null; CHC = CH[n]; W.ch = n; W.deckOn = n === 6; P
 function segDist(px, pz, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l)); return [Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t), t]; }
 function roadInfo(x, z) { let d = 1e9, y = 0; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) { const [dd, t] = segDist(x, z, r[i], r[i + 1]); if (dd < d) { d = dd; y = r[i][2] + (r[i + 1][2] - r[i][2]) * t; } } return [d, y]; }
 function roadDist(x, z) { return roadInfo(x, z)[0]; }
+/* ---------- далёкие горы в дымке по кругу горизонта: своя форма и цвет у планеты (одна сетка, ~500 треугольников, едет с камерой) ---------- */
+const HOR = { 1: ['#7a3a30', 1, 0.6], 2: ['#6a3028', 1.3, 0.9], 3: ['#8a4a34', 1, 0.5], 5: ['#b8c8e0', 1.1, 0.7], 6: ['#5a5662', 0.8, 1.2], 7: ['#4a2a2a', 1.6, 0.4], 8: ['#6a6670', 0.8, 1.1], 10: ['#a8c8e0', 0.9, 0.8], 11: ['#7a5030', 0.9, 0.6], 12: ['#5a5a62', 0.9, 1.2], 13: ['#7a9ab0', 0.6, 0.5], 14: ['#7a9aa8', 0.5, 0.4] };
+function buildHorizon() { if (W.horM) { W.horM.geometry.dispose(); W.horM = null; } const H0 = HOR[W.ch]; if (!H0 || CHC.clouds || CHC.dark) return;
+  const N = 160, R0 = 520, top = new THREE.Color(H0[0]).lerp(new THREE.Color(CHC.fog || '#806070'), 0.45), bot = new THREE.Color(CHC.fog || '#806070'), pos = [], col = [];
+  const hgt = (a) => { const u = a / (Math.PI * 2) * 24; let v = (fbm(u * 0.55 + W.ch * 7, 3.1) - 0.35) * 70 * H0[1]; v += (fbm(u * 2.2, 9.7) - 0.5) * 22 * H0[2]; if (W.ch <= 3) v = Math.round(v / 14) * 14 + (fbm(u * 5, 1) - 0.5) * 4; return Math.max(6, v + 18); }; // на Марсе — ступенчатые столовые горы
+  for (let i = 0; i < N; i++) { const a0 = i / N * Math.PI * 2, a1 = (i + 1) / N * Math.PI * 2, h0 = hgt(a0), h1 = hgt(a1), x0 = Math.sin(a0) * R0, z0 = Math.cos(a0) * R0, x1 = Math.sin(a1) * R0, z1 = Math.cos(a1) * R0;
+    pos.push(x0, -40, z0, x1, -40, z1, x1, h1, z1, x0, -40, z0, x1, h1, z1, x0, h0, z0); for (const c of [bot, bot, top, bot, top, top]) col.push(c.r, c.g, c.b); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide, depthWrite: false })); m.renderOrder = -1; m.frustumCulled = false; S.add(m); W.horM = m; }
+
 /* ---------- мелочь под колёсами: камешки, лёд, кристаллы, щебень, трава — только вокруг игрока, переезжает с ним (одна InstancedMesh) ---------- */
 const SCAT = { 1: 'peb', 2: 'peb', 3: 'peb', 7: 'basalt', 4: 'cry', 5: 'ice', 10: 'ice', 6: 'gpeb', 8: 'gpeb', 12: 'gpeb', 11: 'opeb', 13: 'grass', 14: 'grass' };
 const SCAT_COL = { peb: ['#7a3a28', '#5a2a20', '#9a5a40', '#6a3424'], basalt: ['#3a2a28', '#4a3430', '#2a2222'], gpeb: ['#6a6a6e', '#8a8a8e', '#4a4a4e', '#7a7670'], opeb: ['#a86a3a', '#7a4a2a', '#c88a4a'], ice: ['#dff4ff', '#b8e4ff', '#9ad8ff'], cry: ['#c08aff', '#7fe8ff', '#ff9ad8'], grass: ['#6a9a3a', '#8ab84a', '#4a7a2a', '#9ac85a'] };
@@ -665,7 +675,7 @@ function buildPOIs() {
   // световые столбы над местами
   POI.forEach((p) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 160, 10, 1, true), new THREE.MeshBasicMaterial({ color: p.col, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
     m.position.set(p.x, p.h + 80, p.z); S.add(m); p.beam = m; beams.push(m); });
-  scatterBuild();
+  scatterBuild(); buildHorizon();
   // столкновения с постройками (упрощённо — круги)
 }
 // Аэроград: платформы-диски на шарах, мосты с перилами, тросы, облачные башни
@@ -968,7 +978,7 @@ W.start = function () {
 };
 W.stop = function () { if (!W.active) return; W.active = false; if (window.RIM) RIM.value.set('#ffd8b8').multiplyScalar(0.34); if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
-  W.t += dt; scatterStep(); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
+  W.t += dt; scatterStep(); if (W.horM) W.horM.position.set(camera.position.x, camera.position.y - 12, camera.position.z); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
   if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else if (CHC.earth) sun.position.set(-0.8, 0.5, 0.35); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
