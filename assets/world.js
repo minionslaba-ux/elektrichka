@@ -730,7 +730,30 @@ W.setNight = function (k) { if (!S || !CHC.blue) return; const day = new THREE.C
 W.snowStep = function (dt) { if (W.beltM) { W.beltM.position.set(camera.position.x, 0, camera.position.z); W.beltM.rotation.y += dt * 0.01; } if (W.marsBall) { W.marsBall.position.set(camera.position.x + 420, camera.position.y + 210, camera.position.z - 860); if (!CHC.jup && !CHC.sat) W.marsBall.rotation.y += dt * (CHC.earth ? 0.006 : 0.004); } const p = W.snowP; if (!p) return; const a = p.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z; p.position.set(0, 0, 0);
   for (let i = 0; i < a.length; i += 3) { a[i + 1] -= dt * 4; a[i] += Math.sin(W.t + i) * dt * 0.6; let x = a[i], z = a[i + 2]; if (x - cx > 70) x -= 140; if (x - cx < -70) x += 140; if (z - cz > 70) z -= 140; if (z - cz < -70) z += 140; a[i] = x; a[i + 2] = z;
     if (a[i + 1] < H(x, z) + 9) { a[i + 1] = camera.position.y + 30 + Math.random() * 25; } } p.geometry.attributes.position.needsUpdate = true; if (W.aurora) W.aurora.position.set(cx, 0, cz); if (W.aurora) W.aurora.children.forEach((m, k) => (m.material.opacity = 0.6 + 0.3 * Math.sin(W.t * 0.5 + k * 1.3))); }
-function buildWater() { if (CHC.water === undefined) return; const SE = CHC.sea || SEA4, g = new THREE.CircleGeometry(SE.r * (CHC.sea ? 1.45 : 1.08), 48); g.rotateX(-Math.PI / 2); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: CHC.waterC || '#1a6a8a', transparent: true, opacity: CHC.sea ? 0.9 : 0.72, depthWrite: false })); m.position.set(SE.x, CHC.water, SE.z); m.renderOrder = 1; S.add(m); W.waterM = m; }
+function buildWater() { if (CHC.water === undefined) return; const SE = CHC.sea || SEA4, R0 = SE.r * (CHC.sea ? 1.45 : 1.08), N = lowEnd ? 36 : 48;
+  // живая вода: волны, мелководье у берега светлее, у горизонта отражает небо, солнечные блики (глубина — по рельефу в каждой вершине сетки)
+  const g = new THREE.PlaneGeometry(R0 * 2, R0 * 2, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position, dep = new Float32Array(P.count);
+  for (let i = 0; i < P.count; i++) dep[i] = CHC.water - H(SE.x + P.getX(i), SE.z + P.getZ(i)); g.setAttribute('depth', new THREE.BufferAttribute(dep, 1));
+  const base = new THREE.Color(CHC.waterC || '#1a6a8a'), deep = base.clone().multiplyScalar(0.55), shal = base.clone().lerp(new THREE.Color(CHC.dark ? '#5a8aa8' : '#9ad8d0'), 0.45), sky = new THREE.Color(CHC.fog || '#a0b8d0').lerp(new THREE.Color('#ffffff'), 0.25);
+  const m = new THREE.Mesh(g, new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uT: { value: 0 }, uDeep: { value: deep }, uShal: { value: shal }, uSky: { value: sky }, uR: { value: R0 }, uSun: { value: new THREE.Vector3(0.4, 0.8, 0.3).normalize() }, uA: { value: CHC.sea ? 0.92 : 0.8 } }]),
+    vertexShader: `attribute float depth; varying float vD; varying vec3 vW; varying vec2 vL; #include <fog_pars_vertex>
+      void main() { vD = depth; vL = position.xz; vec4 wp = modelMatrix * vec4(position, 1.0); vW = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
+#include <fog_vertex>
+}`.replace('#include <fog_pars_vertex>', '\n#include <fog_pars_vertex>\n'),
+    fragmentShader: `uniform float uT, uR, uA; uniform vec3 uDeep, uShal, uSky, uSun; varying float vD; varying vec3 vW; varying vec2 vL; #include <fog_pars_fragment>
+      void main() { if (length(vL) > uR) discard; if (vD < -0.3) discard;
+        vec2 p = vW.xz; float t = uT;
+        vec2 gr = vec2(cos(p.x * 0.11 + t * 1.1) * 0.6 + cos((p.x + p.y) * 0.07 - t * 0.8) * 0.5 + cos(p.x * 0.31 - p.y * 0.17 + t * 2.0) * 0.25,
+                       cos(p.y * 0.13 - t * 0.9) * 0.6 + cos((p.x - p.y) * 0.06 + t * 0.7) * 0.5 + cos(p.y * 0.29 + p.x * 0.21 - t * 1.7) * 0.25);
+        vec3 n = normalize(vec3(gr.x * 0.12, 1.0, gr.y * 0.12)), v = normalize(cameraPosition - vW);
+        float fr = pow(1.0 - max(dot(n, v), 0.0), 3.0), dk = smoothstep(0.0, 4.0, vD);
+        vec3 c = mix(uShal, uDeep, dk); c = mix(c, uSky, fr * 0.65);
+        float sp = pow(max(dot(reflect(-v, n), uSun), 0.0), 90.0); c += vec3(1.0, 0.95, 0.85) * sp * 0.9;
+        float foam = (1.0 - smoothstep(0.0, 0.7, vD)) * (0.55 + 0.45 * sin(p.x * 0.9 + p.y * 0.7 + t * 2.5)); c = mix(c, vec3(0.95, 0.97, 1.0), clamp(foam, 0.0, 1.0) * 0.7);
+        gl_FragColor = vec4(c, mix(uA * 0.75, uA, dk) + sp * 0.3);
+        #include <fog_fragment>
+      }`.replace(/#include <fog_pars_fragment>/, '\n#include <fog_pars_fragment>\n') }));
+  m.position.set(SE.x, CHC.water, SE.z); m.renderOrder = 1; S.add(m); W.waterM = m; }
 W.Hs = (x, z) => { const h = H(x, z); return CHC.water !== undefined && h < CHC.water ? CHC.water : h; };
 function buildScene() {
   const old = S, keep = old ? old.children.filter((o) => o.userData.keep) : [];
@@ -945,7 +968,7 @@ W.start = function () {
 };
 W.stop = function () { if (!W.active) return; W.active = false; if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
-  W.t += dt; scatterStep(); if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
+  W.t += dt; scatterStep(); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
   if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else if (CHC.earth) sun.position.set(-0.8, 0.5, 0.35); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
