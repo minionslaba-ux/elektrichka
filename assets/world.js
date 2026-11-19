@@ -345,6 +345,27 @@ function setChapter(n) { MG = null; CHC = CH[n]; W.ch = n; W.deckOn = n === 6; P
 function segDist(px, pz, a, b) { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / l)); return [Math.hypot(px - a[0] - dx * t, pz - a[1] - dz * t), t]; }
 function roadInfo(x, z) { let d = 1e9, y = 0; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) { const [dd, t] = segDist(x, z, r[i], r[i + 1]); if (dd < d) { d = dd; y = r[i][2] + (r[i + 1][2] - r[i][2]) * t; } } return [d, y]; }
 function roadDist(x, z) { return roadInfo(x, z)[0]; }
+/* ---------- мелочь под колёсами: камешки, лёд, кристаллы, щебень, трава — только вокруг игрока, переезжает с ним (одна InstancedMesh) ---------- */
+const SCAT = { 1: 'peb', 2: 'peb', 3: 'peb', 7: 'basalt', 4: 'cry', 5: 'ice', 10: 'ice', 6: 'gpeb', 8: 'gpeb', 12: 'gpeb', 11: 'opeb', 13: 'grass', 14: 'grass' };
+const SCAT_COL = { peb: ['#7a3a28', '#5a2a20', '#9a5a40', '#6a3424'], basalt: ['#3a2a28', '#4a3430', '#2a2222'], gpeb: ['#6a6a6e', '#8a8a8e', '#4a4a4e', '#7a7670'], opeb: ['#a86a3a', '#7a4a2a', '#c88a4a'], ice: ['#dff4ff', '#b8e4ff', '#9ad8ff'], cry: ['#c08aff', '#7fe8ff', '#ff9ad8'], grass: ['#6a9a3a', '#8ab84a', '#4a7a2a', '#9ac85a'] };
+function scatterBuild() { if (W.scat) { S.remove(W.scat.im); W.scat.im.geometry.dispose(); W.scat = null; } const kind = SCAT[W.ch]; if (!kind || CHC.clouds) return;
+  const B = new Builder(null), sh = (cx, cy, cz, nx, ny, nz) => TC.setRGB(1, 1, 1).multiplyScalar(kind === 'cry' ? 1 : 0.62 + 0.38 * Math.max(0, ny) + 0.1 * Math.abs(nx));
+  if (kind === 'grass') for (let k = 0; k < 3; k++) B.add(new THREE.ConeGeometry(0.06, 1, 3), mat(Math.cos(k * 2.1) * 0.08, 0.5, Math.sin(k * 2.1) * 0.08, 1, 1, 1, k * 1.3, Math.cos(k * 2.1) * 0.25, Math.sin(k * 2.1) * 0.25), (cx, cy) => TC.setRGB(1, 1, 1).multiplyScalar(0.55 + cy * 0.6), { emit: true });
+  else if (kind === 'ice' || kind === 'cry') for (let k = 0; k < 2; k++) B.add(new THREE.ConeGeometry(0.22 - k * 0.07, 1 - k * 0.35, 4), mat(k * 0.18, (1 - k * 0.35) / 2, k * 0.1, 1, 1, 1, k, 0, k * 0.4), sh, { emit: true });
+  else B.add(new THREE.OctahedronGeometry(1, 0), mat(0, 0.25, 0, 1, 0.5, 0.8), sh, { emit: true });
+  const R0 = lowEnd ? 6 : 8, CELL = kind === 'grass' ? 5 : 6, per = kind === 'grass' ? 1 : 2, n = (R0 * 2 + 1) ** 2 * per;
+  const im = new THREE.InstancedMesh(B.build(), new THREE.MeshBasicMaterial({ vertexColors: true }), n); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3); im.frustumCulled = false; im.count = 0; S.add(im);
+  W.scat = { im, kind, R0, CELL, per, cx: 1e9, cz: 1e9 }; }
+function scatterStep() { const Sc = W.scat; if (!Sc) return; const cx = Math.floor(R.x / Sc.CELL), cz = Math.floor(R.z / Sc.CELL); if (cx === Sc.cx && cz === Sc.cz) return; Sc.cx = cx; Sc.cz = cz;
+  const cols = SCAT_COL[Sc.kind], C = new THREE.Color(); let c = 0;
+  for (let i = -Sc.R0; i <= Sc.R0; i++) for (let j = -Sc.R0; j <= Sc.R0; j++) for (let q = 0; q < Sc.per; q++) { const gx = cx + i, gz = cz + j, h1 = hash(gx * 7.1 + q, gz * 3.3), h2 = hash(gx * 1.7, gz * 9.1 + q), h3 = hash(gx + q * 5, gz - q * 3);
+    const x = (gx + h1) * Sc.CELL, z = (gz + h2) * Sc.CELL; if (roadDist(x, z) < 5.5 || POI.some((p) => Math.hypot(p.x - x, p.z - z) < p.r * 0.55)) continue; if (CHC.dark && W.cave && W.cave(x, z) < 0.85) continue;
+    const y = H(x, z); if (CHC.water !== undefined && y < CHC.water + 0.2) continue;
+    const s = Sc.kind === 'grass' ? 0.5 + h3 * 0.6 : Sc.kind === 'ice' || Sc.kind === 'cry' ? 0.35 + h3 * 0.7 : 0.14 + h3 * h3 * 0.42;
+    Sc.im.setMatrixAt(c, mat(x, y - 0.04, z, s, s * (Sc.kind === 'ice' ? 1.3 : 1), s, h1 * 6.28, (h2 - 0.5) * 0.3, (h3 - 0.5) * 0.3)); C.set(cols[Math.floor(h2 * cols.length) % cols.length]); if (CHC.dark && Sc.kind !== 'cry') C.multiplyScalar(0.5); Sc.im.setColorAt(c, C); c++; }
+  Sc.im.count = c; Sc.im.instanceMatrix.needsUpdate = true; Sc.im.instanceColor.needsUpdate = true; }
+W.scatterBuild = scatterBuild;
+
 W.roadDist = roadDist; W.roadInfo = roadInfo;
 function rawH(x, z) { return CHC.raw(x, z); }
 // следы колёс: две колеи за задними колёсами, одним набором на всю карту (старые перезаписываются новыми)
@@ -644,6 +665,7 @@ function buildPOIs() {
   // световые столбы над местами
   POI.forEach((p) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 160, 10, 1, true), new THREE.MeshBasicMaterial({ color: p.col, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
     m.position.set(p.x, p.h + 80, p.z); S.add(m); p.beam = m; beams.push(m); });
+  scatterBuild();
   // столкновения с постройками (упрощённо — круги)
 }
 // Аэроград: платформы-диски на шарах, мосты с перилами, тросы, облачные башни
@@ -923,7 +945,7 @@ W.start = function () {
 };
 W.stop = function () { if (!W.active) return; W.active = false; if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
-  W.t += dt; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
+  W.t += dt; scatterStep(); if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
   if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else if (CHC.earth) sun.position.set(-0.8, 0.5, 0.35); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
