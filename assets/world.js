@@ -829,9 +829,24 @@ function buildRover() {
   W.wpos = [[-1.42, -1.6], [1.42, -1.6], [-1.42, 0], [1.42, 0], [-1.42, 1.6], [1.42, 1.6]]; W.wsus = [0, 0, 0, 0, 0, 0]; W.wrot = 0;
   // турель деда на крыше
   dedT = new THREE.Group(); dedT.position.set(0, 2.6, -0.6); body.add(dedT);
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 0.35, 12), new THREE.MeshLambertMaterial({ color: '#5a5a66' })); dedT.add(base);
+  const TLM = (window.addRim ? addRim : (m) => m)(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+  { const TB = new Builder(null, true); // башенка: кольцо с заклёпками, щиток спереди (дед не под пулями), мешки соли по бокам
+    const OCT1 = new THREE.OctahedronGeometry(1, 0), OCT2 = new THREE.IcosahedronGeometry(1, 1); TB.add(new THREE.CylinderGeometry(0.55, 0.66, 0.3, 12), null, '#5a5a62', SMOOTH); TB.add(new THREE.TorusGeometry(0.6, 0.05, 4, 16), mat(0, 0.14, 0, 1, 1, 1, 0, Math.PI / 2), '#8a8a90', SMOOTH);
+    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; TB.add(OCT1, mat(Math.sin(a) * 0.62, 0, Math.cos(a) * 0.62, 0.035, 0.035, 0.035), '#b8b8b0'); }
+    TB.add(new THREE.CylinderGeometry(0.62, 0.62, 0.55, 8, 1, true, -0.9, 1.8), mat(0, 0.42, 0), (cx, cy) => TC.set(cy > 0.62 ? '#7a8a5a' : '#6a7a4a'), SMOOTH); // щиток
+    for (const sd of [-1, 1]) for (let k = 0; k < 2; k++) TB.add(OCT2, mat(sd * (0.48 - k * 0.06), 0.24 + k * 0.14, -0.32 - k * 0.04, 0.17, 0.1, 0.13), '#e8e0cc'); // мешки соли
+    const tb = new THREE.Mesh(TB.build(), TLM); dedT.add(tb); }
   gunT = new THREE.Group(); gunT.position.y = 0.4; dedT.add(gunT);
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.5, 8), new THREE.MeshLambertMaterial({ color: '#2a2a30' })); barrel.rotation.x = Math.PI / 2; barrel.position.set(0.32, 0.25, 0.75); gunT.add(barrel); W.barrel = barrel;
+  const BB = new Builder(null, true); // солевая пушка из самовара: медный ствол с обручами, раструб, банка-магазин сверху, ручка
+  BB.add(new THREE.CylinderGeometry(0.1, 0.13, 1.5, 10), null, '#c8803a', SMOOTH); for (const y of [-0.5, -0.1, 0.3]) BB.add(new THREE.TorusGeometry(0.135, 0.03, 4, 10), mat(0, y, 0, 1, 1, 1, 0, Math.PI / 2), '#8a5a2a', SMOOTH);
+  BB.add(new THREE.CylinderGeometry(0.17, 0.1, 0.22, 12, 1, true), mat(0, 0.82, 0), '#e0a050', SMOOTH); BB.add(new THREE.TorusGeometry(0.17, 0.025, 4, 10), mat(0, 0.93, 0, 1, 1, 1, 0, Math.PI / 2), '#f0c070', SMOOTH); // раструб
+  BB.add(new THREE.CylinderGeometry(0.11, 0.11, 0.28, 10), mat(0, -0.2, -0.2), '#e8f0f4', SMOOTH); BB.add(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 10), mat(0, -0.2, -0.36), '#d0303a', SMOOTH); // банка соли
+  BB.add(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 8), mat(0, -0.62, 0.12, 1, 1, 1, 0, 0.6), '#5a3a20', SMOOTH); BB.add(new THREE.OctahedronGeometry(1, 1), mat(0, -0.74, 0.24, 0.07, 0.07, 0.07), '#3a2414'); // ручка
+  { // лучи фар: видны ночью, в пещерах и на тёмной стороне (яркие у фары, гаснут к концу)
+    const L = 16, cg = new THREE.ConeGeometry(3.2, L, 10, 1, true); cg.rotateX(-Math.PI / 2); const P = cg.attributes.position, cl = new Float32Array(P.count * 3); for (let i = 0; i < P.count; i++) { const k = Math.max(0, Math.min(1, 0.5 - P.getZ(i) / L)); cl[i * 3] = k * 1.0; cl[i * 3 + 1] = k * 0.92; cl[i * 3 + 2] = k * 0.7; } cg.setAttribute('color', new THREE.BufferAttribute(cl, 3));
+    const bm = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); W.beamsF = [];
+    for (const sd of [-1, 1]) { const b = new THREE.Mesh(cg, bm); b.position.set(sd * 0.72, 1.1, 2.3 + L / 2); b.rotation.x = 0.06; b.visible = false; b.renderOrder = 2; body.add(b); W.beamsF.push(b); } }
+  const barrel = new THREE.Mesh(BB.build(), TLM); barrel.rotation.x = Math.PI / 2; barrel.position.set(0.32, 0.25, 0.75); gunT.add(barrel); W.barrel = barrel;
   if (FX.ded) { const d = FX.ded.clone(true); d.position.set(0, -0.1, -0.1); d.rotation.set(0, 0, 0); d.scale.setScalar(0.95); gunT.add(d); W.dedFig = d; }
   { const sg = new THREE.PlaneGeometry(3.6, 6.2); sg.rotateX(-Math.PI / 2); const sm = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ map: W.shadowTex ? W.shadowTex() : null, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, opacity: 0.85 })); sm.position.y = 0.06; sm.renderOrder = 1; roverG.add(sm); W.roverShadow = sm; } roverG.userData.keep = true; W.wheels.userData.keep = true; S.add(roverG); W.roverG = roverG; W.dedT = dedT; W.gunT = gunT;
 }
@@ -978,7 +993,7 @@ W.start = function () {
 };
 W.stop = function () { if (!W.active) return; W.active = false; if (window.RIM) RIM.value.set('#ffd8b8').multiplyScalar(0.34); if (W.bake0) { const [a, b, c, d] = W.bake0; AMB.splice(0, 3, ...a); BOUNCE.splice(0, 3, ...b); SUN.splice(0, 3, ...c); SUN_DIR.copy(d); } document.body.classList.remove('world', 'wdcab', 'wdtur'); scene.add(skyG); babka.visible = true; };
 W.frame = function (dt, now) {
-  W.t += dt; scatterStep(); if (W.horM) W.horM.position.set(camera.position.x, camera.position.y - 12, camera.position.z); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
+  W.t += dt; scatterStep(); if (W.beamsF) { const on = !!(W.night || CHC.dark || W.dark2 > 0) && W.view !== 1; W.beamsF.forEach((b) => (b.visible = on)); } if (W.horM) W.horM.position.set(camera.position.x, camera.position.y - 12, camera.position.z); if (W.waterM && W.waterM.material.uniforms) W.waterM.material.uniforms.uT.value = W.t; if (!W.paused) { roverStep(dt); if (W.combat) W.combat(dt); if (W.logic) W.logic(dt); }
   cameraStep(dt); hudStep(); if (W.snowP || W.marsBall || W.beltM) W.snowStep(dt); beams.forEach((b, k) => (b.material.opacity = 0.14 + Math.sin(W.t * 2 + k) * 0.05));
   if (CHC.sat) sun.position.set(0.9, 0.42, 0.25); else if (CHC.earth) sun.position.set(-0.8, 0.5, 0.35); else sun.position.set(Math.sin(W.t * 0.01) * 0.6 + 0.3, 1, 0.3);
   renderer.render(S, camera);
